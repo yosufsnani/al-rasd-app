@@ -384,7 +384,7 @@ body.modal-lock{ overflow:hidden; }
   }
 }
 
-/* Reliable offline "حفظ الكل PDF" fallback: use the browser print engine. */
+/* طباعة "كل الشعب" عبر محرك طباعة المتصفح مباشرة (window.print). */
 @media print{
   /* One .print-block per section, holding the FULL table (all rows) — no
      fixed height, no overflow:hidden. Letting the table flow naturally
@@ -414,6 +414,26 @@ body.modal-lock{ overflow:hidden; }
   body.printing-all #print-all-holder .hint,
   body.printing-all #print-all-holder .toolbar,
   body.printing-all #print-all-holder .row-del{display:none !important;}
+}
+
+/* طباعة تقرير إحالة واحد، عدة تقارير، أو تقرير التحليل — بنفس أسلوب طباعة
+   الشعب أعلاه (window.print مباشرة على المتصفح) بدل توليد ملف PDF عبر
+   html2canvas: توليد PDF كان يطلع فاضي أو مقصوص على بعض متصفحات الجوال
+   ومتصفحات التطبيقات المدمجة (واتساب/تيليجرام). */
+@media print{
+  body.printing-doc main{display:none !important;}
+  body.printing-doc #print-referral-holder{
+    display:block !important; position:static !important; left:auto !important; top:auto !important;
+    width:100% !important; padding:8mm !important; background:#fff;
+  }
+  body.printing-doc #print-referral-holder .referral-sheet,
+  body.printing-doc #print-referral-holder .print-doc{
+    break-before:page; page-break-before:always;
+  }
+  body.printing-doc #print-referral-holder .referral-sheet:first-child,
+  body.printing-doc #print-referral-holder .print-doc:first-child{
+    break-before:auto !important; page-break-before:auto !important;
+  }
 }
 
 </style>
@@ -602,7 +622,7 @@ body.modal-lock{ overflow:hidden; }
   </div>
   <button class="icon-btn" onclick="showNewTermDialog()">🆕 بدء فصل دراسي جديد</button>
   <button class="icon-btn" onclick="printCurrentSection()">🖨️ طباعة الشعبة الحالية</button>
-  <button class="icon-btn" onclick="printAllSections()">📄 حفظ الكل PDF</button>
+  <button class="icon-btn" onclick="printAllSections()">🖨️ طباعة كل الشعب</button>
   <button class="icon-btn" id="btn-logout" style="background:rgba(156,28,40,.35); border-color:rgba(255,255,255,.35);">🚪 خروج</button>
 </header>
 
@@ -1371,7 +1391,7 @@ function renderAnalysis(opts){
   /* ---- شريط أزرار الطباعة (يُخفى تلقائيًا عند الطباعة عبر class="toolbar") ---- */
   const analysisToolbar = forPrint ? `` : `
   <div class="toolbar">
-    <button type="button" onclick="printAnalysisReport()">🖨️ تنزيل تقرير التحليل (PDF)</button>
+    <button type="button" onclick="printAnalysisReport()">🖨️ طباعة تقرير التحليل</button>
   </div>`;
 
   /* ---- Summary bar (أعلى الصفحة) ---- */
@@ -1451,7 +1471,7 @@ function renderAnalysis(opts){
   <div class="card">
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
       <span>🚨 يحتاج متابعة</span>
-      ${(followUps.length>0 && !forPrint) ? `<button type="button" class="fu-print-all-btn" style="border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;">🖨️ تنزيل كل تقارير الإحالة (PDF)</button>` : ``}
+      ${(followUps.length>0 && !forPrint) ? `<button type="button" class="fu-print-all-btn" style="border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;">🖨️ طباعة كل تقارير الإحالة</button>` : ``}
     </h2>
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
@@ -2717,7 +2737,7 @@ function openReferralReportDialog(key, idx){
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" id="dlg-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
           <button type="button" id="dlg-save-archive" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">💾 حفظ في الأرشيف</button>
-          <button type="button" id="dlg-ok" style="flex:1; width:auto; background:var(--teal);">⬇️ حفظ التقرير PDF</button>
+          <button type="button" id="dlg-ok" style="flex:1; width:auto; background:var(--teal);">🖨️ طباعة التقرير</button>
         </div>
       </div>
     </div>`;
@@ -2858,67 +2878,12 @@ function buildDefaultReferralData(key, idx){
   };
 }
 
+// طباعة تقرير إحالة فردي عبر window.print() (بدل تنزيل PDF عبر html2canvas
+// الذي كان يطلع فاضيًا أو مقصوصًا على بعض متصفحات الجوال).
 function printReferralReport(data){
   const holder = document.getElementById('print-referral-holder');
   holder.innerHTML = referralSheetHtml(data);
-  saveReferralPdf(data, holder);
-}
-
-function saveReferralPdf(data, holder){
-  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
-    showToast('تعذّر تجهيز PDF — تأكد من الاتصال بالإنترنت (الأدوات اللازمة تُحمّل من الشبكة أول مرة) وحاول مجددًا');
-    return;
-  }
-  showToast('جاري تجهيز ملف PDF...');
-
-  // Render the report off-screen at a fixed A4-like width so the exported
-  // PDF has consistent proportions regardless of the phone's screen size.
-  holder.style.cssText = 'display:block; position:fixed; top:0; left:-10000px; width:794px; background:#fff; padding:28px; box-sizing:border-box;';
-
-  requestAnimationFrame(()=>{
-    setTimeout(()=>{
-      html2canvas(holder, { scale:2, backgroundColor:'#ffffff', useCORS:true }).then(canvas=>{
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p','mm','a4');
-        const pageW = 210, pageH = 297, margin = 10;
-        const usableW = pageW - margin*2;
-        const usableH = pageH - margin*2;
-        const ratio = usableW / canvas.width; // mm per source px (uniform for width & height)
-        const pxPerPage = Math.floor(usableH / ratio); // how many source px fit one page height
-
-        if(canvas.height <= pxPerPage){
-          const imgHmm = canvas.height * ratio;
-          pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, imgHmm);
-        } else {
-          let y = 0;
-          let first = true;
-          while(y < canvas.height){
-            const sliceH = Math.min(pxPerPage, canvas.height - y);
-            const sliceCanvas = document.createElement('canvas');
-            sliceCanvas.width = canvas.width;
-            sliceCanvas.height = sliceH;
-            const ctx = sliceCanvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0,0,sliceCanvas.width, sliceCanvas.height);
-            ctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-            if(!first) pdf.addPage();
-            pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH*ratio);
-            first = false;
-            y += sliceH;
-          }
-        }
-        const safeName = (data.studentName||'طالب').replace(/[\\/:*?"<>|]/g,'_');
-        pdf.save(`تقرير_إحالة_${safeName}.pdf`);
-        showToast('تم حفظ ملف PDF');
-        holder.style.cssText = '';
-        holder.innerHTML = '';
-      }).catch(()=>{
-        showToast('حدث خطأ أثناء إنشاء ملف PDF — حاول مجددًا');
-        holder.style.cssText = '';
-        holder.innerHTML = '';
-      });
-    }, 60);
-  });
+  printHolder(holder);
 }
 
 
@@ -3027,6 +2992,21 @@ function printCurrentSection(){
   setTimeout(()=> window.print(), 600);
 }
 
+// طباعة موحّدة لأي محتوى مُجهَّز مسبقًا داخل holder (تقرير إحالة واحد، عدة
+// تقارير، أو تقرير التحليل) عبر window.print() مباشرة — بنفس أسلوب طباعة
+// الشعب بالأسفل، بدل توليد ملف PDF عبر html2canvas الذي كان يطلع فاضيًا أو
+// مقصوصًا على بعض متصفحات الجوال ومتصفحات التطبيقات المدمجة.
+function printHolder(holder){
+  document.body.classList.add('printing-doc');
+  const cleanup = ()=>{
+    document.body.classList.remove('printing-doc');
+    holder.innerHTML = '';
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup, {once:true});
+  requestAnimationFrame(()=> setTimeout(()=> window.print(), 150));
+}
+
 async function printAllSections(){
   const holder = document.getElementById('print-all-holder');
   if(!holder){ showToast('تعذر تجهيز معاينة الطباعة'); return; }
@@ -3079,77 +3059,9 @@ async function printAllSections(){
   }
 }
 
-// Renders one HTML block off-screen inside `holder` and appends it to `pdf` as
-// one or more A4 pages (paginating tall content the same way saveReferralPdf
-// does for a single referral sheet). isFirstBlock controls whether the very
-// first page of the very first block should avoid an extra leading blank page.
-function addHtmlBlockToPdf(pdf, holder, htmlContent, isFirstBlock){
-  return new Promise((resolve, reject)=>{
-    // Force the print-only header/footer to render, and hide the editable
-    // UI chrome (letterhead/signature/config forms, toolbars, delete icons)
-    // that renderSectionSheet() also includes for the live in-app view —
-    // html2canvas captures normal (non-print) computed styles, so without
-    // this override those editable panels show up in full in the PDF
-    // instead of just the clean printable sheet.
-    holder.innerHTML = `<style>
-      .print-header,.print-footer{display:block !important;}
-      header.app-top,.tabbar,.toolbar,.autosave-note,.hint,.footer-note,
-      .card.meta-card,.row-del,.toast,.warn-overlay,.fu-print-all-btn{display:none !important;}
-    </style>` + htmlContent;
-    requestAnimationFrame(()=>{
-      setTimeout(()=>{
-        html2canvas(holder, { scale:2, backgroundColor:'#ffffff', useCORS:true }).then(canvas=>{
-          // Page size is read from the jsPDF instance itself so this same
-          // helper works for both portrait (referral/analysis reports) and
-          // landscape (wide multi-column sheets) documents.
-          const pageW = pdf.internal.pageSize.getWidth();
-          const pageH = pdf.internal.pageSize.getHeight();
-          const margin = 10;
-          const usableW = pageW - margin*2;
-          const usableH = pageH - margin*2;
-          const ratio = usableW / canvas.width;
-          const pxPerPage = Math.floor(usableH / ratio);
-          if(canvas.height <= pxPerPage){
-            if(!isFirstBlock) pdf.addPage();
-            const imgHmm = canvas.height * ratio;
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, imgHmm);
-          } else {
-            let y = 0, first = true;
-            while(y < canvas.height){
-              const sliceH = Math.min(pxPerPage, canvas.height - y);
-              const sliceCanvas = document.createElement('canvas');
-              sliceCanvas.width = canvas.width; sliceCanvas.height = sliceH;
-              const ctx = sliceCanvas.getContext('2d');
-              ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,sliceCanvas.width, sliceCanvas.height);
-              ctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-              if(!(isFirstBlock && first)) pdf.addPage();
-              pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH*ratio);
-              first = false;
-              y += sliceH;
-            }
-          }
-          resolve();
-        }).catch(reject);
-      }, 60);
-    });
-  });
-}
-
-// Downloads the analysis tab as a PDF. Uses the same html2canvas+jsPDF
-// pipeline as the individual referral report (saveReferralPdf) instead of
-// window.open()+window.print(): that popup/new-tab approach is unreliable on
-// many mobile browsers and in-app webviews (Android Chrome popup blocking,
-// WhatsApp/Telegram in-app browsers, etc.), while a direct PDF download
-// already works reliably for referral reports in this same app.
-async function printAnalysisReport(){
-  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
-    showToast('تعذّر تجهيز PDF — تأكد من الاتصال بالإنترنت (الأدوات اللازمة تُحمّل من الشبكة أول مرة) وحاول مجددًا');
-    return;
-  }
-  showToast('جاري تجهيز ملف PDF...');
+// طباعة تقرير التحليل عبر window.print() (بدل تنزيل PDF عبر html2canvas).
+function printAnalysisReport(){
   const holder = document.getElementById('print-referral-holder');
-  holder.style.cssText = 'display:block; position:fixed; top:0; left:-10000px; width:794px; background:#fff; padding:28px; box-sizing:border-box;';
-
   const lh = STATE.letterhead;
   const logoSrc = document.querySelector('header.app-top img')?.src || '';
   const header = `
@@ -3166,51 +3078,22 @@ async function printAnalysisReport(){
   </div>
   <h1 style="text-align:center; font-size:18px; margin:0 0 20px; color:#111; font-family:'Segoe UI', Tahoma, Arial, sans-serif;">تقرير تحليل أداء الشعب</h1>`;
 
-  try{
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p','mm','a4');
-    await addHtmlBlockToPdf(pdf, holder, header + renderAnalysis({forPrint:true}), true);
-    pdf.save('تقرير_تحليل_الأداء.pdf');
-    showToast('تم حفظ ملف PDF');
-  }catch(e){
-    showToast('حدث خطأ أثناء إنشاء ملف PDF — حاول مجددًا');
-  }finally{
-    holder.style.cssText = '';
-    holder.innerHTML = '';
-  }
+  holder.innerHTML = `<div class="print-doc" dir="rtl">${header}${renderAnalysis({forPrint:true})}</div>`;
+  printHolder(holder);
 }
 
-// Downloads a single combined PDF with one referral sheet per "يحتاج
-// متابعة" student (each on its own page). Same reasoning as
-// printAnalysisReport for using PDF download instead of a print popup.
-// Note: unlike the individual "📋 إحالة" flow, this batch export does not
-// save entries to the referral archive.
-async function printAllFollowUpReferrals(){
+// طباعة تقرير إحالة واحد لكل طالب "يحتاج متابعة" ضمن نفس أمر الطباعة (كل
+// تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. ملاحظة: هذه
+// الدفعة لا تُحفظ في أرشيف الإحالات، بخلاف مسار "📋 إحالة" الفردي.
+function printAllFollowUpReferrals(){
   const followUps = needsFollowUpList();
   if(followUps.length===0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }
-  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
-    showToast('تعذّر تجهيز PDF — تأكد من الاتصال بالإنترنت (الأدوات اللازمة تُحمّل من الشبكة أول مرة) وحاول مجددًا');
-    return;
-  }
-  showToast(`جاري تجهيز ${followUps.length} تقرير إحالة...`);
   const holder = document.getElementById('print-referral-holder');
-  holder.style.cssText = 'display:block; position:fixed; top:0; left:-10000px; width:794px; background:#fff; padding:28px; box-sizing:border-box;';
-
-  try{
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p','mm','a4');
-    for(let i=0;i<followUps.length;i++){
-      const data = buildDefaultReferralData(followUps[i].key, followUps[i].idx);
-      await addHtmlBlockToPdf(pdf, holder, referralSheetHtml(data), i===0);
-    }
-    pdf.save('تقارير_إحالة_يحتاج_متابعة.pdf');
-    showToast('تم حفظ ملف PDF. ملاحظة: لم تُحفظ هذه الدفعة في أرشيف الإحالات.');
-  }catch(e){
-    showToast('حدث خطأ أثناء إنشاء ملف PDF — حاول مجددًا');
-  }finally{
-    holder.style.cssText = '';
-    holder.innerHTML = '';
-  }
+  holder.innerHTML = followUps
+    .map(f => referralSheetHtml(buildDefaultReferralData(f.key, f.idx)))
+    .join('');
+  showToast(`تم تجهيز ${followUps.length} تقرير — لن تُحفظ هذه الدفعة في أرشيف الإحالات`);
+  printHolder(holder);
 }
 
 
@@ -3243,8 +3126,6 @@ window.rasdStartApp = async function(){
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 
 <div class="footer-note">تطبيق ويب لكشف رصد المشاريع — رصدك محفوظ تلقائيًا في حسابك السحابي، ويمكنك الدخول عليه من أي جهاز بنفس البريد وكلمة المرور. زر «نسخة احتياطية» يبقى خيارًا إضافيًا لحفظ نسخة JSON على جهازك.</div>
