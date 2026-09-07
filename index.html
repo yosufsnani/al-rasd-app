@@ -143,7 +143,9 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
 
 /* ===== بطاقة طالب (عرض البطاقات) ===== */
 .stu-card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:14px 15px; box-shadow:var(--shadow); margin-bottom:10px;}
-.stu-card.is-flag{border-color:#F3DFD3; background:#FFFDFB;}
+.stu-card.is-flag{border-right:4px solid var(--flag-rail);}
+.stu-card.sev-urgent{--flag-rail:#C0392B; border-color:#F2D9D5; border-right-color:var(--flag-rail); background:#FFFCFB;}
+.stu-card.sev-warn{--flag-rail:#D9822B; border-color:#F3DFD3; border-right-color:var(--flag-rail); background:#FFFDFB;}
 .stu-top{display:flex; align-items:center; gap:10px; margin-bottom:11px; cursor:pointer;}
 .stu-top .s-nm{flex:1 1 auto; font-size:14.5px; font-weight:500; color:var(--text); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .stu-top .s-score{font-size:15px; font-weight:600; color:var(--text); white-space:nowrap;}
@@ -226,8 +228,13 @@ td.flag-c{font-size:11px; font-weight:700; white-space:nowrap;}
 
 tr.row-empty td.name-c, tr.row-empty td.idx-c{background:var(--empty);}
 tr.row-empty{background:var(--empty);}
-tr.row-orange{background:var(--orange) !important;}
-tr.row-orange td.name-c, tr.row-orange td.idx-c{background:var(--orange) !important;}
+/* شريط من يحتاج متابعة — بدرجتَي خطورة */
+tr.sev-urgent{--flag-bg:var(--red); --flag-rail:#C0392B;}
+tr.sev-warn{--flag-bg:var(--orange); --flag-rail:#D9822B;}
+tr.row-flag{background:var(--flag-bg) !important;}
+tr.row-flag td.name-c, tr.row-flag td.idx-c{background:var(--flag-bg) !important;}
+tr.row-flag td.idx-c{box-shadow:inset -4px 0 0 var(--flag-rail), -1px 0 0 #dbe1ea inset;}
+tr.row-flag td.flag-c{color:var(--flag-rail); font-weight:800;}
 
 td.final-green{background:var(--green); color:var(--green-t);}
 td.final-yellow{background:var(--yellow); color:var(--yellow-t);}
@@ -335,6 +342,12 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .followup-table thead th{background:var(--gray-head); color:#fff; font-size:11.5px;}
 .followup-table td.fu-name{text-align:right; font-weight:700;}
 .followup-table td.fu-reason{font-size:11px; color:var(--muted);}
+.followup-table td.fu-sev{font-size:11px; font-weight:700; white-space:nowrap;}
+.followup-table tr.sev-urgent{--flag-bg:var(--red); --flag-rail:#C0392B;}
+.followup-table tr.sev-warn{--flag-bg:var(--orange); --flag-rail:#D9822B;}
+.followup-table tr.sev-urgent td, .followup-table tr.sev-warn td{background:var(--flag-bg);}
+.followup-table tr.sev-urgent td.fu-name, .followup-table tr.sev-warn td.fu-name{border-right:4px solid var(--flag-rail);}
+.followup-table tr.sev-urgent td.fu-sev, .followup-table tr.sev-warn td.fu-sev{color:var(--flag-rail);}
 .fu-open-btn{border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit; white-space:nowrap;}
 .late-rank-row{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:7px 0; border-bottom:1px dashed #eef0f3;}
 .late-rank-row:last-child{border-bottom:none;}
@@ -491,7 +504,8 @@ body.modal-lock{ overflow:hidden; }
   td.cell{font-size:9px !important; width:auto !important;}
   .row-del{display:none !important;}
 
-  tr.row-orange{border-right:4px solid #a15c00 !important;}
+  tr.sev-urgent{border-right:4px solid #9c1c28 !important;}
+  tr.sev-warn{border-right:4px solid #a15c00 !important;}
   td.final-green{border-right:4px solid #1e6b2e !important;}
   td.final-yellow{border-right:4px solid #8a6d00 !important;}
   td.final-red{border-right:4px solid #9c1c28 !important;}
@@ -1130,7 +1144,7 @@ function sumGroup(arr, fullVal, halfVal){
 
 function studentCalc(row){
   const cfg = STATE.config;
-  let final = 0, maxGrade = 0, lateCount = 0;
+  let final = 0, maxGrade = 0, lateCount = 0, missCount = 0;
   const sums = {};
   for(const k of CAT_KEYS){
     const arr = row[k] || [];
@@ -1141,6 +1155,7 @@ function studentCalc(row){
     final += sum;
     maxGrade += (arr.length - countSym(arr,"⬜")) * full;
     lateCount += countSym(arr,"⏰");
+    missCount += countSym(arr,"❌");
   }
   const ratio = maxGrade>0 ? final/maxGrade : null;
   const lowRatio = maxGrade>0 ? (final/maxGrade < 0.6) : false;
@@ -1148,9 +1163,14 @@ function studentCalc(row){
   if(row.name.trim()!==""){
     if(lowRatio || lateCount>=5) flag = "⚠ نعم";
   }
-  const isOrange = row.name.trim()!=="" && (lowRatio || lateCount>=5);
-  return {pSum:sums.pSum, hSum:sums.hSum, tSum:sums.tSum, jSum:sums.jSum, final,maxGrade,lateCount,ratio,flag,isOrange};
+  /* درجة الخطورة داخل من يحتاج متابعة — لا تضيف طلابًا جددًا، تفرّق بينهم فقط:
+     عاجل = انخفاض إنجاز أو ٣ حالات عدم تسليم فأكثر، وإلا تنبيه (تكرار تأخر). */
+  let severity = "";
+  if(flag === "⚠ نعم") severity = (lowRatio || missCount>=3) ? "urgent" : "warn";
+  return {pSum:sums.pSum, hSum:sums.hSum, tSum:sums.tSum, jSum:sums.jSum, final,maxGrade,lateCount,missCount,ratio,flag,severity};
 }
+
+const SEV_LABEL = {urgent:"🔴 عاجل", warn:"🟡 متابعة"};
 
 function sectionAnalysis(key){
   const rows = STATE.sections[key].filter(r=>r.name.trim()!=="");
@@ -1247,7 +1267,7 @@ function renderSectionRows(key){
   return STATE.sections[key].map((row, idx)=>{
     const c = studentCalc(row);
     const empty = row.name.trim()==="";
-    let rowClass = empty ? "row-empty" : (c.isOrange ? "row-orange" : "");
+    let rowClass = empty ? "row-empty" : (c.severity ? `row-flag sev-${c.severity}` : "");
     if(SELECTED_ROWS.has(idx)) rowClass += " row-selected";
     let finalClass = "";
     if(!empty && c.maxGrade>0){
@@ -1268,7 +1288,7 @@ function renderSectionRows(key){
       <td class="sum-c">${fmt(c.jSum)}</td>
       <td class="final-c ${finalClass}">${fmt(c.final)}</td>
       <td class="max-c">${fmt(c.maxGrade)}</td>
-      <td class="flag-c">${c.flag}</td>
+      <td class="flag-c">${c.severity ? SEV_LABEL[c.severity] : ""}</td>
       <td class="row-del" data-del="${idx}" data-key="${key}" title="حذف الصف">🗑️</td>
     </tr>`;
   }).join("");
@@ -1286,7 +1306,8 @@ function escapeAttr(s){
 /* نفس عتبات levelDistribution حرفيًا حتى لا تختلف البطاقة عن لوحة التحليل */
 function studentLevelChip(c, empty){
   if(empty || c.maxGrade===0) return `<span class="pill-badge" style="background:var(--empty); color:var(--muted);">لم يُرصد</span>`;
-  if(c.flag==="⚠ نعم")       return `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">يحتاج متابعة</span>`;
+  if(c.severity==="urgent")  return `<span class="pill-badge" style="background:var(--red); color:var(--red-t);">متابعة عاجلة</span>`;
+  if(c.severity==="warn")    return `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">يحتاج متابعة</span>`;
   if(c.ratio>=0.9)           return `<span class="pill-badge" style="background:var(--green); color:var(--green-t);">ممتاز</span>`;
   if(c.ratio>=0.75)          return `<span class="pill-badge" style="background:var(--teal-soft); color:var(--teal-d);">جيد</span>`;
   return `<span class="pill-badge" style="background:var(--yellow); color:var(--yellow-t);">يحتاج تحسين</span>`;
@@ -1319,7 +1340,7 @@ function renderSectionCards(key){
           `<button type="button" class="cg-cell" data-idx="${idx}" data-group="${k}" data-gi="${gi}" title="${escapeAttr(SYM_LABEL[v]||'')}">${v}</button>`
         ).join('')}</div>
       </div>`).join('')}</div>` : '';
-    return `<div class="stu-card${c.isOrange?' is-flag':''}${open?' open':''}">
+    return `<div class="stu-card${c.severity?` is-flag sev-${c.severity}`:''}${open?' open':''}">
       <div class="stu-top" data-toggle-card="${idx}">
         <span class="s-nm">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span>
         ${studentLevelChip(c, empty)}
@@ -1533,7 +1554,8 @@ function renderSectionSheet(key, opts){
     </div>
     <div class="legend">
       <div><b>الرموز:</b> اضغط على أي خلية لفتح قائمة الاختيار — ✔️ = درجة كاملة &nbsp; ❌ = صفر &nbsp; ⏰ = نصف درجة (متأخر بالتسليم) &nbsp; ⬜ = لم يصل له بعد (لا يُحسب)</div>
-      <div><b>الألوان:</b> 🟩 أخضر = 80% فأكثر من الدرجة القصوى &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; 🟧 برتقالي = 5 تأخيرات فأكثر (تحتاج متابعة) &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
+      <div><b>ألوان درجة الطالب:</b> 🟩 أخضر = 80% فأكثر من الدرجة القصوى &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
+      <div><b>شريط المتابعة (على يمين الصف):</b> 🔴 <b>عاجل</b> = الإنجاز أقل من 60% أو 3 حالات عدم تسليم (❌) فأكثر &nbsp; 🟡 <b>متابعة</b> = 5 تأخيرات (⏰) فأكثر مع بقاء الإنجاز مقبولًا</div>
     </div>
     <div class="print-footer">
       <div>معلم المادة: ${escapeAttr(meta.teacher)}</div>
@@ -1581,10 +1603,15 @@ function needsFollowUpList(){
       const reasons = [];
       if(lowRatio) reasons.push("انخفاض الإنجاز");
       if(frequentLate) reasons.push("تكرار التأخر");
-      list.push({key, idx, name:row.name, ratioPct: c.ratio!==null ? Math.round(c.ratio*100) : null, lateCount:c.lateCount, reason: reasons.join(" و ") || "—"});
+      if(c.missCount>=3) reasons.push("تكرار عدم التسليم");
+      list.push({key, idx, name:row.name, ratioPct: c.ratio!==null ? Math.round(c.ratio*100) : null, lateCount:c.lateCount, missCount:c.missCount, severity:c.severity, reason: reasons.join(" و ") || "—"});
     });
   }
-  list.sort((a,b)=> (a.ratioPct===null?101:a.ratioPct) - (b.ratioPct===null?101:b.ratioPct));
+  list.sort((a,b)=>{
+    const rank = s => s==="urgent" ? 0 : 1;
+    if(rank(a.severity)!==rank(b.severity)) return rank(a.severity)-rank(b.severity);
+    return (a.ratioPct===null?101:a.ratioPct) - (b.ratioPct===null?101:b.ratioPct);
+  });
   return list;
 }
 
@@ -1790,19 +1817,22 @@ function renderAnalysis(opts){
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
     <table class="followup-table">
-      <thead><tr><th>الطالب</th><th>الشعبة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th></th></tr></thead>
+      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th><th></th></tr></thead>
       <tbody>
-        ${followUps.map(f=>`<tr>
+        ${followUps.map(f=>`<tr class="sev-${f.severity}">
           <td class="fu-name">${escapeAttr(f.name)}</td>
           <td>${escapeAttr(f.key)}</td>
+          <td class="fu-sev">${SEV_LABEL[f.severity]||''}</td>
           <td class="fu-reason">${escapeAttr(f.reason)}</td>
           <td>${f.ratioPct!==null?f.ratioPct+'%':'—'}</td>
           <td>${f.lateCount}</td>
+          <td>${f.missCount}</td>
           <td><button type="button" class="fu-open-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📋 إحالة</button></td>
         </tr>`).join("")}
       </tbody>
     </table>
-    </div>`}
+    </div>
+    <div class="hint" style="margin-top:8px;">🔴 <b>عاجل</b>: انخفاض الإنجاز عن ٦٠٪ أو ٣ حالات عدم تسليم فأكثر &nbsp;·&nbsp; 🟡 <b>متابعة</b>: تكرار التأخر (٥ تأخيرات فأكثر) مع بقاء الإنجاز مقبولًا.</div>`}
   </div>`;
 
   /* ---- 🟡 منطقة الإنذار المبكر ---- */
@@ -2022,10 +2052,15 @@ function greetingWord(){
 }
 
 function sectionFollowUpCount(key){
-  return STATE.sections[key].reduce((n,row)=>{
-    if(row.name.trim()==="") return n;
-    return n + (studentCalc(row).flag === "⚠ نعم" ? 1 : 0);
-  }, 0);
+  const out = {total:0, urgent:0, warn:0};
+  STATE.sections[key].forEach(row=>{
+    if(row.name.trim()==="") return;
+    const sev = studentCalc(row).severity;
+    if(!sev) return;
+    out.total++;
+    out[sev==='urgent' ? 'urgent' : 'warn']++;
+  });
+  return out;
 }
 
 function renderHome(){
@@ -2041,9 +2076,11 @@ function renderHome(){
     const count = rows.filter(r=>(r.name||'').trim()!=='').length;
     const meta = STATE.meta[key] || blankMeta();
     const fu = sectionFollowUpCount(key);
-    const badge = fu>0
-      ? `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">${fmt(fu)} بحاجة متابعة</span>`
-      : `<span class="pill-badge" style="background:var(--green); color:var(--green-t);">لا يوجد متعثرون</span>`;
+    const badge = fu.total===0
+      ? `<span class="pill-badge" style="background:var(--green); color:var(--green-t);">لا يوجد متعثرون</span>`
+      : fu.urgent>0
+        ? `<span class="pill-badge" style="background:var(--red); color:var(--red-t);">${fmt(fu.urgent)} حالة عاجلة${fu.warn>0?` · ${fmt(fu.warn)} متابعة`:''}</span>`
+        : `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">${fmt(fu.warn)} بحاجة متابعة</span>`;
     return `<button type="button" class="sec-card" data-open-section="${escapeAttr(key)}">
       <span class="sec-key">${escapeAttr(key)}</span>
       <span style="flex:1 1 auto; min-width:0;">
@@ -3464,15 +3501,16 @@ function exportXlsx(){
       for(const k of CAT_KEYS){
         cells.push(...row[k], fmt2(c[k+'Sum']));
       }
-      cells.push(fmt2(c.final), fmt2(c.maxGrade), c.flag);
+      cells.push(fmt2(c.final), fmt2(c.maxGrade), c.severity ? SEV_LABEL[c.severity] : "");
       return cells;
     });
     const footer1 = [];
     const footer2 = [null, `معلم المادة: ${meta.teacher}`];
     footer2[24] = `مدير المدرسة: ${meta.principal}`;
     const footer3 = [null, "الرموز: ✔️ = درجة كاملة    ❌ = صفر    ⏰ = نصف درجة (متأخر بالتسليم)    ⬜ = لم يصل له بعد"];
-    const footer4 = [null, "الألوان: 🟩 أخضر = 80% فأكثر   🟨 أصفر = 60–79%   🟥 أحمر = أقل من 60%   🟧 برتقالي = 5 تأخيرات فأكثر"];
-    const aoa = [headerRow1, headerRow2, titleRow, grp, sub, ...rows, [], footer2, footer3, footer4];
+    const footer4 = [null, "الألوان: 🟩 أخضر = 80% فأكثر   🟨 أصفر = 60–79%   🟥 أحمر = أقل من 60%"];
+    const footer5 = [null, "المتابعة: 🔴 عاجل = إنجاز أقل من 60% أو 3 حالات عدم تسليم فأكثر   🟡 متابعة = 5 تأخيرات فأكثر مع إنجاز مقبول"];
+    const aoa = [headerRow1, headerRow2, titleRow, grp, sub, ...rows, [], footer2, footer3, footer4, footer5];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!dir'] = 'rtl';
     XLSX.utils.book_append_sheet(wb, ws, key);
