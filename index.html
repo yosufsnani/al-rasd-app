@@ -603,6 +603,7 @@ body.modal-lock{ overflow:hidden; }
   <button class="icon-btn" onclick="showNewTermDialog()">🆕 بدء فصل دراسي جديد</button>
   <button class="icon-btn" onclick="printCurrentSection()">🖨️ طباعة الشعبة الحالية</button>
   <button class="icon-btn" onclick="printAllSections()">📄 حفظ الكل PDF</button>
+  <button class="icon-btn" id="btn-logout" style="background:rgba(156,28,40,.35); border-color:rgba(255,255,255,.35);">🚪 خروج</button>
 </header>
 
 <nav class="tabbar" id="tabbar"></nav>
@@ -1180,7 +1181,6 @@ function renderSectionSheet(key){
       <button id="btn-export-json">📦 نسخة احتياطية</button>
       <button id="btn-import-json">📂 استعادة نسخة احتياطية</button>
       <input type="file" id="file-import" accept="application/json" style="display:none">
-      <button id="btn-logout" style="color:#9c1c28; border-color:#f3c6c6;">🚪 تسجيل خروج</button>
     </div>
     <div class="toolbar">
       <button id="btn-select-empty">☑️ تحديد الصفوف الفارغة الزائدة</button>
@@ -1873,11 +1873,6 @@ function wireSectionEvents(key){
   document.getElementById('btn-export-json').addEventListener('click', ()=> exportJson());
   document.getElementById('btn-import-json').addEventListener('click', ()=> document.getElementById('file-import').click());
   document.getElementById('file-import').addEventListener('change', importJson);
-  document.getElementById('btn-logout').addEventListener('click', ()=>{
-    showConfirmDialog('تسجيل الخروج', 'هل تريد تسجيل الخروج من حسابك؟', ()=>{
-      if(window.rasdAuth) window.rasdAuth.signOut();
-    });
-  });
 
   ['m-subject','m-term','m-year','m-teacher','m-principal'].forEach(id=>{
     const field = id.replace('m-','');
@@ -3227,6 +3222,12 @@ window.rasdStartApp = async function(){
   applyLoadedState(await loadState());
   updateAppHeader();
   render();
+
+  document.getElementById('btn-logout').addEventListener('click', ()=>{
+    showConfirmDialog('تسجيل الخروج', 'هل تريد تسجيل الخروج من حسابك؟', ()=>{
+      if(window.rasdAuth) window.rasdAuth.signOut();
+    });
+  });
 
   // Lock background scrolling whenever a dialog / overlay is open, so the
   // roster table can't scroll behind a modal that has its own scroll area.
