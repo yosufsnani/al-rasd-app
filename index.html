@@ -301,13 +301,17 @@ body.modal-lock{ overflow:hidden; }
 #print-referral-holder{display:none;}
 
 
-/* Samsung Internet (and other Android browsers) frequently fail to
-   re-paginate correctly when the person manually flips the print-preview
-   orientation — that's what was dropping whole sections. Instead of
-   fighting that, we stop forcing landscape entirely and design the sheet
-   to work in whatever the device's default orientation is (normally
-   portrait), so nobody ever needs to touch the orientation control. */
+/* Samsung Internet (and other Android browsers) used to drop whole
+   sections when the person manually flipped the print-preview orientation
+   toggle — that's why this used to avoid landscape entirely. Instead of
+   relying on that manual toggle (the actual failure point), the roster
+   table now gets landscape declared directly in CSS via a named page
+   ("wide", applied to main/#print-all-holder below) — nobody needs to
+   touch the orientation control, it's already correct before the print
+   dialog even opens. Everything else (referral/analysis reports, which
+   read naturally as a portrait A4 form) stays on the default page. */
 @page{ margin:6mm; }
+@page wide{ size:A4 landscape; margin:6mm; }
 @page referral-page{ size:A4 portrait; margin:12mm; }
 
 @media print{
@@ -332,7 +336,7 @@ body.modal-lock{ overflow:hidden; }
     text-align:center; font-size:13px; margin:3px 0 2px; color:#000;
   }
 
-  main{padding:0; max-width:none;}
+  main{padding:0; max-width:none; page:wide;}
   .card{border:none; box-shadow:none; padding:0; margin:0; border-radius:0;}
 
   .table-wrap{overflow:visible !important; border:none;}
@@ -395,10 +399,10 @@ body.modal-lock{ overflow:hidden; }
      repeating via thead{display:table-header-group}) is what actually
      prevents content from being clipped/lost: a hand-computed fixed page
      height that's even slightly wrong either leaves blank gaps or — worse —
-     hides whole rows/sections behind overflow:hidden. Orientation is
-     controlled by the single @page rule above; there is no second,
-     conflicting page-size declaration here. */
-  body.printing-all #print-all-holder{padding:0; margin:0; background:#fff; width:285mm;}
+     hides whole rows/sections behind overflow:hidden. Orientation comes
+     from the named "wide" @page rule above (landscape, 285mm usable width
+     after margins — matches the width set below). */
+  body.printing-all #print-all-holder{padding:0; margin:0; background:#fff; width:285mm; page:wide;}
   body.printing-all #print-all-holder .print-block{
     display:block !important; width:100%;
     break-before:page; page-break-before:always;
@@ -1228,7 +1232,7 @@ function renderSectionSheet(key){
       <div>معلم المادة: ${escapeAttr(meta.teacher)}</div>
       <div>مدير المدرسة: ${escapeAttr(meta.principal)}</div>
     </div>
-    <div class="hint">💡 الجدول يمرَّر أفقيًا على الجوال. اسم الطالب ورقمه ثابتان أثناء التمرير.<br>🖨️ عند الطباعة: اطبع بالوضع الافتراضي (عمودي) ولا تغيّر الاتجاه يدويًا من نافذة الطباعة — بعض متصفحات الجوال (مثل Samsung Internet) تفقد صفحات كاملة عند تبديل الاتجاه يدويًا.</div>
+    <div class="hint">💡 الجدول يمرَّر أفقيًا على الجوال. اسم الطالب ورقمه ثابتان أثناء التمرير.<br>🖨️ عند الطباعة: الاتجاه (عرضي) مضبوط تلقائيًا — لا تغيّره يدويًا من نافذة الطباعة، بعض متصفحات الجوال (مثل Samsung Internet) تفقد صفحات كاملة عند التبديل اليدوي.</div>
   </div>`;
 }
 
@@ -2991,7 +2995,7 @@ function exportXlsx(){
 function fmt2(n){ return Math.round(n*100)/100; }
 
 function printCurrentSection(){
-  showToast('اطبع بالوضع الافتراضي (عمودي) ولا تغيّر الاتجاه يدويًا — تبديله على بعض متصفحات الجوال يفقد صفحات');
+  showToast('الاتجاه (عرضي) مضبوط تلقائيًا — لا تغيّره يدويًا من نافذة الطباعة، بعض متصفحات الجوال يفقد صفحات عند التبديل اليدوي');
   setTimeout(()=> window.print(), 600);
 }
 
@@ -3046,7 +3050,7 @@ async function printAllSections(){
     });
 
     document.body.classList.add('printing-all');
-    showToast(`تم تجهيز ${printKeys.length} شعب — اختر «حفظ كملف PDF» بالوضع الافتراضي (عمودي) بدون تغيير الاتجاه`);
+    showToast(`تم تجهيز ${printKeys.length} شعب — الاتجاه (عرضي) مضبوط تلقائيًا، اختر «حفظ كملف PDF» بدون تغيير الاتجاه يدويًا`);
     await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,150)));
     window.print();
   }catch(e){
