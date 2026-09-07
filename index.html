@@ -342,9 +342,9 @@ body.modal-lock{ overflow:hidden; }
   }
   col.col-idx{width:2.2%;}
   col.col-name{width:8.5%;}
-  col.col-data{width:calc(72% / var(--item-count, 1));}
+  col.col-data{width:calc(68% / var(--item-count, 1));}
   col.col-sum{width:2%;}
-  col.col-final{width:2.6%;}
+  col.col-final{width:5.5%;}
   col.col-del{width:0.1%;}
   table.grid th, table.grid td{
     padding:1px !important; height:auto !important; border:0.5px solid #999 !important;
@@ -352,7 +352,10 @@ body.modal-lock{ overflow:hidden; }
   table.grid thead tr.grp th, table.grid thead tr.sub th{
     font-size:8px !important; padding:2px 1px !important;
     color:#000 !important; background:#eef1f5 !important; border:0.5px solid #9aa3af !important;
+    white-space:normal !important; overflow-wrap:break-word !important; word-break:break-word !important;
+    line-height:1.15 !important; vertical-align:middle !important;
   }
+  th.g-final{ font-size:7px !important; line-height:1.1 !important; padding:1px !important; }
   th.g-part{border-bottom:3px solid var(--part) !important;}
   th.g-hw{border-bottom:3px solid var(--hw) !important;}
   th.g-task{border-bottom:3px solid var(--task) !important;}
