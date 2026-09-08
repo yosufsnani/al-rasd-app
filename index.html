@@ -136,6 +136,54 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
   box-shadow:0 4px 12px rgba(14,145,121,.22);
 }
 .fab-add svg{width:20px; height:20px;}
+.fab-pick{
+  flex:0 0 auto; width:44px; height:44px; border:1px solid var(--border); border-radius:14px;
+  background:var(--card); font-size:19px; line-height:1; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); font-family:inherit;
+}
+.fab-pick:active{background:var(--surface-2); transform:scale(.95);}
+
+/* ===== نافذة قرعة المشاركة ===== */
+.pick-modal{text-align:center;}
+.pick-top{display:flex; align-items:center; justify-content:space-between; font-size:12.5px; font-weight:500; color:var(--text-2); margin-bottom:14px;}
+.pick-x{border:none; background:none; font-size:15px; color:var(--muted); cursor:pointer; padding:2px 6px; font-family:inherit;}
+.pick-name{
+  font-size:26px; font-weight:600; color:var(--text); line-height:1.5; padding:16px 8px 4px;
+  animation:pickIn .28s ease-out;
+}
+@keyframes pickIn{ from{opacity:0; transform:scale(.9);} to{opacity:1; transform:scale(1);} }
+.pick-sub{font-size:11.5px; font-weight:300; color:var(--muted); margin-bottom:16px;}
+.pick-slot{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+  background:var(--bg); border:1px solid var(--border); border-radius:11px; padding:9px 12px;
+  font-size:12px; color:var(--text-2); font-family:inherit; cursor:pointer; margin-bottom:12px;
+}
+.pick-slot b{color:var(--text); font-weight:500;}
+.pick-slot-edit{color:var(--teal-d); font-weight:500; flex:0 0 auto;}
+.pick-marks{display:flex; gap:8px; margin-bottom:14px;}
+.pick-mark{
+  flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  min-height:64px; border:1px solid var(--border); border-radius:14px; background:var(--card);
+  font-family:inherit; font-size:11.5px; color:var(--text-2); cursor:pointer; padding:8px 4px;
+}
+.pick-mark:active{transform:scale(.96);}
+.pick-mark .sym svg{width:22px; height:22px;}
+.pick-mark.sym-full{border-color:#CFE7DF;} .pick-mark.sym-full:active{background:var(--green);}
+.pick-mark.sym-late{border-color:#EEE0C2;} .pick-mark.sym-late:active{background:var(--yellow);}
+.pick-mark.sym-zero{border-color:#F2D7D2;} .pick-mark.sym-zero:active{background:var(--red);}
+.pick-actions{display:flex; gap:8px; margin-bottom:12px;}
+.pick-actions button{
+  flex:1 1 0; min-height:44px; border:1px solid var(--border); background:var(--card);
+  border-radius:12px; font-family:inherit; font-size:13px; color:var(--text); cursor:pointer;
+}
+.pick-actions button#pick-next{background:var(--teal); color:#fff; border-color:var(--teal);}
+.pick-foot{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  font-size:10.5px; color:var(--muted); border-top:1px solid var(--border); padding-top:10px;
+}
+.pick-fair{display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;}
+.pick-fair input{width:15px; height:15px; accent-color:var(--teal);}
+@media print{ .fab-pick{display:none !important;} }
 
 /* الجدول يبقى في الصفحة دائمًا ليُطبع، ويُخفى عن الشاشة فقط في وضع البطاقات */
 .screen-hidden{display:none;}
@@ -1213,6 +1261,7 @@ let STATE = {
   activeTab: SECTION_KEYS[0],
   rosterView: 'table',
   quickItem: null,
+  picker: { fair:true, round:[] },
   attDayIndex: null,
   attendance: blankAttendance(),
   attDays: {},
@@ -1239,7 +1288,7 @@ let STATE = {
    وهو ما يحدث فعلًا عند استعادة نسخة احتياطية تالفة، فيموت الاستيراد بلا رسالة. */
 function freshState(){
   const seedKeys = Object.keys(SEED);
-  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
+  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, picker:{ fair:true, round:[] }, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
   for(const k of seedKeys){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -1273,6 +1322,8 @@ function normalizeLoadedState(obj){
       weight: (isNaN(parseFloat(a.weight)) ? 5 : Math.max(0, Math.min(50, parseFloat(a.weight))))
     };
     if(!obj.attDays || typeof obj.attDays !== 'object') obj.attDays = {};
+    const pk = (obj.picker && typeof obj.picker === 'object') ? obj.picker : {};
+    obj.picker = { fair: pk.fair !== false, round: Array.isArray(pk.round) ? pk.round : [] };
     if(!Array.isArray(obj.sectionOrder) || obj.sectionOrder.length===0){
       obj.sectionOrder = Object.keys(obj.sections);
     }
@@ -2321,6 +2372,8 @@ function renderGuideCard(){
       </ul>
       <h3>الطباعة</h3>
       <ul>
+        <li><b>قرعة المشاركة</b> 🎲 زر بجانب «إضافة طالب» في تبويب الرصد: يسحب اسمًا، وترصد إجابته بضغطة في نفس النافذة. القرعة <b>عادلة افتراضيًا</b> — من قلّ نصيبه أوفر حظًا فلا يُنسى أحد ولا يُستهدف أحد — ويمكن جعلها عشوائية محضة من المفتاح أسفل النافذة. تستبعد تلقائيًا <b>الغائبين اليوم</b> (إن كان الحضور مفعّلًا واليوم مسجّلًا) ومن اختير في الجولة. و«تخطّي» لا يرصد ولا يحتسب.</li>
+        <li><b>استبعاد طالب من القرعة</b> 🚫 من قائمة الطالب — يبقى في الكشف ويُرصد عاديًا، لكن لا يُسحب اسمه فجأة أمام الفصل.</li>
         <li><b>ملاحظة عن الطالب</b> 📝 من قائمة الطالب — ملاحظة خاصة بك يظهر مؤشرها بجانب الاسم، و<b>تُمهَّد بها تقارير الإحالة الداخلية</b>. لا تُرسل لولي الأمر ولا تظهر في تقريره أو رسالته.</li>
         <li><b>مشاركة الحالة</b> 📲 ترسل ملخّص الطالب نصًّا جاهزًا لولي أمره عبر واتساب أو غيره — من قائمة الطالب في الجدول، أو من تبويب المتابعة. النص قابل للتعديل قبل الإرسال.</li>
         <li><b>التراجع</b> ↩︎ يظهر في التنبيه بعد كل عملية حذف أو تفريغ ويبقى ست ثوانٍ. بعدها لا رجعة — والنسخة الاحتياطية من «حسابي» هي شبكة الأمان الأبعد.</li>
@@ -2548,6 +2601,142 @@ function renderQuickEntry(key){
   <div class="hint">💡 الأسرع: ارصد المتأخرين وغير المسلّمين فقط، ثم اضغط «الباقي سلّموا» لإنهاء البقية دفعة واحدة.</div>`}`;
 }
 
+/* نافذة القرعة: الاسم كبير، وتحته الرصد مباشرة — الرصد اختياري لا إجباري،
+   فمن أراد المناداة فقط يضغط «التالي» أو يغلق. */
+let PICKER_SLOT = null;
+function showPickerDialog(key, forcedIdx){
+  const cand = pickerCandidates(key);
+  if(cand.all.length === 0){
+    showAlertDialog(attEnabled() && cand.absentCount>0
+      ? 'لا يوجد طالب متاح للقرعة — تحقّق من الأسماء والغياب والمستبعدين.'
+      : 'لا يوجد طلاب بأسماء في هذه الشعبة، أو الجميع مستبعدون من القرعة.');
+    return;
+  }
+  const idx = Number.isInteger(forcedIdx) ? forcedIdx : pickStudent(key);
+  if(idx === null || idx === undefined) return;
+  const row = STATE.sections[key][idx];
+  if(!PICKER_SLOT || !STATE.config[PICKER_SLOT.k] || PICKER_SLOT.gi >= STATE.config[PICKER_SLOT.k].count){
+    PICKER_SLOT = defaultPickerSlot(key, idx);
+  }
+  const slot = PICKER_SLOT;
+  const done = pickSettings().round.length;
+  const totalPool = cand.all.length;
+
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal pick-modal" style="max-width:400px;">
+        <div class="pick-top">
+          <span>🎲 قرعة المشاركة</span>
+          <button type="button" class="pick-x" id="pick-close" aria-label="إغلاق">✕</button>
+        </div>
+
+        <div class="pick-name" id="pick-name">${escapeAttr(row.name)}</div>
+        <div class="pick-sub">${escapeAttr(key)} · اختير ${fmt(pickCount(row))} مرة قبل اليوم</div>
+
+        ${slot ? `
+        <button type="button" class="pick-slot" id="pick-slot">
+          <span>تُرصد في: <b>${escapeAttr(STATE.config[slot.k].name)} ${slot.gi+1}</b></span>
+          <span class="pick-slot-edit">تغيير</span>
+        </button>
+        <div class="pick-marks">
+          <button type="button" class="pick-mark sym-full" data-pick-mark="✔️">${symIcon("✔️")}<span>أجاب</span></button>
+          <button type="button" class="pick-mark sym-late" data-pick-mark="⏰">${symIcon("⏰")}<span>ناقصة</span></button>
+          <button type="button" class="pick-mark sym-zero" data-pick-mark="❌">${symIcon("❌")}<span>لم يجب</span></button>
+        </div>` : `<div class="hint">لا توجد بنود رصد — أضف بندًا من «حسابي ← عناصر الرصد» لتسجيل المشاركة.</div>`}
+
+        <div class="pick-actions">
+          <button type="button" id="pick-next">🎲 اختيار آخر</button>
+          <button type="button" id="pick-skip">↷ تخطّي</button>
+        </div>
+
+        <div class="pick-foot">
+          <span>${fmt(done)} من ${fmt(totalPool)} في هذه الجولة${cand.absentCount>0 ? ` · ${fmt(cand.absentCount)} غائب مستبعد` : ''}</span>
+          <label class="pick-fair">
+            <input type="checkbox" id="pick-fair" ${pickSettings().fair?'checked':''}>
+            <span>قرعة عادلة</span>
+          </label>
+        </div>
+      </div>
+    </div>`;
+
+  const close = ()=>{ closeDialog(); render(); };
+  document.getElementById('pick-close').addEventListener('click', close);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') close(); });
+
+  /* «التخطّي» لا يرصد ولا يحتسب — الطالب يبقى في الجولة ليأتي دوره لاحقًا. */
+  document.getElementById('pick-skip').addEventListener('click', ()=> showPickerDialog(key));
+
+  document.getElementById('pick-next').addEventListener('click', ()=>{
+    countPick(key, idx);
+    showPickerDialog(key);
+  });
+
+  const fair = document.getElementById('pick-fair');
+  if(fair) fair.addEventListener('change', ()=>{
+    pickSettings().fair = fair.checked;
+    persistState();
+    showToast(fair.checked ? 'قرعة عادلة: من قلّ نصيبه أوفر حظًا' : 'قرعة عشوائية محضة');
+  });
+
+  const slotBtn = document.getElementById('pick-slot');
+  if(slotBtn) slotBtn.addEventListener('click', ()=> showPickerSlotDialog(key, idx));
+
+  document.querySelectorAll('[data-pick-mark]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const sym = btn.getAttribute('data-pick-mark');
+      if(slot && Array.isArray(row[slot.k])) row[slot.k][slot.gi] = sym;
+      countPick(key, idx);
+      /* الخانة التالية جاهزة للطالب القادم بدل إعادة الرصد في نفس الخانة. */
+      PICKER_SLOT = null;
+      persistState();
+      showPickerDialog(key);
+    });
+  });
+}
+
+function countPick(key, idx){
+  const row = STATE.sections[key][idx];
+  if(!row) return;
+  row.picks = pickCount(row) + 1;
+  const r = pickSettings().round;
+  if(!r.includes(idx)) r.push(idx);
+  persistState();
+}
+
+/* اختيار البند والخانة التي تُرصد فيها المشاركة. */
+function showPickerSlotDialog(key, idx){
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:420px;">
+        <h3>أين تُرصد المشاركة؟</h3>
+        <div class="hint" style="margin-top:0; margin-bottom:12px;">اختر البند والخانة — سيُستخدم لبقية القرعة حتى تغيّره.</div>
+        ${CAT_KEYS.map(k=>`
+          <div class="qp-group">
+            <div class="qp-head"><span class="cfg-dot" style="background:${catColor(k)};"></span>${escapeAttr(STATE.config[k].name)}</div>
+            <div class="qp-chips">
+              ${Array.from({length: STATE.config[k].count}, (_,gi)=>{
+                const on = PICKER_SLOT && PICKER_SLOT.k===k && PICKER_SLOT.gi===gi;
+                return `<button type="button" class="qp-chip${on?' done':''}" data-slot-k="${k}" data-slot-gi="${gi}"><b>${gi+1}</b></button>`;
+              }).join("")}
+            </div>
+          </div>`).join("")}
+        <div class="warn-actions" style="margin-top:12px;">
+          <button type="button" class="btn-cancel" id="slot-back">رجوع</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('slot-back').addEventListener('click', ()=> showPickerDialog(key, idx));
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.querySelectorAll('[data-slot-k]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      PICKER_SLOT = { k: btn.getAttribute('data-slot-k'), gi: parseInt(btn.getAttribute('data-slot-gi')) };
+      showPickerDialog(key, idx);
+    });
+  });
+}
+
 /* نافذة إضافة يوم: التاريخ ميلادي من تقويم الجهاز، والعرض هجري. */
 function showAddDayDialog(key){
   const holder = document.getElementById('dialog-holder');
@@ -2593,6 +2782,78 @@ function showAddDayDialog(key){
     render();
     showToast('تمت إضافة اليوم');
   });
+}
+
+/* ===== قرعة المشاركة =====
+   العشوائية المحضة ظالمة عمليًا: تختار الطالب نفسه مرتين في حصة وتترك آخر
+   أسابيع بلا دور، والطلاب يلاحظون. فالافتراضي ترجيح من قلّ نصيبه — تبقى
+   المفاجأة ولا يُنسى أحد — والعشوائية المحضة خلف مفتاح لمن أرادها. */
+function pickSettings(){
+  if(!STATE.picker) STATE.picker = { fair:true, round:[] };
+  if(typeof STATE.picker.fair !== 'boolean') STATE.picker.fair = true;
+  if(!Array.isArray(STATE.picker.round)) STATE.picker.round = [];
+  return STATE.picker;
+}
+function pickCount(row){ return Number.isFinite(row.picks) ? row.picks : 0; }
+function isExcludedFromPicker(row){ return row.noPick === true; }
+
+/* الغائب اليوم لا يُسحب اسمه — فقط إن كان الحضور مفعّلًا واليوم مسجّلًا. */
+function absentTodayIndexes(key){
+  const out = new Set();
+  if(!attEnabled()) return out;
+  const days = attDays(key);
+  const i = days.indexOf(todayISO());
+  if(i < 0) return out;
+  (STATE.sections[key] || []).forEach((row, idx)=>{
+    const st = attGet(row, i);
+    if(st === ATT_ABSENT || st === ATT_EXCUSED) out.add(idx);
+  });
+  return out;
+}
+
+function pickerCandidates(key){
+  const absent = absentTodayIndexes(key);
+  const round = new Set(pickSettings().round);
+  const all = [], fresh = [];
+  (STATE.sections[key] || []).forEach((row, idx)=>{
+    if((row.name||'').trim()==='') return;
+    if(isExcludedFromPicker(row)) return;
+    if(absent.has(idx)) return;
+    all.push(idx);
+    if(!round.has(idx)) fresh.push(idx);
+  });
+  return { all, fresh, absentCount: absent.size };
+}
+
+/* يرجع فهرس الطالب المختار، أو null إن لم يبقَ أحد. */
+function pickStudent(key){
+  const { all, fresh } = pickerCandidates(key);
+  if(all.length === 0) return null;
+  /* الجولة انتهت — تبدأ جولة جديدة تلقائيًا بدل أن تتوقف الأداة. */
+  const pool = fresh.length > 0 ? fresh : (pickSettings().round = [], all);
+  if(!pickSettings().fair) return pool[Math.floor(Math.random()*pool.length)];
+  /* ترجيح عكسي بعدد المرات: من لم يُختر قط وزنه الأعلى. */
+  const rows = STATE.sections[key];
+  const maxN = pool.reduce((m,i)=> Math.max(m, pickCount(rows[i])), 0);
+  const weights = pool.map(i=> (maxN - pickCount(rows[i])) + 1);
+  const total = weights.reduce((a,b)=>a+b, 0);
+  let r = Math.random() * total;
+  for(let i=0;i<pool.length;i++){
+    r -= weights[i];
+    if(r <= 0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
+
+/* أول خانة فارغة في أول بند — الوجهة الافتراضية لرصد المشاركة. */
+function defaultPickerSlot(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  for(const k of CAT_KEYS){
+    const arr = (row && row[k]) || [];
+    for(let gi=0; gi<arr.length; gi++){ if(arr[gi] === '⬜') return { k, gi }; }
+  }
+  const k0 = CAT_KEYS[0];
+  return k0 ? { k:k0, gi:0 } : null;
 }
 
 /* ===== شاشة رصد الحضور اليومي ===== */
@@ -2736,6 +2997,7 @@ function renderSectionSheet(key, opts){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>الحضور
       </button>` : ``}
     </div>
+    <button type="button" class="fab-pick" id="btn-pick" title="اختيار طالب للمشاركة" aria-label="اختيار طالب للمشاركة">🎲</button>
     <button type="button" class="fab-add" id="btn-add-row" title="إضافة طالب" aria-label="إضافة طالب">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
@@ -4042,6 +4304,11 @@ function wireSectionEvents(key){
     }
   });
 
+  on('btn-pick', 'click', ()=>{
+    PICKER_SLOT = null;
+    showPickerDialog(key);
+  });
+
   on('btn-add-row', 'click', ()=>{
     const cfg = STATE.config;
     const newRow = {name:""};
@@ -5152,6 +5419,7 @@ function openNameMenu(anchorEl, key, idx){
   menu.innerHTML = `
     <button type="button" class="sym-opt" data-act="rename"><span>✏️</span><span>تعديل الاسم</span></button>
     <button type="button" class="sym-opt" data-act="move"><span>🔀</span><span>نقل إلى شعبة أخرى</span></button>
+    <button type="button" class="sym-opt" data-act="nopick"><span>${STATE.sections[key][idx] && STATE.sections[key][idx].noPick ? '🎲' : '🚫'}</span><span>${STATE.sections[key][idx] && STATE.sections[key][idx].noPick ? 'إعادته لقرعة المشاركة' : 'استبعاده من قرعة المشاركة'}</span></button>
     <button type="button" class="sym-opt" data-act="note"><span>📝</span><span>ملاحظة عن الطالب</span></button>
     <button type="button" class="sym-opt" data-act="referral"><span>📋</span><span>تقرير إحالة</span></button>
     <button type="button" class="sym-opt" data-act="parent"><span>👪</span><span>تقرير لولي الأمر</span></button>
@@ -5167,6 +5435,16 @@ function openNameMenu(anchorEl, key, idx){
     ev.stopPropagation();
     closePopupMenu();
     showMoveStudentsDialog(key, [idx]);
+  });
+  menu.querySelector('[data-act="nopick"]').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closePopupMenu();
+    const row = STATE.sections[key][idx];
+    if(!row) return;
+    if(row.noPick){ delete row.noPick; showToast('عاد الطالب إلى القرعة'); }
+    else { row.noPick = true; showToast('استُبعد من القرعة — يبقى في الكشف ويُرصد عاديًا'); }
+    persistState();
+    render();
   });
   menu.querySelector('[data-act="note"]').addEventListener('click', (ev)=>{
     ev.stopPropagation();
