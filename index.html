@@ -620,6 +620,12 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
   opacity:0; pointer-events:none; transition:opacity .25s, bottom .25s;
 }
 .toast.show{opacity:1; bottom:30px;}
+.toast.with-undo{display:flex; align-items:center; gap:14px; pointer-events:auto;}
+.toast.with-undo button{
+  border:1px solid rgba(255,255,255,.45); background:transparent; color:#fff;
+  border-radius:8px; padding:5px 11px; font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap;
+}
+.toast.with-undo button:active{background:rgba(255,255,255,.14);}
 #print-all-holder{display:none;}
 .referral-sheet{font-family:inherit; color:#000;}
 .referral-sheet h2.rf-title{text-align:center; font-size:16px; margin:10px 0 16px;}
@@ -1595,19 +1601,21 @@ function addSection(name, namesList){
 function deleteSection(name){
   const idx = SECTION_KEYS.indexOf(name);
   if(idx===-1) return;
-  showConfirmDialog('حذف الشعبة', `سيتم حذف "${name}" وكل رصدها نهائيًا ولا يمكن التراجع. هل تريد المتابعة؟`, ()=>{
-    SECTION_KEYS.splice(idx,1);
-    STATE.sectionOrder = SECTION_KEYS.slice();
-    delete STATE.sections[name];
-    delete STATE.meta[name];
-    if(STATE.activeTab === name){
-      STATE.activeTab = SECTION_KEYS.length>0 ? SECTION_KEYS[0] : null;
-      if(!STATE.activeTab) STATE.activeView = "home";
-    }
-    EXPANDED_CARDS.clear();
-    persistState();
-    render();
-    showToast('تم حذف الشعبة');
+  showConfirmDialog('حذف الشعبة', `سيتم حذف "${name}" وكل رصدها. يمكنك التراجع مباشرة بعد الحذف من التنبيه الذي سيظهر.`, ()=>{
+    withUndo(()=>{
+      SECTION_KEYS.splice(idx,1);
+      STATE.sectionOrder = SECTION_KEYS.slice();
+      delete STATE.sections[name];
+      delete STATE.meta[name];
+      if(STATE.attDays) delete STATE.attDays[name];
+      if(STATE.activeTab === name){
+        STATE.activeTab = SECTION_KEYS.length>0 ? SECTION_KEYS[0] : null;
+        if(!STATE.activeTab) STATE.activeView = "home";
+      }
+      EXPANDED_CARDS.clear();
+      persistState();
+      render();
+    }, 'تم حذف الشعبة');
   });
 }
 
@@ -2293,6 +2301,11 @@ function renderGuideCard(){
         <li><b>التحليل</b>: أرقام واتجاهات ورسوم بيانية فقط — لا أسماء طلاب.</li>
         <li><b>المتابعة</b>: كل من يحتاج تدخّلًا بأسمائهم — يحتاج متابعة، الإنذار المبكر، الأكثر تأخرًا، لوحة التميز، سجل التواصل، وأرشيف الإحالات.</li>
         <li><b>حسابي</b>: الكليشة والبنود والمواعيد والتوقيع والنسخ الاحتياطية.</li>
+      </ul>
+      <h3>الطباعة</h3>
+      <ul>
+        <li><b>مشاركة الحالة</b> 📲 ترسل ملخّص الطالب نصًّا جاهزًا لولي أمره عبر واتساب أو غيره — من قائمة الطالب في الجدول، أو من تبويب المتابعة. النص قابل للتعديل قبل الإرسال.</li>
+        <li><b>التراجع</b> ↩︎ يظهر في التنبيه بعد كل عملية حذف أو تفريغ ويبقى ست ثوانٍ. بعدها لا رجعة — والنسخة الاحتياطية من «حسابي» هي شبكة الأمان الأبعد.</li>
       </ul>
       <h3>الطباعة</h3>
       <ul>
@@ -3224,6 +3237,7 @@ function renderFollowUpCard(opts){
             <div class="fu-actions">
               <button type="button" class="fu-open-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📋 إحالة</button>
               <button type="button" class="fu-open-btn fu-parent-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">👪 تقرير ولي أمر</button>
+              <button type="button" class="fu-open-btn fu-share-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📲 مشاركة</button>
               <button type="button" class="fu-open-btn fu-contact-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">☎️ تسجيل تواصل</button>
             </div>
           </td>
@@ -3744,7 +3758,8 @@ function wireFollowUpEvents(){
     btn.addEventListener('click', ()=>{
       const key = btn.dataset.key;
       const idx = parseInt(btn.dataset.idx);
-      if(btn.classList.contains('fu-parent-btn')) printParentReport(key, idx);
+      if(btn.classList.contains('fu-share-btn')) shareParentMessage(key, idx);
+      else if(btn.classList.contains('fu-parent-btn')) printParentReport(key, idx);
       else if(btn.classList.contains('fu-contact-btn')) showContactDialog(key, idx);
       else openReferralReportDialog(key, idx);
     });
@@ -3975,10 +3990,12 @@ function wireSectionEvents(key){
     if(del){
       const idx = parseInt(del.dataset.idx ?? del.getAttribute('data-del'));
       showConfirmDialog('حذف الصف', 'هل تريد حذف هذا الصف؟', ()=>{
-        STATE.sections[key].splice(idx,1);
-        SELECTED_ROWS.clear();
-        persistState();
-        render();
+        withUndo(()=>{
+          STATE.sections[key].splice(idx,1);
+          SELECTED_ROWS.clear();
+          persistState();
+          render();
+        }, 'تم حذف الصف');
       });
       return;
     }
@@ -4034,24 +4051,26 @@ function wireSectionEvents(key){
     if(SELECTED_ROWS.size===0){ showToast('لم يتم تحديد أي صف بعد'); return; }
     const count = SELECTED_ROWS.size;
     showConfirmDialog('حذف الصفوف المحددة', `سيتم حذف ${count} صف محدد نهائيًا (وأي رصد بداخلها). هل تريد المتابعة؟`, ()=>{
-      const idxs = Array.from(SELECTED_ROWS).sort((a,b)=>b-a);
-      idxs.forEach(i=> STATE.sections[key].splice(i,1));
-      SELECTED_ROWS.clear();
-      persistState();
-      render();
-      showToast(`تم حذف ${count} صف`);
+      withUndo(()=>{
+        const idxs = Array.from(SELECTED_ROWS).sort((a,b)=>b-a);
+        idxs.forEach(i=> STATE.sections[key].splice(i,1));
+        SELECTED_ROWS.clear();
+        persistState();
+        render();
+      }, `تم حذف ${count} صف`);
     });
   });
 
   document.getElementById('btn-clear-section').addEventListener('click', ()=>{
     showConfirmDialog('تفريغ الرصد', `سيتم تفريغ كل الرصد في ${key} (الأسماء تبقى). متابعة؟`, ()=>{
-      const cfg = STATE.config;
-      STATE.sections[key].forEach(r=>{
-        for(const k of CAT_KEYS) r[k] = Array(cfg[k].count).fill("⬜");
-      });
-      persistState();
-      render();
-      showToast('تم تفريغ الرصد');
+      withUndo(()=>{
+        const cfg = STATE.config;
+        STATE.sections[key].forEach(r=>{
+          for(const k of CAT_KEYS) r[k] = Array(cfg[k].count).fill("⬜");
+        });
+        persistState();
+        render();
+      }, 'تم تفريغ الرصد');
     });
   });
 
@@ -4148,15 +4167,17 @@ function wireSectionEvents(key){
   if(qeRest) qeRest.addEventListener('click', ()=>{
     if(!quickItemValid()) return;
     const { k, gi } = STATE.quickItem;
-    let n = 0;
-    STATE.sections[key].forEach(row=>{
-      if((row.name||'').trim()==='') return;
-      if(!Array.isArray(row[k])) return;
-      if((row[k][gi] || '⬜') === '⬜'){ row[k][gi] = '✔️'; n++; }
-    });
-    persistState();
-    render();
-    showToast(`تم رصد ${fmt(n)} طالبًا بدرجة كاملة`);
+    /* العدد يُحسب قبل التغيير لأن رسالة التنبيه وسيط يُقيَّم قبل تنفيذ العملية. */
+    const n = STATE.sections[key].filter(r=>(r.name||'').trim()!=='' && Array.isArray(r[k]) && (r[k][gi]||'⬜')==='⬜').length;
+    withUndo(()=>{
+      STATE.sections[key].forEach(row=>{
+        if((row.name||'').trim()==='') return;
+        if(!Array.isArray(row[k])) return;
+        if((row[k][gi] || '⬜') === '⬜') row[k][gi] = '✔️';
+      });
+      persistState();
+      render();
+    }, `تم رصد ${fmt(n)} طالبًا بدرجة كاملة`);
   });
 
   const qeClear = document.getElementById('qe-clear');
@@ -4164,10 +4185,11 @@ function wireSectionEvents(key){
     if(!quickItemValid()) return;
     const { k, gi } = STATE.quickItem;
     showConfirmDialog('تفريغ رصد البند', `سيُمسح ما رُصد في «${STATE.config[k].name} ${gi+1}» لكل طلاب هذه الشعبة. هل تريد المتابعة؟`, ()=>{
-      STATE.sections[key].forEach(row=>{ if(Array.isArray(row[k])) row[k][gi] = '⬜'; });
-      persistState();
-      render();
-      showToast('تم تفريغ رصد هذا البند');
+      withUndo(()=>{
+        STATE.sections[key].forEach(row=>{ if(Array.isArray(row[k])) row[k][gi] = '⬜'; });
+        persistState();
+        render();
+      }, 'تم تفريغ رصد هذا البند');
     });
   });
 
@@ -4207,14 +4229,15 @@ function wireSectionEvents(key){
   if(attRest) attRest.addEventListener('click', ()=>{
     const i = curDayIndex();
     if(i < 0) return;
-    let n = 0;
-    STATE.sections[key].forEach(row=>{
-      if((row.name||'').trim()==='') return;
-      if(attGet(row, i) === ATT_NONE){ attSet(row, i, ATT_PRESENT); n++; }
-    });
-    persistState();
-    render();
-    showToast(`تم تسجيل ${fmt(n)} طالبًا حاضرين`);
+    const n = STATE.sections[key].filter(r=>(r.name||'').trim()!=='' && attGet(r, i) === ATT_NONE).length;
+    withUndo(()=>{
+      STATE.sections[key].forEach(row=>{
+        if((row.name||'').trim()==='') return;
+        if(attGet(row, i) === ATT_NONE) attSet(row, i, ATT_PRESENT);
+      });
+      persistState();
+      render();
+    }, `تم تسجيل ${fmt(n)} طالبًا حاضرين`);
   });
   const attDelDay = document.getElementById('att-del-day');
   if(attDelDay) attDelDay.addEventListener('click', ()=>{
@@ -4222,11 +4245,12 @@ function wireSectionEvents(key){
     const days = attDays(key);
     if(i < 0 || !days[i]) return;
     showConfirmDialog('حذف يوم', `سيُحذف سجل يوم ${attDayLabel(days[i])} لكل طلاب هذه الشعبة. هل تريد المتابعة؟`, ()=>{
-      attRemoveDay(key, i);
-      STATE.attDayIndex = null;
-      persistState();
-      render();
-      showToast('تم حذف اليوم');
+      withUndo(()=>{
+        attRemoveDay(key, i);
+        STATE.attDayIndex = null;
+        persistState();
+        render();
+      }, 'تم حذف اليوم');
     });
   });
 
@@ -4418,13 +4442,14 @@ function wireSettingsPanelEvents(){
       if(!STATE.config[k] || CAT_KEYS.length<=1) return;
       const name = STATE.config[k].name;
       showConfirmDialog('حذف بند الرصد', `سيتم حذف بند "${name}" وكل ما رُصد فيه لدى جميع الطلاب في كل الشعب، ولا يمكن التراجع. هل تريد المتابعة؟`, ()=>{
-        delete STATE.config[k];
-        STATE.configOrder = CAT_KEYS.filter(x=>x!==k);
-        syncCatKeys();
-        applyConfigToAllRows(STATE.config, CAT_KEYS);
-        persistState();
-        render();
-        showToast(`تم حذف بند "${name}"`);
+        withUndo(()=>{
+          delete STATE.config[k];
+          STATE.configOrder = CAT_KEYS.filter(x=>x!==k);
+          syncCatKeys();
+          applyConfigToAllRows(STATE.config, CAT_KEYS);
+          persistState();
+          render();
+        }, `تم حذف بند "${name}"`);
       });
     });
   });
@@ -4456,9 +4481,47 @@ let toastTimer;
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
+  t.classList.remove('with-undo');
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ===== التراجع =====
+   العمليات المدمّرة (تفريغ شعبة، حذف بند، «الباقي سلّموا»…) كانت بلا رجعة،
+   والتأكيد وحده لا يكفي لعمل فصل كامل. لقطة واحدة قبل كل عملية، وزر تراجع في
+   التنبيه نفسه — في الذاكرة فقط، فهي شبكة أمان للحظة لا سجل تاريخ. */
+let UNDO_SNAPSHOT = null;
+function snapshotState(){
+  try{ return JSON.parse(JSON.stringify(STATE)); }
+  catch(e){ return null; }
+}
+/* تُستدعى قبل تنفيذ العملية مباشرة. */
+function withUndo(fn, message){
+  const snap = snapshotState();
+  fn();
+  if(snap) showUndoToast(message, snap);
+  else showToast(message);
+}
+function showUndoToast(msg, snap){
+  UNDO_SNAPSHOT = snap;
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${escapeAttr(msg)}</span><button type="button" id="toast-undo">↩︎ تراجع</button>`;
+  t.classList.add('show','with-undo');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.classList.remove('show'); UNDO_SNAPSHOT = null; }, 6000);
+  const btn = document.getElementById('toast-undo');
+  if(btn) btn.addEventListener('click', ()=>{
+    const snapshot = UNDO_SNAPSHOT;
+    UNDO_SNAPSHOT = null;
+    clearTimeout(toastTimer);
+    t.classList.remove('show');
+    if(!snapshot) return;
+    applyLoadedState(normalizeLoadedState(snapshot));
+    persistState();
+    render();
+    showToast('تم التراجع');
+  });
 }
 
 /* ================= MODAL SCROLL/KEYBOARD FIX =================
@@ -5063,6 +5126,7 @@ function openNameMenu(anchorEl, key, idx){
     <button type="button" class="sym-opt" data-act="move"><span>🔀</span><span>نقل إلى شعبة أخرى</span></button>
     <button type="button" class="sym-opt" data-act="referral"><span>📋</span><span>تقرير إحالة</span></button>
     <button type="button" class="sym-opt" data-act="parent"><span>👪</span><span>تقرير لولي الأمر</span></button>
+    <button type="button" class="sym-opt" data-act="share"><span>📲</span><span>مشاركة الحالة (واتساب)</span></button>
     <button type="button" class="sym-opt" data-act="contact"><span>☎️</span><span>تسجيل تواصل</span></button>
   `;
   menu.querySelector('[data-act="rename"]').addEventListener('click', (ev)=>{
@@ -5084,6 +5148,11 @@ function openNameMenu(anchorEl, key, idx){
     ev.stopPropagation();
     closePopupMenu();
     printParentReport(key, idx);
+  });
+  menu.querySelector('[data-act="share"]').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closePopupMenu();
+    shareParentMessage(key, idx);
   });
   menu.querySelector('[data-act="contact"]').addEventListener('click', (ev)=>{
     ev.stopPropagation();
@@ -5573,6 +5642,94 @@ function parentReportHtml(d){
         <div>توقيع ولي الأمر<span class="ln">&nbsp;</span></div>
       </div>
     </div>`;
+}
+
+/* ===== مشاركة حالة الطالب مع ولي أمره =====
+   التقارير كانت للطباعة فقط، والمعلم في الميدان يتواصل مع أولياء الأمور عبر
+   واتساب. نشارك نصًّا مصاغًا جاهزًا للإرسال بدل صورة — الصور كانت مصدر عطل
+   الطباعة القديم على الجوال، والنص يصل مقروءًا في كل تطبيق ويقبل التعديل. */
+function parentMessageText(key, idx){
+  const d = buildParentReportData(key, idx);
+  const lh = STATE.letterhead || blankLetterhead();
+  const L = [];
+  L.push('السلام عليكم ورحمة الله وبركاته');
+  L.push('');
+  L.push(`ولي أمر الطالب: ${d.studentName}`);
+  L.push(`${lh.school || ''}${d.section ? ' — ' + d.section : ''}`.trim());
+  L.push(`مادة: ${d.subject || '—'}${d.term ? ' · ' + d.term : ''}`);
+  L.push('');
+  L.push('📊 مستوى الطالب حتى تاريخه:');
+  L.push(`• الدرجة: ${fmt(d.final)} من ${fmt(d.maxGrade)}${d.ratioPct!==null ? ` (${d.ratioPct}%)` : ''}`);
+  L.push(`• التقدير: ${d.levelName}`);
+  if(d.att && d.att.recorded > 0){
+    L.push(`• المواظبة: حضور ${d.att.present} · تأخر ${d.att.late} · غياب ${d.att.absent}${d.att.excused ? ` · بعذر ${d.att.excused}` : ''}`);
+  }
+  if(d.lateCount > 0 || d.missCount > 0){
+    L.push(`• التسليم: ${d.missCount} مهمة لم تُسلّم · ${d.lateCount} سُلّمت متأخرة`);
+  }
+  if(d.tasks && d.tasks.length > 0){
+    L.push('');
+    L.push('📌 المهام التي تحتاج متابعة:');
+    d.tasks.slice(0, 12).forEach(t=>{
+      L.push(`• ${t.label}${t.dueHijri ? ` (${t.dueHijri})` : ''} — ${t.status}`);
+    });
+    if(d.tasks.length > 12) L.push(`• وعدد ${fmt(d.tasks.length - 12)} مهمة أخرى`);
+  }
+  L.push('');
+  L.push(d.recommendation);
+  L.push('');
+  L.push(`معلم المادة: ${d.teacher || ''}`.trim());
+  return L.join('\n');
+}
+
+async function shareParentMessage(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  if((row.name||'').trim()===''){ showAlertDialog('يجب إدخال اسم الطالب أولًا'); return; }
+  const text = parentMessageText(key, idx);
+  /* لوحة المشاركة الأصلية تدع المعلم يختار واتساب أو غيره ويختار المستلم. */
+  if(navigator.share){
+    try{
+      await navigator.share({ text, title: `مستوى الطالب ${row.name}` });
+      return;
+    }catch(e){
+      /* AbortError = ألغى المعلم المشاركة، فلا نزعجه ببديل. */
+      if(e && e.name === 'AbortError') return;
+    }
+  }
+  showShareFallbackDialog(text);
+}
+
+/* بديل للأجهزة التي لا تدعم لوحة المشاركة (أغلب متصفحات سطح المكتب). */
+function showShareFallbackDialog(text){
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:460px;">
+        <h3>📲 مشاركة حالة الطالب</h3>
+        <textarea id="share-text" rows="12" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:12.5px; font-family:inherit; line-height:1.9; resize:vertical; background:var(--bg);"></textarea>
+        <div class="hint" style="margin-top:8px; margin-bottom:14px;">النص قابل للتعديل قبل الإرسال.</div>
+        <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <a class="btn-ok" id="share-wa" href="#" target="_blank" rel="noopener" style="text-align:center; text-decoration:none; display:block;">💬 فتح واتساب بالنص</a>
+          <button type="button" class="btn-cancel" id="share-copy">📋 نسخ النص</button>
+          <button type="button" class="btn-cancel" id="share-close">إغلاق</button>
+        </div>
+      </div>
+    </div>`;
+  const ta = document.getElementById('share-text');
+  ta.value = text;
+  const syncLink = ()=>{ document.getElementById('share-wa').href = 'https://wa.me/?text=' + encodeURIComponent(ta.value); };
+  syncLink();
+  ta.addEventListener('input', syncLink);
+  document.getElementById('share-close').addEventListener('click', closeDialog);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('share-copy').addEventListener('click', async ()=>{
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(ta.value);
+      else { ta.select(); document.execCommand('copy'); }
+      showToast('تم نسخ النص');
+    }catch(e){ showToast('تعذّر النسخ — حدّد النص وانسخه يدويًا'); }
+  });
 }
 
 function printParentReport(key, idx){
