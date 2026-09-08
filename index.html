@@ -206,6 +206,22 @@ td.cell .sym svg{width:16px; height:16px;}
 .guide li{margin-bottom:3px;}
 .guide b{color:var(--text); font-weight:500;}
 
+/* مواعيد تسليم البنود */
+.dates-group{margin-bottom:14px;}
+.dates-group:last-of-type{margin-bottom:0;}
+.dg-head{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:500; color:var(--text); margin-bottom:7px;}
+.dg-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(148px,1fr)); gap:8px;}
+.dg-cell{display:flex; flex-direction:column; gap:3px; border:1px solid var(--border); border-radius:10px; padding:7px 9px; background:var(--bg);}
+.dg-cell > span{font-size:10.5px; font-weight:500; color:var(--muted);}
+.dg-cell input{width:100%; border:none; background:none; font-family:inherit; font-size:12px; color:var(--text); padding:0;}
+.dg-cell i{font-style:normal; font-size:10px; color:var(--teal-d);}
+
+/* رقم الخانة في رأس الجدول يفتح موعدها */
+th.due-th{cursor:pointer; position:relative;}
+th.due-th.has-due{text-decoration:underline; text-underline-offset:2px;}
+th.due-th .due-dot{display:block; width:4px; height:4px; border-radius:50%; background:#fff; margin:1px auto 0;}
+@media print{ th.due-th .due-dot{display:none !important;} th.due-th{text-decoration:none !important;} }
+
 /* شريط بيانات الشعبة — مدخل ظاهر لتعديل المادة والفصل والعام */
 .meta-strip{
   display:flex; align-items:center; gap:11px; width:100%; text-align:right; cursor:pointer;
@@ -219,7 +235,25 @@ td.cell .sym svg{width:16px; height:16px;}
 .meta-strip .ms-line1{font-size:13px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .meta-strip .ms-line2{font-size:11px; font-weight:300; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .meta-strip .ms-act{flex:0 0 auto; font-size:11.5px; font-weight:500; color:var(--teal-d);}
-@media print{ .meta-strip{display:none !important;} }
+
+/* شريط أدوات الشعبة المطوي */
+.tools-strip{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:right; cursor:pointer;
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:10px 13px; margin-bottom:10px; box-shadow:var(--shadow); font-family:inherit;
+}
+.tools-strip:active{background:var(--surface-2);}
+.tools-strip.open{border-bottom-left-radius:0; border-bottom-right-radius:0; margin-bottom:0; border-bottom-color:transparent;}
+.tools-strip .ts-ico{flex:0 0 auto; width:30px; height:30px; border-radius:9px; background:var(--surface-2); color:var(--text-2); display:flex; align-items:center; justify-content:center;}
+.tools-strip .ts-ico svg{width:15px; height:15px;}
+.tools-strip .ts-label{flex:1 1 auto; font-size:13px; font-weight:500; color:var(--text);}
+.tools-strip .ts-count{flex:0 0 auto; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; background:var(--teal-soft); color:var(--teal-d);}
+.tools-strip .ts-chev{flex:0 0 auto; color:var(--muted); transition:transform .15s;}
+.tools-strip .ts-chev svg{width:16px; height:16px; display:block;}
+.tools-strip .ts-chev.up{transform:rotate(180deg);}
+.drop-panel{border-top-left-radius:0; border-top-right-radius:0; margin-top:0;}
+
+@media print{ .meta-strip, .tools-strip{display:none !important;} }
 .meta-field label{display:block; font-size:11.5px; color:var(--muted); margin-bottom:4px; font-weight:600;}
 .meta-field input{
   width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
@@ -376,6 +410,8 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .ref-card-actions .ref-delete{color:#b91c1c; border-color:#f3c6c6;}
 
 /* ===== Analysis extra widgets (summary bar / items / follow-up / delays / levels) ===== */
+.ref-summary-item.is-link{cursor:pointer;}
+.ref-summary-item.is-link:active{transform:scale(.98);}
 .ref-summary-item.lvl-tier{background:var(--tier-bg);}
 .ref-summary-item.lvl-tier .v{color:var(--tier-fg);}
 .ref-summary-item.lvl-tier span:last-child{color:var(--tier-fg); opacity:.85;}
@@ -406,6 +442,27 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .cstat.cs-wait{background:var(--yellow); color:var(--yellow-t);}
 .cstat.cs-none{background:var(--orange); color:var(--orange-t);}
 .cstat.cs-never{background:var(--empty); color:var(--muted); font-weight:400;}
+/* بطاقة «يحتاج انتباهك» في الرئيسية */
+.att-card h2{margin-bottom:10px;}
+.att-row{
+  display:flex; align-items:flex-start; gap:10px; width:100%; text-align:right; font-family:inherit;
+  background:var(--bg); border:1px solid var(--border); border-radius:13px;
+  padding:11px 12px; margin-bottom:8px; cursor:pointer;
+}
+.att-row:last-child{margin-bottom:0;}
+.att-row.att-static{cursor:default;}
+.att-row:not(.att-static):active{background:var(--surface-2);}
+.att-row.att-urgent{background:var(--red); border-color:#F2D7D2;}
+.att-row .att-ico{flex:0 0 auto; font-size:15px; line-height:1.5;}
+.att-row .att-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.att-row .att-body b{font-size:12.5px; font-weight:500; color:var(--text);}
+.att-row .att-body i{font-style:normal; font-size:11px; font-weight:300; color:var(--muted); line-height:1.6;}
+.att-row.att-urgent .att-body b{color:var(--red-t);}
+.att-row .att-go{flex:0 0 auto; color:var(--muted); padding-top:2px;}
+.att-row .att-go svg{width:15px; height:15px; display:block;}
+.att-bar{display:block; height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin:3px 0 2px;}
+.att-fill{display:block; height:6px; border-radius:3px; background:var(--teal);}
+
 .chip-list{display:flex; flex-wrap:wrap; gap:7px;}
 .chip-item{
   display:inline-flex; align-items:baseline; gap:5px; background:var(--surface-2); color:var(--text);
@@ -431,6 +488,8 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .empty-note{font-size:12.5px; color:var(--muted); padding:8px 2px;}
 .chart-box{position:relative; width:100%; height:220px; margin-bottom:14px;}
 .chart-box.tall{height:280px;}
+.chart-box.donut{height:210px;}
+@media(max-width:420px){ .chart-box.donut{height:240px;} }
 
 .hint{font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.8;}
 .autosave-note{font-size:12px; color:#0f7a5c; background:#eafaf3; border:1px solid #cdeee0; padding:7px 10px; border-radius:8px; margin-bottom:10px; display:inline-block;}
@@ -927,11 +986,12 @@ function blankLetterhead(){
 let CAT_KEYS = ["p","h","t","j"];
 const CAT_PALETTE = ['var(--part)','var(--hw)','var(--task)','var(--proj)','#2F7E9E','#5B8C3E','#B0743A','#7A3FA8'];
 function blankConfig(){
+  const d = n => Array(n).fill('');
   return {
-    p: { name: "المشاركة", count: 10, point: 1, color: CAT_PALETTE[0] },
-    h: { name: "الواجبات", count: 10, point: 1, color: CAT_PALETTE[1] },
-    t: { name: "المهام الأدائية", count: 10, point: 1, color: CAT_PALETTE[2] },
-    j: { name: "المشاريع", count: 5, point: 2, color: CAT_PALETTE[3] }
+    p: { name: "المشاركة", count: 10, point: 1, color: CAT_PALETTE[0], dates: d(10) },
+    h: { name: "الواجبات", count: 10, point: 1, color: CAT_PALETTE[1], dates: d(10) },
+    t: { name: "المهام الأدائية", count: 10, point: 1, color: CAT_PALETTE[2], dates: d(10) },
+    j: { name: "المشاريع", count: 5, point: 2, color: CAT_PALETTE[3], dates: d(5) }
   };
 }
 function blankConfigOrder(){ return ["p","h","t","j"]; }
@@ -950,11 +1010,19 @@ function normalizeConfig(cfg, order){
     const def = fallback[k] || { name:`عنصر ${i+1}`, count:5, point:1 };
     let count = parseInt(raw.count); if(isNaN(count)) count = def.count;
     let point = parseFloat(raw.point); if(isNaN(point) || point<=0) point = def.point;
+    const n = Math.max(1, Math.min(20, count));
+    /* مواعيد التسليم: تاريخ لكل خانة (اختياري) — واحد للبند لا لكل طالب، لأن
+       الموعد مشترك، ولأن تخزينه في صفوف الطلاب يعني ألف تاريخ في الشعبة الواحدة
+       وتحويلًا لكل البيانات المحفوظة. مصفوفة بطول عدد الخانات، الفارغ ''. */
+    const rawDates = Array.isArray(raw.dates) ? raw.dates : [];
+    const dates = [];
+    for(let j=0;j<n;j++) dates.push(typeof rawDates[j]==='string' ? rawDates[j] : '');
     out[k] = {
       name: (typeof raw.name === 'string' && raw.name.trim()!=="") ? raw.name.trim() : def.name,
-      count: Math.max(1, Math.min(20, count)),
+      count: n,
       point,
-      color: (typeof raw.color === 'string' && raw.color.trim()!=="") ? raw.color : CAT_PALETTE[i % CAT_PALETTE.length]
+      color: (typeof raw.color === 'string' && raw.color.trim()!=="") ? raw.color : CAT_PALETTE[i % CAT_PALETTE.length],
+      dates
     };
   });
   return { config: out, order: keys.slice() };
@@ -1014,12 +1082,14 @@ let STATE = {
   configOrder: blankConfigOrder(),
   configOpen: false,
   guideOpen: false,
+  toolsOpen: false,
+  datesOpen: false,
   referrals: [],
   contacts: []
 };
 
 function freshState(){
-  const s = { activeView:'home', activeTab: SECTION_KEYS[0], rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, sectionOrder: SECTION_KEYS.slice(), referrals: [], contacts: [] };
+  const s = { activeView:'home', activeTab: SECTION_KEYS[0], rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: SECTION_KEYS.slice(), referrals: [], contacts: [] };
   for(const k of SECTION_KEYS){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -1042,6 +1112,8 @@ function normalizeLoadedState(obj){
     obj.configOrder = nc.order;
     if(typeof obj.configOpen !== 'boolean') obj.configOpen = true;
     if(typeof obj.guideOpen !== 'boolean') obj.guideOpen = false;
+    if(typeof obj.toolsOpen !== 'boolean') obj.toolsOpen = false;
+    if(typeof obj.datesOpen !== 'boolean') obj.datesOpen = false;
     if(!Array.isArray(obj.contacts)) obj.contacts = [];
     if(!Array.isArray(obj.sectionOrder) || obj.sectionOrder.length===0){
       obj.sectionOrder = Object.keys(obj.sections);
@@ -1388,7 +1460,11 @@ function colGroupHeader(){
   const subCells = CAT_KEYS.map(k=>{
     const c = cfg[k];
     const items = [];
-    for(let i=1;i<=c.count;i++) items.push(`<th>${i}</th>`);
+    for(let i=1;i<=c.count;i++){
+      const due = itemDueDate(k, i-1);
+      const h = hijriFromISO(due);
+      items.push(`<th class="due-th${due?' has-due':''}" data-due-head="${k}" data-due-headgi="${i-1}" title="${due ? escapeAttr('موعد التسليم: '+h) : 'اضغط لتحديد موعد التسليم'}">${i}${due?`<i class="due-dot"></i>`:``}</th>`);
+    }
     items.push(`<th>المجموع</th>`);
     return items.join("");
   }).join("");
@@ -1652,8 +1728,101 @@ function renderSettingsPanels(){
     ` : ``}
   </div>
 
+  ${renderDatesCard()}
+
   ${renderGuideCard()}
 `;
+}
+
+/* ---- 📅 مواعيد تسليم البنود ----
+   التاريخ يُدخل ميلاديًا من تقويم الجهاز ويُعرض هجريًا في التقارير. */
+function hijriFromISO(iso){
+  if(!iso) return '';
+  try{
+    const d = new Date(iso + 'T12:00:00');
+    if(isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day:'numeric', month:'long', year:'numeric' }).format(d);
+  }catch(e){ return ''; }
+}
+function itemDueDate(k, gi){
+  const c = STATE.config[k];
+  if(!c || !Array.isArray(c.dates)) return '';
+  return c.dates[gi] || '';
+}
+function itemLabelWithDate(k, gi){
+  const name = `${STATE.config[k].name} ${gi+1}`;
+  const h = hijriFromISO(itemDueDate(k, gi));
+  return h ? `${name} — ${h}` : name;
+}
+function datedItemCount(){
+  return CAT_KEYS.reduce((n,k)=> n + (STATE.config[k].dates||[]).filter(Boolean).length, 0);
+}
+
+function renderDatesCard(){
+  const total = CAT_KEYS.reduce((n,k)=> n + STATE.config[k].count, 0);
+  const filled = datedItemCount();
+  return `
+  <div class="card meta-card">
+    <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <span>📅 مواعيد تسليم البنود</span>
+      <button type="button" id="btn-toggle-dates" class="icon-btn" style="background:#eef2f7; color:var(--navy); border-color:var(--border); padding:5px 10px; font-size:11.5px;">${STATE.datesOpen ? "🔼 إخفاء" : "🔽 إظهار"}</button>
+    </h2>
+    ${STATE.datesOpen ? `
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">اختياري بالكامل: البند بلا تاريخ يعمل كما هو. الفائدة أن تقرير ولي الأمر وتقرير الإحالة يذكران <b>«الواجب ٣ — ١٥ محرم — لم يسلّم»</b> بدل رقم مجرّد. اختر التاريخ ميلاديًا من تقويم جهازك، ويُعرض في التقارير هجريًا. حُدِّد ${fmt(filled)} من ${fmt(total)} موعدًا.</div>
+    ${CAT_KEYS.map(k=>`
+      <div class="dates-group">
+        <div class="dg-head"><span class="cfg-dot" style="background:${catColor(k)};"></span>${escapeAttr(STATE.config[k].name)}</div>
+        <div class="dg-grid">
+          ${Array.from({length: STATE.config[k].count}, (_,gi)=>`
+            <label class="dg-cell">
+              <span>${gi+1}</span>
+              <input type="date" data-due-key="${k}" data-due-gi="${gi}" value="${escapeAttr(itemDueDate(k,gi))}">
+              <i>${escapeAttr(hijriFromISO(itemDueDate(k,gi)) || '—')}</i>
+            </label>`).join("")}
+        </div>
+      </div>`).join("")}
+    <div class="toolbar" style="margin-top:10px; margin-bottom:0;">
+      <button id="btn-clear-dates">🧹 مسح كل المواعيد</button>
+    </div>
+    ` : ``}
+  </div>
+`;
+}
+
+/* نافذة موعد خانة واحدة — تُفتح بالضغط على رقم الخانة في رأس جدول الرصد. */
+function showDueDateDialog(k, gi){
+  if(!STATE.config[k]) return;
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:360px;">
+        <h3>📅 موعد التسليم</h3>
+        <p style="margin:0 0 12px; font-size:12.5px; color:var(--muted);">${escapeAttr(STATE.config[k].name)} — الخانة ${gi+1}</p>
+        <div class="meta-field" style="margin-bottom:6px;">
+          <label>التاريخ (ميلادي)</label>
+          <input type="date" id="due-input" value="${escapeAttr(itemDueDate(k,gi))}">
+        </div>
+        <div class="hint" id="due-hijri" style="margin-top:0; margin-bottom:14px;">${escapeAttr(hijriFromISO(itemDueDate(k,gi)) || 'بلا موعد محدد')}</div>
+        <div class="warn-actions">
+          <button type="button" class="btn-cancel" id="due-clear">مسح الموعد</button>
+          <button type="button" class="btn-ok" id="due-save">💾 حفظ</button>
+        </div>
+      </div>
+    </div>`;
+  const input = document.getElementById('due-input');
+  const label = document.getElementById('due-hijri');
+  input.addEventListener('change', ()=>{ label.textContent = hijriFromISO(input.value) || 'بلا موعد محدد'; });
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  const apply = (val)=>{
+    if(!Array.isArray(STATE.config[k].dates)) STATE.config[k].dates = Array(STATE.config[k].count).fill('');
+    STATE.config[k].dates[gi] = val;
+    persistState();
+    closeDialog();
+    render();
+    showToast(val ? 'تم حفظ الموعد' : 'تم مسح الموعد');
+  };
+  document.getElementById('due-save').addEventListener('click', ()=> apply(input.value || ''));
+  document.getElementById('due-clear').addEventListener('click', ()=> apply(''));
 }
 
 /* ---- دليل الاستخدام: يشرح الرموز والألوان وأين تُضبط كل إعدادة ---- */
@@ -1678,6 +1847,7 @@ function renderGuideCard(){
         <li><b>المادة، الصف والشعبة، الفصل الدراسي، العام، معلم المادة، مدير المدرسة</b> ← تبويب <b>الرصد</b>، بطاقة «بيانات الشعبة» أعلى الصفحة (لكل شعبة بياناتها الخاصة). هذه بالضبط هي التي تظهر في <b>الجزء الأيسر من الكليشة</b> عند الطباعة.</li>
         <li><b>الدولة والوزارة واسم المدرسة وعنوان الكشف</b> (يمين الكليشة ووسطها) ← بطاقة «بيانات الكليشة» في هذا التبويب، وتُطبَّق على كل الشعب.</li>
         <li><b>بنود الرصد</b> — إضافة بند أو حذفه أو تغيير عدد خاناته ودرجته ← بطاقة «عناصر الرصد» أعلاه.</li>
+        <li><b>مواعيد تسليم البنود</b> (اختيارية) ← بطاقة «مواعيد تسليم البنود» أعلاه، أو بالضغط على رقم الخانة في رأس جدول الرصد. تظهر في تقرير ولي الأمر وتقرير الإحالة: «الواجب ٣ — ١٥ محرم — لم يسلّم».</li>
         <li><b>التوقيع</b> الذي يُدرج تلقائيًا في التقارير ← بطاقة «التوقيع الإلكتروني».</li>
       </ul>
       <h3>متى يظهر الطالب في «يحتاج متابعة»؟</h3>
@@ -1691,6 +1861,14 @@ function renderGuideCard(){
         <li><b>المتابعة</b> تقيس سلوك التسليم لا الدرجة. فقد يكون الطالب <b>ممتازًا</b> ومع ذلك عليه شريط متابعة لأنه يسلّم متأخرًا، وقد يكون <b>ضعيفًا</b> بلا شريط لأنه يسلّم كل شيء في وقته ومشكلته في الفهم لا في الالتزام.</li>
         <li>التقدير لا يظهر قبل رصد ثلاث خانات على الأقل — تظهر «قيد الرصد» حتى تكتمل.</li>
       </ul>
+      <h3>أين أجد ماذا؟</h3>
+      <ul>
+        <li><b>الرئيسية</b>: ما ينتظرك اليوم — الحالات العاجلة، ومن لم تبدأ رصدهم، ونسبة اكتمال الكشف، وقائمة شعبك.</li>
+        <li><b>الرصد</b>: الجدول أو البطاقات، وأدوات الشعبة في شريط مطوي فوقهما.</li>
+        <li><b>التحليل</b>: أرقام واتجاهات ورسوم بيانية فقط — لا أسماء طلاب.</li>
+        <li><b>المتابعة</b>: كل من يحتاج تدخّلًا بأسمائهم — يحتاج متابعة، الإنذار المبكر، الأكثر تأخرًا، لوحة التميز، سجل التواصل، وأرشيف الإحالات.</li>
+        <li><b>حسابي</b>: الكليشة والبنود والمواعيد والتوقيع والنسخ الاحتياطية.</li>
+      </ul>
       <h3>الطباعة</h3>
       <ul>
         <li>جدول الشعبة يُطبع <b>عرضيًا</b> تلقائيًا — لا تغيّر الاتجاه يدويًا من نافذة الطباعة.</li>
@@ -1699,6 +1877,36 @@ function renderGuideCard(){
     </div>` : ``}
   </div>
 `;
+}
+
+/* أدوات الشعبة: كانت بطاقة مفتوحة تأكل نصف الشاشة قبل أن يصل الجدول. صارت
+   شريطًا مطويًا فوق مبدّل العرض، ويُفتح تلقائيًا ما دام هناك صفوف محدَّدة حتى
+   لا تختفي أزرار النقل والحذف عن من يحدّد. */
+function renderSectionTools(key){
+  const n = SELECTED_ROWS.size;
+  const open = STATE.toolsOpen || n>0;
+  return `
+  <button type="button" class="tools-strip${open?' open':''}" id="btn-toggle-tools" aria-expanded="${open}">
+    <span class="ts-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 7 2.6h.1A1.6 1.6 0 0 0 8.2 1V1a2 2 0 1 1 4 0v.1"/></svg></span>
+    <span class="ts-label">أدوات الشعبة</span>
+    ${n>0 ? `<span class="ts-count">${fmt(n)} محدَّدة</span>` : ``}
+    <span class="ts-chev${open?' up':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+  </button>
+
+  ${open ? `
+  <div class="card drop-panel">
+    <div class="toolbar">
+      <button class="primary" id="btn-import-students">📥 إضافة عدة طلاب (لصق/إكسل)</button>
+      <button id="btn-clear-section">🧹 تفريغ الرصد (هذه الشعبة)</button>
+      <button id="btn-delete-section">🗑️ حذف هذه الشعبة</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:0;">
+      <button id="btn-select-empty">☑️ تحديد الصفوف الفارغة الزائدة</button>
+      <button id="btn-clear-selection">☐ إلغاء التحديد</button>
+      <button id="btn-move-selected">🔀 نقل المحدد إلى شعبة أخرى (${SELECTED_ROWS.size})</button>
+      <button id="btn-delete-selected" style="color:#b91c1c; border-color:#f3c6c6;">🗑️ حذف المحدد (${SELECTED_ROWS.size})</button>
+    </div>
+  </div>` : ``}`;
 }
 
 function renderSectionSheet(key, opts){
@@ -1727,21 +1935,17 @@ function renderSectionSheet(key, opts){
   </div>
 
   ${forPrint ? `` : `
-  <button type="button" class="meta-strip" id="btn-toggle-sectionmeta-strip" title="تعديل بيانات الشعبة">
+  <button type="button" class="meta-strip" id="btn-toggle-sectionmeta-strip" title="تعديل بيانات الشعبة" aria-expanded="${STATE.sectionMetaOpen}">
     <span class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
     <span class="ms-body">
       <span class="ms-line1">${escapeAttr(meta.subject) || 'لم تُحدَّد المادة'} · ${escapeAttr(key)}</span>
       <span class="ms-line2">${[escapeAttr(meta.term), escapeAttr(meta.year)].filter(Boolean).join(' · ') || 'اضغط لتحديد المادة والفصل والعام الدراسي'}</span>
     </span>
     <span class="ms-act">${STATE.sectionMetaOpen ? 'إخفاء' : 'تعديل'}</span>
-  </button>`}
+  </button>
 
-  <div class="card meta-card">
-    <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-      <span>بيانات الشعبة — تظهر في الجزء الأيسر من الكليشة عند الطباعة</span>
-      <button type="button" id="btn-toggle-sectionmeta" class="icon-btn" style="background:#eef2f7; color:var(--navy); border-color:var(--border); padding:5px 10px; font-size:11.5px;">${STATE.sectionMetaOpen ? "🔼 إخفاء" : "🔽 إظهار"}</button>
-    </h2>
-    ${STATE.sectionMetaOpen ? `
+  ${STATE.sectionMetaOpen ? `
+  <div class="card meta-card drop-panel">
     <div class="meta-grid">
       <div class="meta-field"><label>المادة</label><input id="m-subject" value="${escapeAttr(meta.subject)}"></div>
       <div class="meta-field"><label>الصف والشعبة</label><input value="${key}" disabled></div>
@@ -1749,10 +1953,12 @@ function renderSectionSheet(key, opts){
       <div class="meta-field"><label>العام الدراسي</label><input id="m-year" value="${escapeAttr(meta.year)}" placeholder="مثال: 1447هـ"></div>
       <div class="meta-field"><label>معلم المادة</label><input id="m-teacher" value="${escapeAttr(meta.teacher)}"></div>
       <div class="meta-field"><label>مدير المدرسة</label><input id="m-principal" value="${escapeAttr(meta.principal)}"></div>
-    </div>` : ``}
-  </div>
+    </div>
+    <div class="hint" style="margin-bottom:0;">هذه البيانات تظهر في الجزء الأيسر من الكليشة عند الطباعة.</div>
+  </div>` : ``}
 
-  ${forPrint ? `` : `
+  ${renderSectionTools(key)}
+
   <div class="switch-row">
     <div class="viewswitch" role="group" aria-label="شكل عرض الرصد">
       <button type="button" data-roster-view="table" class="${cardsMode?'':'on'}">
@@ -1765,20 +1971,6 @@ function renderSectionSheet(key, opts){
     <button type="button" class="fab-add" id="btn-add-row" title="إضافة طالب" aria-label="إضافة طالب">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
-  </div>
-
-  <div class="card">
-    <div class="toolbar">
-      <button class="primary" id="btn-import-students">📥 إضافة عدة طلاب (لصق/إكسل)</button>
-      <button id="btn-clear-section">🧹 تفريغ الرصد (هذه الشعبة)</button>
-      <button id="btn-delete-section">🗑️ حذف هذه الشعبة</button>
-    </div>
-    <div class="toolbar" style="margin-bottom:0;">
-      <button id="btn-select-empty">☑️ تحديد الصفوف الفارغة الزائدة</button>
-      <button id="btn-clear-selection">☐ إلغاء التحديد</button>
-      <button id="btn-move-selected">🔀 نقل المحدد إلى شعبة أخرى (${SELECTED_ROWS.size})</button>
-      <button id="btn-delete-selected" style="color:#b91c1c; border-color:#f3c6c6;">🗑️ حذف المحدد (${SELECTED_ROWS.size})</button>
-    </div>
   </div>
 
   ${cardsMode ? `<div class="roster-cards">${renderSectionCards(key)}</div>` : ``}
@@ -2073,9 +2265,10 @@ function renderAnalysis(opts){
     <div class="ref-summary">
       <div class="ref-summary-item"><span class="v">${totalN}</span><span>عدد الطلاب</span></div>
       <div class="ref-summary-item"><span class="v">${fmt(overallAvgFinal)}</span><span>متوسط المجموع العام</span></div>
-      <div class="ref-summary-item rs-pending"><span class="v">${followUps.length}</span><span>يحتاج متابعة</span></div>
+      <div class="ref-summary-item rs-pending is-link" ${forPrint?``:`data-goto-view="archive" role="button" tabindex="0"`}><span class="v">${followUps.length}</span><span>يحتاج متابعة ${forPrint?``:`↗`}</span></div>
       <div class="ref-summary-item"><span class="v">${fmt(avgLate)}</span><span>متوسط التأخيرات</span></div>
     </div>
+    ${forPrint ? `` : `<div class="hint">هذا التبويب للأرقام والاتجاهات. أسماء الطلاب الذين يحتاجون تدخّلًا — والمتميزون — في تبويب <b>المتابعة</b>؛ اضغط الرقم أعلاه للانتقال إليه.</div>`}
   </div>`;
 
   /* ---- أداء الشعبة ---- */
@@ -2096,6 +2289,7 @@ function renderAnalysis(opts){
       <span class="ip-track bar-track"><span class="bar-fill${it.avgRatio<0.6?' bar-bad':''}" style="width:${Math.round(it.avgRatio*100)}%"></span></span>
       <span class="ip-val">${Math.round(it.avgRatio*100)}%</span>
     </div>`;
+  const worstDelayItems = [...allItems].filter(it=>it.lateN>0).sort((a,b)=>b.lateN-a.lateN).slice(0,3);
   const itemChartCanvas = forPrint ? `` : `<div class="chart-box tall"><canvas id="chart-item-perf"></canvas></div>`;
   const itemPerfCard = allItems.length===0 ? `` : `
   <div class="card">
@@ -2105,7 +2299,10 @@ function renderAnalysis(opts){
     ${bestItems.map(itemRow).join("")}
     <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">⚠️ الأضعف أداءً</h3>
     ${worstItems.map(itemRow).join("")}
-    <div class="hint">النسبة تمثل متوسط الإنجاز للبند عبر كل الطلاب الذين وصلهم (المتروك ⬜ لا يُحتسب).</div>
+    ${worstDelayItems.length>0 ? `
+    <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">⏰ الأكثر تأخرًا في التسليم</h3>
+    ${worstDelayItems.map(it=>`<div class="late-rank-row"><span>${escapeAttr(it.label)}</span><span class="lr-badge">${it.lateN} تأخير</span></div>`).join("")}` : ``}
+    <div class="hint">النسبة تمثل متوسط الإنجاز للبند عبر كل الطلاب الذين وصلهم (المتروك ${symIcon("⬜")} لا يُحتسب). البند الذي يتأخر فيه كثيرون قد تكون مشكلته في موعده أو وضوح تعليماته لا في الطلاب.</div>
   </div>`;
 
   /* ---- بيانات الرسوم البيانية (تُستهلك من wireAnalysisEvents بعد إدراج الـ canvas في الصفحة) ---- */
@@ -2114,23 +2311,153 @@ function renderAnalysis(opts){
       sectionLabels: SECTION_KEYS,
       sectionValues: SECTION_KEYS.map(k=> totalMax>0 ? Math.round((stats[k].avgFinal/totalMax)*1000)/10 : 0),
       itemLabels: [...bestItems, ...worstItems].map(it=>it.label),
-      itemValues: [...bestItems, ...worstItems].map(it=>Math.round(it.avgRatio*1000)/10),
-      itemIsBest: [...bestItems.map(()=>true), ...worstItems.map(()=>false)]
+      itemValues: [...bestItems, ...worstItems].map(it=>Math.round(it.avgRatio*1000)/10)
     };
   }
 
-  /* ---- 🌟 لوحة تفوق (أفضل أداءً) ---- */
-  const topPerf = topPerformers(5);
-  const topPerfCard = `
+  /* ---- توزيع المستوى ---- */
+  const levels = levelDistribution();
+  const gradedTotal = LEVEL_TIERS.reduce((a,t)=>a+levels[t.name], 0);
+  if(!forPrint && ANALYSIS_CHART_DATA){
+    ANALYSIS_CHART_DATA.levelLabels = LEVEL_TIERS.map(t=>t.name);
+    ANALYSIS_CHART_DATA.levelValues = LEVEL_TIERS.map(t=>levels[t.name]);
+    ANALYSIS_CHART_DATA.levelTotal  = gradedTotal;
+  }
+  const levelChartCanvas = (forPrint || gradedTotal===0) ? `` : `<div class="chart-box donut"><canvas id="chart-levels"></canvas></div>`;
+  const levelCard = `
   <div class="card">
-    <h2>🌟 لوحة تفوق</h2>
-    ${topPerf.length===0 ? `<div class="empty-note">لا توجد بيانات كافية بعد.</div>` : topPerf.map((s,i)=>`
-      <div class="late-rank-row"><span>${i+1}. ${escapeAttr(s.name)} <span style="color:var(--muted); font-size:11px;">(${escapeAttr(s.key)})</span></span><span class="lr-badge" style="background:var(--green); color:var(--green-t);">${s.ratioPct}%</span></div>
-    `).join("")}
+    <h2>🏆 توزيع التقديرات</h2>
+    ${levelChartCanvas}
+    <div class="ref-summary">
+      ${LEVEL_TIERS.map(t=>`
+      <div class="ref-summary-item lvl-tier" style="--tier-bg:${t.bg}; --tier-fg:${t.fg};">
+        <span class="v">${levels[t.name]}</span><span>${t.name}</span>
+      </div>`).join("")}
+      ${levels[LEVEL_PENDING.name]>0 ? `
+      <div class="ref-summary-item lvl-tier" style="--tier-bg:var(--empty); --tier-fg:var(--muted);">
+        <span class="v">${levels[LEVEL_PENDING.name]}</span><span>${LEVEL_PENDING.name}</span>
+      </div>` : ``}
+    </div>
+    <div class="hint">ممتاز ٩٠٪ فأكثر · جيد جدًا ٨٠–٨٩٪ · جيد ٧٠–٧٩٪ · مقبول ٦٠–٦٩٪ · ضعيف أقل من ٦٠٪ — من نسبة الإنجاز من الدرجة القصوى المتاحة له حاليًا. التقدير يقيس الدرجة فقط؛ حاجة الطالب للمتابعة إشارة مستقلة تجدها في بطاقة «يحتاج متابعة».</div>
   </div>`;
 
-  /* ---- يحتاج متابعة ---- */
-  const followUpCard = `
+  /* ---- جدول مقارنة الشعب ---- */
+  const comparisonTable = `
+  <div class="card">
+    <h2>📋 جدول مقارنة الشعب</h2>
+    <div class="table-wrap">
+    <table class="analysis-table">
+      <thead><tr>
+        <th>الشعبة</th><th>عدد الطلاب المرصودين</th><th>متوسط المجموع النهائي</th>
+        <th>أعلى مجموع</th><th>أقل مجموع</th>
+        ${CAT_KEYS.map(ck=>`<th>متوسط ${escapeAttr(cfg[ck].name)}</th>`).join("")}
+      </tr></thead>
+      <tbody>
+        ${SECTION_KEYS.map(k=>{
+          const s=stats[k];
+          const catTds = CAT_KEYS.map(ck=>`<td>${fmt(s['avg_'+ck])}</td>`).join("");
+          return `<tr><td>${k}</td><td>${s.n}</td><td>${fmt(s.avgFinal)}</td><td>${fmt(s.maxFinal)}</td><td>${fmt(s.minFinal)}</td>${catTds}</tr>`;
+        }).join("")}
+        <tr><td>الكل</td><td>${totalN}</td><td>${fmt(overallAvgFinal)}</td><td>${fmt(overallMax)}</td><td>${fmt(overallMin)}</td>
+        ${CAT_KEYS.map(ck=>`<td>${fmt(weightedAvg('avg_'+ck))}</td>`).join("")}</tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="hint">يتم تحديث هذا التحليل تلقائيًا كلما رصدت درجة جديدة في أي شعبة.</div>
+  </div>`;
+
+  /* ---- 🧭 أضعف البنود ---- */
+  const catPerf = categoryPerformance().filter(c=>c.pct!==null);
+  const catSorted = catPerf.slice().sort((a,b)=>a.pct-b.pct);
+  const weakestCard = catPerf.length===0 ? `` : `
+  <div class="card">
+    <h2>🧭 أداء البنود</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">
+      ${catSorted.length>1
+        ? `أضعف بند لدى طلابك هو <b>${escapeAttr(catSorted[0].name)}</b> بنسبة <b>${catSorted[0].pct}%</b>، وأقواها <b>${escapeAttr(catSorted[catSorted.length-1].name)}</b> بنسبة <b>${catSorted[catSorted.length-1].pct}%</b> — ركّز خطتك العلاجية على الأول.`
+        : `نسبة إنجاز بند <b>${escapeAttr(catSorted[0].name)}</b> هي <b>${catSorted[0].pct}%</b>.`}
+    </div>
+    ${catPerf.map(c=>`
+      <div class="ip-row">
+        <span class="ip-label">${escapeAttr(c.name)}</span>
+        <span class="ip-track bar-track"><span class="bar-fill" style="width:${c.pct}%; background:${c.color};"></span></span>
+        <span class="ip-val">${c.pct}%</span>
+      </div>`).join("")}
+  </div>`;
+
+  /* ---- 🔁 مقارنة الفترات ---- */
+  const periods = periodComparison();
+  if(!forPrint && ANALYSIS_CHART_DATA && periods.length>0){
+    ANALYSIS_CHART_DATA.periodLabels = periods.map(p=>p.key);
+    ANALYSIS_CHART_DATA.periodPrev   = periods.map(p=>p.prevPct);
+    ANALYSIS_CHART_DATA.periodCur    = periods.map(p=>p.curPct);
+  }
+  const periodChartCanvas = forPrint ? `` : `<div class="chart-box"><canvas id="chart-periods"></canvas></div>`;
+  const periodCard = periods.length===0 ? `` : `
+  <div class="card">
+    <h2>🔁 مقارنة الفترات</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:8px;">مقارنة متوسط نسبة الإنجاز في كل شعبة بينها وبين نسختها المؤرشفة من فصل سابق.</div>
+    ${periodChartCanvas}
+    <div class="table-wrap">
+    <table class="followup-table">
+      <thead><tr><th>الشعبة</th><th>الفترة السابقة</th><th>الفترة الحالية</th><th>الفرق</th></tr></thead>
+      <tbody>
+        ${periods.map(p=>{
+          const up = p.delta!==null && p.delta>0;
+          const flat = p.delta===null || p.delta===0;
+          const col = flat ? 'var(--muted)' : (up ? 'var(--teal-d)' : '#C0392B');
+          const sign = p.delta===null ? '—' : (up?'▲ +':(p.delta<0?'▼ ':'')) + p.delta + '%';
+          return `<tr>
+            <td class="fu-name">${escapeAttr(p.key)}</td>
+            <td class="fu-reason">${escapeAttr(p.archivedKey)}<br>${p.prevPct===null?'—':p.prevPct+'%'}</td>
+            <td>${p.curPct===null?'—':p.curPct+'%'}</td>
+            <td style="color:${col}; font-weight:700;">${sign}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+    </div>
+  </div>`;
+
+  return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + levelCard + periodCard + comparisonTable;
+}
+
+/* ================= سجل التواصل مع أولياء الأمور ================= */
+const CONTACT_METHODS = ["اتصال هاتفي", "رسالة نصية", "واتساب", "لقاء في المدرسة", "عبر المرشد الطلابي"];
+const CONTACT_STATUSES = ["تم التواصل", "لم يُرد", "بانتظار الرد", "تم الحل"];
+function contactStatusClass(status){
+  if(status==="تم الحل") return "cs-done";
+  if(status==="تم التواصل") return "cs-ok";
+  if(status==="لم يُرد") return "cs-none";
+  return "cs-wait";
+}
+/* آخر تواصل مسجّل لطالب بعينه (المطابقة بالاسم داخل الشعبة حتى تنجو من تغيّر ترتيب الصفوف) */
+function lastContactFor(key, name){
+  const n = (name||'').trim();
+  const list = (STATE.contacts||[]).filter(c=> c.key===key && (c.name||'').trim()===n);
+  if(list.length===0) return null;
+  return list.slice().sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''))[0];
+}
+function saveContact(data){
+  const entry = Object.assign({}, data, {
+    id: 'ct_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+    savedAt: new Date().toISOString(),
+    savedAtHijri: getHijriDateStr()
+  });
+  if(!Array.isArray(STATE.contacts)) STATE.contacts = [];
+  STATE.contacts.unshift(entry);
+  persistState();
+  return entry;
+}
+
+/* ================= RENDER: تبويب المتابعة =================
+   كل ما فيه أسماء طلاب وينتظر إجراءً يسكن هنا لا في التحليل. التحليل يقول
+   «١٢ يحتاجون متابعة»، وهذا التبويب هو المكان الذي تشتغل فيه عليهم. */
+
+function renderFollowUpCard(opts){
+  const forPrint = !!(opts && opts.forPrint);
+  const followUps = needsFollowUpList();
+  return `
   <div class="card">
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
       <span>🚨 يحتاج متابعة</span>
@@ -2167,10 +2494,12 @@ function renderAnalysis(opts){
     </div>
     <div class="hint" style="margin-top:8px;">${sevBadge("urgent")} <b>لا يسلّم</b>: ٣ حالات عدم تسليم فأكثر، أو لم تصل منه ربع المهام المرصودة فأكثر &nbsp;·&nbsp; ${sevBadge("warn")} <b>يسلّم متأخرًا</b>: تأخير متكرر لكن المهام تصل. ملاحظة: التأخير نصف درجة، فمن يسلّم كل شيء متأخرًا نسبته ٥٠٪ — وهذا تأخر لا تعثّر.</div>`}
   </div>`;
+}
 
-  /* ---- 🟡 منطقة الإنذار المبكر ---- */
+function renderEarlyWarnCard(){
   const earlyWarn = earlyWarningList();
-  const earlyWarnCard = earlyWarn.length===0 ? `` : `
+  if(earlyWarn.length===0) return ``;
+  return `
   <div class="card">
     <h2>🟡 منطقة الإنذار المبكر</h2>
     <div class="hint" style="margin-top:0; margin-bottom:8px;">طلاب يقتربون من حد "يحتاج متابعة" (٦٠–٧٠٪ إنجاز، أو ٣–٤ تأخيرات، أو حالتا عدم تسليم) لكنهم لم يصلوه بعد — فرصة للتدخل المبكر.</div>
@@ -2189,187 +2518,66 @@ function renderAnalysis(opts){
     </table>
     </div>
   </div>`;
+}
 
-  /* ---- التأخيرات ---- */
+function renderTopLateCard(){
   const topLate = topLateStudents(5);
-  const worstDelayItems = [...allItems].filter(it=>it.lateN>0).sort((a,b)=>b.lateN-a.lateN).slice(0,3);
-  const delaysCard = `
+  return `
   <div class="card">
-    <h2>⏰ التأخيرات</h2>
-    <h3 style="font-size:12.5px; color:var(--muted); margin:6px 0;">الطلاب الأكثر تأخرًا</h3>
+    <h2>⏰ الأكثر تأخرًا في التسليم</h2>
     ${topLate.length===0 ? `<div class="empty-note">لا توجد تأخيرات مرصودة بعد.</div>` : topLate.map(s=>`
       <div class="late-rank-row"><span>${escapeAttr(s.name)} <span style="color:var(--muted); font-size:11px;">(${escapeAttr(s.key)})</span></span><span class="lr-badge">${s.lateCount} تأخير</span></div>
     `).join("")}
-    ${worstDelayItems.length>0 ? `
-    <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">البنود الأكثر تأخرًا</h3>
-    ${worstDelayItems.map(it=>`<div class="late-rank-row"><span>${escapeAttr(it.label)}</span><span class="lr-badge">${it.lateN} تأخير</span></div>`).join("")}` : ``}
   </div>`;
+}
 
-  /* ---- توزيع المستوى ---- */
-  const levels = levelDistribution();
-  const levelCard = `
-  <div class="card">
-    <h2>🏆 توزيع التقديرات</h2>
-    <div class="ref-summary">
-      ${LEVEL_TIERS.map(t=>`
-      <div class="ref-summary-item lvl-tier" style="--tier-bg:${t.bg}; --tier-fg:${t.fg};">
-        <span class="v">${levels[t.name]}</span><span>${t.name}</span>
-      </div>`).join("")}
-      ${levels[LEVEL_PENDING.name]>0 ? `
-      <div class="ref-summary-item lvl-tier" style="--tier-bg:var(--empty); --tier-fg:var(--muted);">
-        <span class="v">${levels[LEVEL_PENDING.name]}</span><span>${LEVEL_PENDING.name}</span>
-      </div>` : ``}
-    </div>
-    <div class="hint">ممتاز ٩٠٪ فأكثر · جيد جدًا ٨٠–٨٩٪ · جيد ٧٠–٧٩٪ · مقبول ٦٠–٦٩٪ · ضعيف أقل من ٦٠٪ — من نسبة الإنجاز من الدرجة القصوى المتاحة له حاليًا. التقدير يقيس الدرجة فقط؛ حاجة الطالب للمتابعة إشارة مستقلة تجدها في بطاقة «يحتاج متابعة».</div>
-  </div>`;
-
-  /* ---- 🗂️ اكتمال الرصد ---- */
-  const completion = dataCompletionStats();
-  const completionCard = `
-  <div class="card">
-    <h2>🗂️ اكتمال الرصد</h2>
-    <div class="item-perf-row">
-      <span class="ip-name">نسبة الخانات المرصودة من إجمالي الكشف</span>
-      <span class="ip-track bar-track"><span class="bar-fill" style="width:${completion.pct}%"></span></span>
-      <span class="ip-val">${completion.pct}%</span>
-    </div>
-    <div class="hint">${completion.filled} من ${completion.total} خانة تم رصدها؛ الباقي ${symIcon("⬜")} لم يصل بعد.</div>
-  </div>`;
-
-  /* ---- جدول مقارنة الشعب ---- */
-  const comparisonTable = `
-  <div class="card">
-    <h2>📋 جدول مقارنة الشعب</h2>
-    <div class="table-wrap">
-    <table class="analysis-table">
-      <thead><tr>
-        <th>الشعبة</th><th>عدد الطلاب المرصودين</th><th>متوسط المجموع النهائي</th>
-        <th>أعلى مجموع</th><th>أقل مجموع</th>
-        ${CAT_KEYS.map(ck=>`<th>متوسط ${escapeAttr(cfg[ck].name)}</th>`).join("")}
-      </tr></thead>
-      <tbody>
-        ${SECTION_KEYS.map(k=>{
-          const s=stats[k];
-          const catTds = CAT_KEYS.map(ck=>`<td>${fmt(s['avg_'+ck])}</td>`).join("");
-          return `<tr><td>${k}</td><td>${s.n}</td><td>${fmt(s.avgFinal)}</td><td>${fmt(s.maxFinal)}</td><td>${fmt(s.minFinal)}</td>${catTds}</tr>`;
-        }).join("")}
-        <tr><td>الكل</td><td>${totalN}</td><td>${fmt(overallAvgFinal)}</td><td>${fmt(overallMax)}</td><td>${fmt(overallMin)}</td>
-        ${CAT_KEYS.map(ck=>`<td>${fmt(weightedAvg('avg_'+ck))}</td>`).join("")}</tr>
-      </tbody>
-    </table>
-    </div>
-    <div class="hint">يتم تحديث هذا التحليل تلقائيًا كلما رصدت درجة جديدة في أي شعبة.</div>
-  </div>`;
-
-  /* ---- ⛔ طلاب لم يُرصد لهم شيء بعد ---- */
-  const unassessed = unassessedList();
-  const unassessedCard = unassessed.length===0 ? `` : `
-  <div class="card">
-    <h2>⛔ طلاب لم يبدأ رصدهم</h2>
-    <div class="hint" style="margin-top:0; margin-bottom:8px;">${unassessed.length} طالبًا لم تُرصد لهم أي خانة بعد، فلا يظهرون في أي متوسط أو مستوى. راجعهم قبل اعتماد الكشف.</div>
-    <div class="chip-list">
-      ${unassessed.map(s=>`<span class="chip-item">${escapeAttr(s.name)} <i>${escapeAttr(s.key)}</i></span>`).join("")}
-    </div>
-  </div>`;
-
-  /* ---- 🧭 أضعف البنود ---- */
-  const catPerf = categoryPerformance().filter(c=>c.pct!==null);
-  const catSorted = catPerf.slice().sort((a,b)=>a.pct-b.pct);
-  const weakestCard = catPerf.length===0 ? `` : `
-  <div class="card">
-    <h2>🧭 أداء البنود</h2>
-    <div class="hint" style="margin-top:0; margin-bottom:10px;">
-      ${catSorted.length>1
-        ? `أضعف بند لدى طلابك هو <b>${escapeAttr(catSorted[0].name)}</b> بنسبة <b>${catSorted[0].pct}%</b>، وأقواها <b>${escapeAttr(catSorted[catSorted.length-1].name)}</b> بنسبة <b>${catSorted[catSorted.length-1].pct}%</b> — ركّز خطتك العلاجية على الأول.`
-        : `نسبة إنجاز بند <b>${escapeAttr(catSorted[0].name)}</b> هي <b>${catSorted[0].pct}%</b>.`}
-    </div>
-    ${catPerf.map(c=>`
-      <div class="ip-row">
-        <span class="ip-label">${escapeAttr(c.name)}</span>
-        <span class="ip-track bar-track"><span class="bar-fill" style="width:${c.pct}%; background:${c.color};"></span></span>
-        <span class="ip-val">${c.pct}%</span>
-      </div>`).join("")}
-  </div>`;
-
-  /* ---- 🌟 قائمة التميز الكاملة ---- */
+/* «قائمة التميز» و«لوحة تفوق» كانتا قائمتين لنفس الطلاب بترتيبين — دُمجتا. */
+function renderHonoursCard(){
   const excellence = excellenceList();
-  const excellenceCard = `
+  return `
   <div class="card">
-    <h2>🌟 قائمة التميز (٩٠٪ فأكثر)</h2>
+    <h2>🌟 لوحة التميز</h2>
     ${excellence.length===0
       ? `<div class="empty-note">لا يوجد طلاب بلغوا ٩٠٪ حتى الآن.</div>`
-      : `<div class="hint" style="margin-top:0; margin-bottom:8px;">${excellence.length} طالبًا يستحقون التكريم.</div>
+      : `<div class="hint" style="margin-top:0; margin-bottom:8px;">${excellence.length} طالبًا بلغوا ٩٠٪ فأكثر ويستحقون التكريم.</div>
       <div class="table-wrap">
       <table class="followup-table">
-        <thead><tr><th>الطالب</th><th>الشعبة</th><th>الإنجاز</th><th>المجموع</th></tr></thead>
+        <thead><tr><th>#</th><th>الطالب</th><th>الشعبة</th><th>الإنجاز</th><th>المجموع</th></tr></thead>
         <tbody>
-          ${excellence.map(s=>`<tr>
+          ${excellence.map((s,i)=>`<tr>
+            <td>${i+1}</td>
             <td class="fu-name">${escapeAttr(s.name)}</td>
             <td>${escapeAttr(s.key)}</td>
-            <td>${s.ratioPct}%</td>
+            <td><span class="cstat cs-done">${s.ratioPct}%</span></td>
             <td>${fmt(s.final)}</td>
           </tr>`).join("")}
         </tbody>
       </table>
       </div>`}
   </div>`;
+}
 
-  /* ---- 🔁 مقارنة الفترات ---- */
-  const periods = periodComparison();
-  const periodCard = periods.length===0 ? `` : `
+function renderFollowUpView(){
+  const followUps = needsFollowUpList();
+  const urgent = followUps.filter(f=>f.severity==='urgent').length;
+  const contacted = followUps.filter(f=>lastContactFor(f.key, f.name)).length;
+  const summary = `
   <div class="card">
-    <h2>🔁 مقارنة الفترات</h2>
-    <div class="hint" style="margin-top:0; margin-bottom:8px;">مقارنة متوسط نسبة الإنجاز في كل شعبة بينها وبين نسختها المؤرشفة من فصل سابق.</div>
-    <div class="table-wrap">
-    <table class="followup-table">
-      <thead><tr><th>الشعبة</th><th>الفترة السابقة</th><th>الفترة الحالية</th><th>الفرق</th></tr></thead>
-      <tbody>
-        ${periods.map(p=>{
-          const up = p.delta!==null && p.delta>0;
-          const flat = p.delta===null || p.delta===0;
-          const col = flat ? 'var(--muted)' : (up ? 'var(--teal-d)' : '#C0392B');
-          const sign = p.delta===null ? '—' : (up?'▲ +':(p.delta<0?'▼ ':'')) + p.delta + '%';
-          return `<tr>
-            <td class="fu-name">${escapeAttr(p.key)}</td>
-            <td class="fu-reason">${escapeAttr(p.archivedKey)}<br>${p.prevPct===null?'—':p.prevPct+'%'}</td>
-            <td>${p.curPct===null?'—':p.curPct+'%'}</td>
-            <td style="color:${col}; font-weight:700;">${sign}</td>
-          </tr>`;
-        }).join("")}
-      </tbody>
-    </table>
+    <h2>📌 حالة المتابعة</h2>
+    <div class="ref-summary">
+      <div class="ref-summary-item" style="background:var(--red);"><span class="v" style="color:var(--red-t);">${urgent}</span><span style="color:var(--red-t);">حالة عاجلة</span></div>
+      <div class="ref-summary-item rs-pending"><span class="v">${followUps.length}</span><span>يحتاج متابعة</span></div>
+      <div class="ref-summary-item rs-contacted"><span class="v">${contacted}</span><span>تم التواصل بشأنهم</span></div>
+      <div class="ref-summary-item rs-closed"><span class="v">${STATE.referrals.length}</span><span>إحالة محفوظة</span></div>
     </div>
   </div>`;
-
-  return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + topPerfCard + excellenceCard + followUpCard + earlyWarnCard + unassessedCard + delaysCard + levelCard + periodCard + completionCard + comparisonTable;
-}
-
-/* ================= سجل التواصل مع أولياء الأمور ================= */
-const CONTACT_METHODS = ["اتصال هاتفي", "رسالة نصية", "واتساب", "لقاء في المدرسة", "عبر المرشد الطلابي"];
-const CONTACT_STATUSES = ["تم التواصل", "لم يُرد", "بانتظار الرد", "تم الحل"];
-function contactStatusClass(status){
-  if(status==="تم الحل") return "cs-done";
-  if(status==="تم التواصل") return "cs-ok";
-  if(status==="لم يُرد") return "cs-none";
-  return "cs-wait";
-}
-/* آخر تواصل مسجّل لطالب بعينه (المطابقة بالاسم داخل الشعبة حتى تنجو من تغيّر ترتيب الصفوف) */
-function lastContactFor(key, name){
-  const n = (name||'').trim();
-  const list = (STATE.contacts||[]).filter(c=> c.key===key && (c.name||'').trim()===n);
-  if(list.length===0) return null;
-  return list.slice().sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''))[0];
-}
-function saveContact(data){
-  const entry = Object.assign({}, data, {
-    id: 'ct_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-    savedAt: new Date().toISOString(),
-    savedAtHijri: getHijriDateStr()
-  });
-  if(!Array.isArray(STATE.contacts)) STATE.contacts = [];
-  STATE.contacts.unshift(entry);
-  persistState();
-  return entry;
+  return summary
+    + renderFollowUpCard({})
+    + renderEarlyWarnCard()
+    + renderTopLateCard()
+    + renderHonoursCard()
+    + renderContactLog()
+    + renderArchive();
 }
 
 /* ================= RENDER: REFERRAL ARCHIVE (أرشيف الإحالات) ================= */
@@ -2439,8 +2647,7 @@ function renderArchive(){
     </div>
     <div class="hint">هذا الأرشيف سجل توثيقي لكل تقرير إحالة تم حفظه — يبقى محفوظًا هنا حتى لو تغيّر رصد الطالب لاحقًا. غيّر الحالة من القائمة المنسدلة لمتابعة كل حالة.</div>
   </div>
-  <div class="ref-list">${cards}</div>
-  ${renderContactLog()}`;
+  <div class="ref-list">${cards}</div>`;
 }
 
 /* ---- 📞 سجل التواصل مع أولياء الأمور ---- */
@@ -2550,6 +2757,68 @@ function sectionFollowUpCount(key){
   return out;
 }
 
+/* ---- «يحتاج انتباهك»: مهام المعلم نفسه، لا حالات الطلاب ----
+   الطالب الذي لم يُرصد لم يخطئ في شيء — أنت من لم ترصده. ولهذا مكانها الرئيسية
+   (لوحة «ماذا ينتظرني اليوم») لا التحليل ولا المتابعة. */
+function renderAttentionCard(){
+  const unassessed = unassessedList();
+  const completion = dataCompletionStats();
+  const followUps = needsFollowUpList();
+  const urgent = followUps.filter(f=>f.severity==='urgent').length;
+  const items = [];
+
+  if(urgent>0){
+    items.push(`
+    <button type="button" class="att-row att-urgent" data-goto-view="archive">
+      <span class="att-ico">🔴</span>
+      <span class="att-body"><b>${fmt(urgent)} حالة عاجلة</b><i>طلاب لا يسلّمون مهامهم — افتح تبويب المتابعة</i></span>
+      <span class="att-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
+    </button>`);
+  }
+
+  if(unassessed.length>0){
+    /* نجمع غير المرصودين حسب الشعبة حتى يفتح المعلم الشعبة مباشرة. */
+    const bySection = {};
+    unassessed.forEach(s=>{ (bySection[s.key] = bySection[s.key] || []).push(s.name); });
+    Object.keys(bySection).forEach(key=>{
+      const names = bySection[key];
+      items.push(`
+      <button type="button" class="att-row" data-goto-view="rasd" data-goto-tab="${escapeAttr(key)}">
+        <span class="att-ico">⛔</span>
+        <span class="att-body"><b>${fmt(names.length)} طالبًا لم تبدأ رصدهم في ${escapeAttr(key)}</b><i>${escapeAttr(names.slice(0,4).join('، '))}${names.length>4?` و${fmt(names.length-4)} غيرهم`:''}</i></span>
+        <span class="att-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
+      </button>`);
+    });
+  }
+
+  if(completion.total>0 && completion.pct<100){
+    items.push(`
+    <div class="att-row att-static">
+      <span class="att-ico">🗂️</span>
+      <span class="att-body">
+        <b>اكتمال الرصد ${completion.pct}%</b>
+        <span class="att-bar"><span class="att-fill" style="width:${completion.pct}%;"></span></span>
+        <i>${fmt(completion.filled)} من ${fmt(completion.total)} خانة رُصدت؛ الباقي ${symIcon("⬜")} لم يصل بعد.</i>
+      </span>
+    </div>`);
+  }
+
+  if(items.length===0){
+    if(completion.total===0) return ``;
+    return `
+    <div class="card att-card">
+      <h2>✅ كل شيء تمام</h2>
+      <div class="hint" style="margin-bottom:0;">الرصد مكتمل ولا توجد حالات عاجلة.</div>
+    </div>`;
+  }
+
+  return `
+  <div class="card att-card">
+    <h2>⚡ يحتاج انتباهك</h2>
+    ${items.join("")}
+  </div>`;
+}
+
 function renderHome(){
   const lh = STATE.letterhead || blankLetterhead();
   const teacher = (SECTION_KEYS.map(k=>STATE.meta[k] && STATE.meta[k].teacher).find(t=>t && t.trim()) || '').trim();
@@ -2589,6 +2858,8 @@ function renderHome(){
     <div class="home-avatar">${escapeAttr(initial)}</div>
   </div>
 
+  ${renderAttentionCard()}
+
   <div class="list-head"><b>شعبك</b><span>${SECTION_KEYS.length===0 ? 'لا توجد شعب بعد' : fmt(SECTION_KEYS.length)+' شعب'}</span></div>
   ${cards}
   <button type="button" class="add-row" id="home-add-section">
@@ -2613,6 +2884,7 @@ function wireHomeEvents(){
       render();
     });
   });
+  wireViewLinks();
   const add = document.getElementById('home-add-section');
   if(add) add.addEventListener('click', ()=> showAddSectionDialog());
   const nt = document.getElementById('home-new-term');
@@ -2650,9 +2922,10 @@ function render(){
     main.innerHTML = renderAnalysis();
     wireAnalysisEvents();
   } else if(view === 'archive'){
-    main.innerHTML = renderArchive();
+    main.innerHTML = renderFollowUpView();
     wireArchiveEvents();
     wireContactLogEvents();
+    wireFollowUpEvents();
   } else if(view === 'account'){
     main.innerHTML = renderAccount();
     wireAccountEvents();
@@ -2685,7 +2958,7 @@ function updateAppChrome(){
   const titles = {
     home:     ['الرصد الإلكتروني', `${lh.school || 'متوسطة أم القرى'}`],
     analysis: ['تحليل الأداء', `كل الشعب (${fmt(SECTION_KEYS.length)})`],
-    archive:  ['الإحالات', `${STATE.referrals.length} إحالة`],
+    archive:  ['المتابعة', `${needsFollowUpList().length} طالبًا يحتاج متابعة`],
     account:  ['حسابي', 'الإعدادات والنسخ الاحتياطية']
   };
   if(STATE.activeView === 'rasd'){
@@ -2707,7 +2980,7 @@ const NAV_ITEMS = [
   { view:'home',     label:'الرئيسية', icon:'<path d="m3 11 9-7.5 9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>' },
   { view:'rasd',     label:'الرصد',    icon:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9.5h18M9 9.5V20"/>' },
   { view:'analysis', label:'التحليل',  icon:'<path d="M4 20V11M10 20V5M16 20v-7M21 20H3"/>' },
-  { view:'archive',  label:'الإحالات', icon:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9.5 13h6M9.5 17h4"/>' },
+  { view:'archive',  label:'المتابعة', icon:'<path d="M9 11.5 11 13.5 15.5 9"/><path d="M20.5 12a8.5 8.5 0 1 1-3.6-6.9"/>' },
   { view:'account',  label:'حسابي',    icon:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>' }
 ];
 
@@ -2727,7 +3000,7 @@ function renderBottomNav(){
 }
 
 /* ================= EVENTS ================= */
-function wireAnalysisEvents(){
+function wireFollowUpEvents(){
   document.querySelectorAll('.fu-open-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const key = btn.dataset.key;
@@ -2741,7 +3014,53 @@ function wireAnalysisEvents(){
   if(printAllBtn){
     printAllBtn.addEventListener('click', ()=> printAllFollowUpReferrals());
   }
+}
+
+/* روابط التنقّل بين التبويبات داخل البطاقات (رقم في التحليل ← تبويب المتابعة). */
+function wireViewLinks(){
+  document.querySelectorAll('[data-goto-view]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const v = el.getAttribute('data-goto-view');
+      const tab = el.getAttribute('data-goto-tab');
+      if(tab && STATE.sections[tab]) STATE.activeTab = tab;
+      switchView(v);
+    });
+  });
+}
+
+function wireAnalysisEvents(){
+  wireViewLinks();
   drawAnalysisCharts();
+}
+
+/* ===== الرسوم البيانية =====
+   لوحة ألوان مفحوصة لا افتراضية: تدرّج التقديرات أحادي اللون تتصاعد قتامته مع
+   التقدير (آمن لعمى الألوان بالبناء لأن الترتيب يحمله السطوع لا الصبغة)، وكل
+   شريحة موسومة باسمها وعددها فلا تُحمَّل الهوية على اللون وحده. */
+const CHART_TEAL      = '#0E9179';
+const CHART_TEAL_SOFT = '#6FBCA7';
+const CHART_CRIT      = '#B4402F';
+const CHART_INK       = '#1F2421';
+const CHART_MUTED     = '#6B6660';
+const CHART_GRID      = '#EFEBE4';
+const CHART_SURFACE   = '#FFFFFF';
+const LEVEL_RAMP = ['#0A5F4E','#12866E','#3EA88E','#6FBCA7','#96CFC0'];
+
+function chartBaseOptions(){
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 260 },
+    plugins: {
+      legend: { display:false },
+      tooltip: {
+        backgroundColor: '#1F2421', titleColor:'#fff', bodyColor:'#fff',
+        titleFont:{ family:"'Readex Pro','Tajawal',sans-serif", size:12 },
+        bodyFont:{ family:"'Readex Pro','Tajawal',sans-serif", size:12 },
+        padding: 9, cornerRadius: 8, displayColors: false
+      }
+    }
+  };
 }
 
 function drawAnalysisCharts(retriesLeft){
@@ -2760,28 +3079,52 @@ function drawAnalysisCharts(retriesLeft){
   Object.values(ANALYSIS_CHART_INSTANCES).forEach(ch=>{ try{ ch.destroy(); }catch(e){} });
   ANALYSIS_CHART_INSTANCES = {};
 
+  Chart.defaults.font.family = "'Readex Pro','Tajawal',system-ui,sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = CHART_MUTED;
+
+  const pctAxis = (horizontal)=>({
+    beginAtZero:true, max:100,
+    grid:{ color:CHART_GRID, drawBorder:false },
+    ticks:{ callback:v=>v+'%', font:{size:10} },
+    border:{ display:false }
+  });
+  const catAxis = ()=>({
+    grid:{ display:false },
+    ticks:{ font:{size:11}, color:CHART_INK },
+    border:{ display:false }
+  });
+
+  /* ---- متوسط الشعب: سلسلة واحدة، لون واحد، بلا مفتاح (العنوان يسمّيها) ---- */
   const secCanvas = document.getElementById('chart-section-compare');
-  if(secCanvas){
+  if(secCanvas && ANALYSIS_CHART_DATA.sectionLabels.length>0){
     ANALYSIS_CHART_INSTANCES.section = new Chart(secCanvas, {
       type: 'bar',
       data: {
         labels: ANALYSIS_CHART_DATA.sectionLabels,
         datasets: [{
-          label: 'متوسط النسبة %',
+          label: 'متوسط الإنجاز',
           data: ANALYSIS_CHART_DATA.sectionValues,
-          backgroundColor: '#2A4B7C',
-          borderRadius: 6,
-          maxBarThickness: 46
+          backgroundColor: CHART_TEAL,
+          borderRadius: 4,
+          borderSkipped: 'bottom',
+          maxBarThickness: 42
         }]
       },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display:false }, title: { display:true, text:'مقارنة متوسط الشعب (%)', font:{size:12} } },
-        scales: { y: { beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } }
-      }
+      options: Object.assign(chartBaseOptions(), {
+        scales: { y: pctAxis(), x: catAxis() },
+        plugins: Object.assign(chartBaseOptions().plugins, {
+          title: { display:true, text:'متوسط إنجاز كل شعبة', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
+          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
+            callbacks:{ label: c=> ` ${c.parsed.y}%` }
+          })
+        })
+      })
     });
   }
 
+  /* ---- أداء البنود: أفقي لأن أسماء البنود عربية طويلة لا تتسع تحت عمود ----
+     اللون الأحمر هنا حالة (دون ٦٠٪) لا هوية سلسلة، ومعه وسم نصي في التلميح. */
   const itemCanvas = document.getElementById('chart-item-perf');
   if(itemCanvas && ANALYSIS_CHART_DATA.itemLabels.length>0){
     ANALYSIS_CHART_INSTANCES.item = new Chart(itemCanvas, {
@@ -2789,22 +3132,105 @@ function drawAnalysisCharts(retriesLeft){
       data: {
         labels: ANALYSIS_CHART_DATA.itemLabels,
         datasets: [{
-          label: 'متوسط الإنجاز %',
+          label: 'متوسط الإنجاز',
           data: ANALYSIS_CHART_DATA.itemValues,
-          backgroundColor: ANALYSIS_CHART_DATA.itemIsBest.map(b=> b ? '#1e6b2e' : '#c0392b'),
-          borderRadius: 6
+          backgroundColor: ANALYSIS_CHART_DATA.itemValues.map(v=> v<60 ? CHART_CRIT : CHART_TEAL),
+          borderRadius: 4,
+          borderSkipped: 'start',
+          maxBarThickness: 22
         }]
       },
-      options: {
+      options: Object.assign(chartBaseOptions(), {
         indexAxis: 'y',
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display:false }, title: { display:true, text:'أفضل وأضعف البنود (%)', font:{size:12} } },
-        scales: { x: { beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } }
-      }
+        scales: { x: pctAxis(true), y: catAxis() },
+        plugins: Object.assign(chartBaseOptions().plugins, {
+          title: { display:true, text:'أفضل وأضعف البنود', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
+          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
+            callbacks:{ label: c=> ` ${c.parsed.x}%${c.parsed.x<60 ? ' — دون الحد المقبول' : ''}` }
+          })
+        })
+      })
+    });
+  }
+
+  /* ---- توزيع التقديرات: دونات، الترتيب يحمله السطوع، وكل شريحة موسومة ---- */
+  const lvlCanvas = document.getElementById('chart-levels');
+  if(lvlCanvas && ANALYSIS_CHART_DATA.levelValues && ANALYSIS_CHART_DATA.levelTotal>0){
+    const total = ANALYSIS_CHART_DATA.levelTotal;
+    ANALYSIS_CHART_INSTANCES.levels = new Chart(lvlCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ANALYSIS_CHART_DATA.levelLabels,
+        datasets: [{
+          data: ANALYSIS_CHART_DATA.levelValues,
+          backgroundColor: LEVEL_RAMP,
+          borderColor: CHART_SURFACE,
+          borderWidth: 2,
+          hoverOffset: 4
+        }]
+      },
+      options: Object.assign(chartBaseOptions(), {
+        cutout: '58%',
+        plugins: Object.assign(chartBaseOptions().plugins, {
+          legend: {
+            display: true, position: 'right',
+            labels: {
+              boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded',
+              padding: 11, color: CHART_INK, font:{size:11},
+              generateLabels: (chart)=>{
+                const d = chart.data;
+                return d.labels.map((lb,i)=>({
+                  text: `${lb} — ${d.datasets[0].data[i]}`,
+                  fillStyle: d.datasets[0].backgroundColor[i],
+                  strokeStyle: d.datasets[0].backgroundColor[i],
+                  lineWidth: 0, index: i,
+                  hidden: false
+                }));
+              }
+            }
+          },
+          title: { display:true, text:`توزيع التقديرات — ${total} طالبًا`, color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:8} },
+          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
+            callbacks:{ label: c=> ` ${c.label}: ${c.parsed} طالبًا (${Math.round((c.parsed/total)*100)}%)` }
+          })
+        })
+      })
+    });
+  }
+
+  /* ---- مقارنة الفترات: أعمدة مزدوجة لا خط — نقطتان زمنيتان مقارنة لا اتجاه ---- */
+  const perCanvas = document.getElementById('chart-periods');
+  if(perCanvas && ANALYSIS_CHART_DATA.periodLabels && ANALYSIS_CHART_DATA.periodLabels.length>0){
+    ANALYSIS_CHART_INSTANCES.periods = new Chart(perCanvas, {
+      type: 'bar',
+      data: {
+        labels: ANALYSIS_CHART_DATA.periodLabels,
+        datasets: [
+          { label:'الفترة السابقة', data:ANALYSIS_CHART_DATA.periodPrev, backgroundColor:CHART_TEAL_SOFT, borderRadius:4, borderSkipped:'bottom', maxBarThickness:26 },
+          { label:'الفترة الحالية', data:ANALYSIS_CHART_DATA.periodCur,  backgroundColor:CHART_TEAL,      borderRadius:4, borderSkipped:'bottom', maxBarThickness:26 }
+        ]
+      },
+      options: Object.assign(chartBaseOptions(), {
+        scales: { y: pctAxis(), x: catAxis() },
+        plugins: Object.assign(chartBaseOptions().plugins, {
+          legend: { display:true, position:'bottom', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'rectRounded', padding:14, color:CHART_INK, font:{size:11} } },
+          title: { display:true, text:'الفترة السابقة مقابل الحالية', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
+          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
+            displayColors: true,
+            callbacks:{ label: c=> ` ${c.dataset.label}: ${c.parsed.y===null?'—':c.parsed.y+'%'}` }
+          })
+        })
+      })
     });
   }
 }
+
 function wireSectionEvents(key){
+  document.querySelectorAll('[data-due-head]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      showDueDateDialog(th.getAttribute('data-due-head'), parseInt(th.getAttribute('data-due-headgi')));
+    });
+  });
   document.getElementById('rows-body').addEventListener('click', (e)=>{
     const del = e.target.closest('[data-del]');
     if(del){
@@ -2915,10 +3341,19 @@ function wireSectionEvents(key){
       if(f) f.focus();
     }
   };
-  const btnToggleSectionMeta = document.getElementById('btn-toggle-sectionmeta');
-  if(btnToggleSectionMeta) btnToggleSectionMeta.addEventListener('click', toggleSectionMeta);
   const btnToggleSectionMetaStrip = document.getElementById('btn-toggle-sectionmeta-strip');
   if(btnToggleSectionMetaStrip) btnToggleSectionMetaStrip.addEventListener('click', toggleSectionMeta);
+
+  const btnToggleTools = document.getElementById('btn-toggle-tools');
+  if(btnToggleTools){
+    btnToggleTools.addEventListener('click', ()=>{
+      /* الشريط مفتوح قسرًا ما دام هناك تحديد، فإغلاقه يعني إلغاء التحديد أيضًا. */
+      if(SELECTED_ROWS.size>0) SELECTED_ROWS.clear();
+      else STATE.toolsOpen = !STATE.toolsOpen;
+      persistState();
+      render();
+    });
+  }
 
   /* مبدّل جدول / بطاقات */
   document.querySelectorAll('[data-roster-view]').forEach(b=>{
@@ -2988,6 +3423,37 @@ function wireSettingsPanelEvents(){
     });
   }
 
+  const btnToggleDates = document.getElementById('btn-toggle-dates');
+  if(btnToggleDates){
+    btnToggleDates.addEventListener('click', ()=>{
+      STATE.datesOpen = !STATE.datesOpen;
+      persistState();
+      render();
+    });
+  }
+  document.querySelectorAll('[data-due-key]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const k = inp.getAttribute('data-due-key');
+      const gi = parseInt(inp.getAttribute('data-due-gi'));
+      if(!STATE.config[k]) return;
+      if(!Array.isArray(STATE.config[k].dates)) STATE.config[k].dates = Array(STATE.config[k].count).fill('');
+      STATE.config[k].dates[gi] = inp.value || '';
+      persistState();
+      render();
+    });
+  });
+  const btnClearDates = document.getElementById('btn-clear-dates');
+  if(btnClearDates){
+    btnClearDates.addEventListener('click', ()=>{
+      showConfirmDialog('مسح كل المواعيد', 'سيتم مسح مواعيد التسليم لكل البنود. الرصد نفسه لا يتأثر. هل تريد المتابعة؟', ()=>{
+        CAT_KEYS.forEach(k=>{ STATE.config[k].dates = Array(STATE.config[k].count).fill(''); });
+        persistState();
+        render();
+        showToast('تم مسح كل المواعيد');
+      });
+    });
+  }
+
   const btnToggleGuide = document.getElementById('btn-toggle-guide');
   if(btnToggleGuide){
     btnToggleGuide.addEventListener('click', ()=>{
@@ -3008,7 +3474,8 @@ function wireSettingsPanelEvents(){
           name: nameEl.value,
           count: document.querySelector(`[data-cfg-count="${k}"]`).value,
           point: document.querySelector(`[data-cfg-point="${k}"]`).value,
-          color: STATE.config[k].color
+          color: STATE.config[k].color,
+          dates: STATE.config[k].dates
         };
       }
       const { config: newCfg, order: newOrder } = normalizeConfig(draft, CAT_KEYS.filter(k=>draft[k]));
@@ -3035,7 +3502,7 @@ function wireSettingsPanelEvents(){
     btnAddCat.addEventListener('click', ()=>{
       if(CAT_KEYS.length >= 8){ showAlertDialog('الحد الأقصى ٨ بنود في الكشف الواحد'); return; }
       const k = genCatKey(STATE.config);
-      STATE.config[k] = { name:`بند جديد ${CAT_KEYS.length+1}`, count:5, point:1, color: CAT_PALETTE[CAT_KEYS.length % CAT_PALETTE.length] };
+      STATE.config[k] = { name:`بند جديد ${CAT_KEYS.length+1}`, count:5, point:1, color: CAT_PALETTE[CAT_KEYS.length % CAT_PALETTE.length], dates: Array(5).fill('') };
       STATE.configOrder = CAT_KEYS.concat([k]);
       syncCatKeys();
       applyConfigToAllRows(STATE.config, CAT_KEYS);
@@ -3966,6 +4433,8 @@ function referralSheetHtml(data){
         </div>
       </div>` : ''}
 
+      ${troubledTasksTableHtml(data.tasks || [])}
+
       <div class="rf-section">
         <h3>ملاحظة المعلم</h3>
         <div class="rf-note">${escapeAttr(data.note)}</div>
@@ -3993,6 +4462,7 @@ function buildDefaultReferralData(key, idx){
     recipientLabel, term:meta.term,
     reasonLow: lowAchievement, reasonLate: frequentLate, reasonBoth: bothReasons, reasonOther:false, reasonOtherText:'',
     includeStats:true, assessedCount:ind.assessedCount, lateCount:ind.lateCount, ratioPct:ind.ratioPct, worstLabel:ind.worstLabel,
+    tasks: troubledTasks(row),
     note
   };
 }
@@ -4008,6 +4478,55 @@ function printReferralReport(data){
 /* ================= تقرير ولي الأمر ================= */
 /* ورقة مختصرة موجَّهة للبيت لا للإدارة: تفصيل البنود، مقارنة بمتوسط الشعبة،
    وتوصية المعلم، مع حقل توقيع ولي الأمر للإعادة. */
+/* المهام التي لم تصل أو تأخرت، بمواعيدها — عمود التقرير الذي طلبه المعلم:
+   «في تاريخ كذا لم يسلّم الواجب». الموعد مأخوذ من تعريف البند لا من صف الطالب. */
+function troubledTasks(row){
+  const out = [];
+  for(const k of CAT_KEYS){
+    const arr = row[k] || [];
+    arr.forEach((v, gi)=>{
+      if(v !== "❌" && v !== "⏰") return;
+      out.push({
+        label: `${STATE.config[k].name} ${gi+1}`,
+        due: itemDueDate(k, gi),
+        dueHijri: hijriFromISO(itemDueDate(k, gi)),
+        status: v === "❌" ? "لم يسلّم" : "سلّم متأخرًا",
+        kind: v === "❌" ? "miss" : "late"
+      });
+    });
+  }
+  /* المؤرَّخة أولًا بترتيب زمني، ثم غير المؤرَّخة كما هي. */
+  const dated = out.filter(t=>t.due).sort((a,b)=> a.due.localeCompare(b.due));
+  const undated = out.filter(t=>!t.due);
+  return dated.concat(undated);
+}
+
+function troubledTasksTableHtml(tasks){
+  if(tasks.length===0) return '';
+  const anyDate = tasks.some(t=>t.dueHijri);
+  return `
+      <div class="rf-section">
+        <h3>تفصيل المهام غير المسلَّمة والمتأخرة</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">المهمة</th>
+              ${anyDate ? `<th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">موعد التسليم</th>` : ``}
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tasks.map(t=>`<tr>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">${escapeAttr(t.label)}</td>
+              ${anyDate ? `<td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${escapeAttr(t.dueHijri || '—')}</td>` : ``}
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center; font-weight:${t.kind==='miss'?'700':'400'};">${escapeAttr(t.status)}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        ${anyDate ? `` : `<p style="font-size:10.5px; color:#666; margin:6px 0 0;">لإظهار مواعيد التسليم هنا، حدّدها من «حسابي ← مواعيد تسليم البنود».</p>`}
+      </div>`;
+}
+
 function buildParentReportData(key, idx){
   const row = STATE.sections[key][idx];
   const meta = STATE.meta[key] || blankMeta();
@@ -4046,7 +4565,8 @@ function buildParentReportData(key, idx){
     lateCount: c.lateCount, missCount: c.missCount,
     assessedCount: ind.assessedCount,
     levelName: studentLevelName(c, row.name.trim()===""),
-    cats, recommendation
+    cats, recommendation,
+    tasks: troubledTasks(row)
   };
 }
 
@@ -4126,6 +4646,8 @@ function parentReportHtml(d){
           </tbody>
         </table>
       </div>
+
+      ${troubledTasksTableHtml(d.tasks || [])}
 
       <div class="rf-section">
         <h3>توصية المعلم</h3>
