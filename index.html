@@ -2845,15 +2845,34 @@ function pickStudent(key){
   return pool[pool.length-1];
 }
 
-/* أول خانة فارغة في أول بند — الوجهة الافتراضية لرصد المشاركة. */
+/* بند المشاركة هو وجهة القرعة الافتراضية — وهو المقصود منها.
+   نتعرّف عليه بالاسم أولًا (فقد يُنشئ المعلم بندًا جديدًا بهذا الاسم)، ثم
+   بالمفتاح 'p' وهو مفتاح «المشاركة» الأصلي الذي ينجو من إعادة التسمية. */
+function participationKey(){
+  const byName = CAT_KEYS.find(k=> (STATE.config[k].name||'').includes('مشارك'));
+  if(byName) return byName;
+  if(STATE.config['p'] && CAT_KEYS.includes('p')) return 'p';
+  return CAT_KEYS[0] || null;
+}
+function firstEmptyIn(row, k){
+  const arr = (row && row[k]) || [];
+  for(let gi=0; gi<arr.length; gi++){ if(arr[gi] === '⬜') return gi; }
+  return -1;
+}
 function defaultPickerSlot(key, idx){
   const row = STATE.sections[key] && STATE.sections[key][idx];
-  for(const k of CAT_KEYS){
-    const arr = (row && row[k]) || [];
-    for(let gi=0; gi<arr.length; gi++){ if(arr[gi] === '⬜') return { k, gi }; }
+  const pk = participationKey();
+  if(pk){
+    const gi = firstEmptyIn(row, pk);
+    if(gi >= 0) return { k:pk, gi };
   }
-  const k0 = CAT_KEYS[0];
-  return k0 ? { k:k0, gi:0 } : null;
+  /* المشاركة ممتلئة: نتراجع لأول خانة فارغة في أي بند بدل الكتابة فوق رصد قائم.
+     الوجهة معروضة على الزر دائمًا، فلا شيء يُرصد في مكان لا يراه المعلم. */
+  for(const k of CAT_KEYS){
+    const gi = firstEmptyIn(row, k);
+    if(gi >= 0) return { k, gi };
+  }
+  return pk ? { k:pk, gi:0 } : null;
 }
 
 /* ===== شاشة رصد الحضور اليومي ===== */
