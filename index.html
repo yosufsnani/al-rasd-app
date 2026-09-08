@@ -1271,7 +1271,7 @@ function sumGroup(arr, fullVal, halfVal){
 
 function studentCalc(row){
   const cfg = STATE.config;
-  let final = 0, maxGrade = 0, lateCount = 0, missCount = 0;
+  let final = 0, maxGrade = 0, lateCount = 0, missCount = 0, fullCount = 0, assessed = 0;
   const sums = {};
   for(const k of CAT_KEYS){
     const arr = row[k] || [];
@@ -1281,22 +1281,36 @@ function studentCalc(row){
     sums[k+'Sum'] = sum;
     final += sum;
     maxGrade += (arr.length - countSym(arr,"⬜")) * full;
+    assessed += arr.length - countSym(arr,"⬜");
     lateCount += countSym(arr,"⏰");
     missCount += countSym(arr,"❌");
+    fullCount += countSym(arr,"✔️");
   }
   const ratio = maxGrade>0 ? final/maxGrade : null;
-  const lowRatio = maxGrade>0 ? (final/maxGrade < 0.6) : false;
+  /* لا يُحكم بالنسبة قبل ثلاث خانات مرصودة: طالب عليه ❌ واحد نسبته ٠٪، وهذه
+     خانة واحدة لا تعثّر. المُشغّلان الآخران (٣ عدم تسليم، ٥ تأخيرات) يضمنان
+     عيّنة كافية بطبيعتهما فلا يحتاجان هذا الشرط. */
+  const enoughData = assessed >= 3;
+  const lowRatio = enoughData && maxGrade>0 && (final/maxGrade < 0.6);
+
+  /* نسبة التسليم: كم مهمة سلّمها فعلًا (في وقتها أو متأخرًا) من المرصود.
+     نحتاجها لأن النسبة وحدها لا تفرّق بين من لم يسلّم ومن سلّم متأخرًا:
+     التأخير نصف درجة، فمن سلّم كل شيء متأخرًا نسبته ٥٠٪ دائمًا. */
+  const submittedRatio = assessed>0 ? (fullCount + lateCount)/assessed : null;
+  const lowDelivery = enoughData && submittedRatio!==null && submittedRatio < 0.75;
+
   /* ثلاثة مُشغّلات للمتابعة، مطابقة لكشف المتابعة الورقي: انخفاض الإنجاز،
      أو تكرار التأخر، أو تكرار عدم التسليم. */
   let flag = "";
   if(row.name.trim()!==""){
     if(lowRatio || lateCount>=5 || missCount>=3) flag = "⚠ نعم";
   }
-  /* درجة الخطورة داخل من يحتاج متابعة — لا تضيف طلابًا جددًا، تفرّق بينهم فقط:
-     عاجل = انخفاض إنجاز أو ٣ حالات عدم تسليم فأكثر، وإلا تنبيه (تكرار تأخر). */
+  /* الخطورة تُقاس بسلوك التسليم لا بالنسبة وحدها:
+     عاجل = لا يسلّم (٣ حالات عدم تسليم فأكثر، أو ربع المهام فأكثر لم تصل)،
+     متابعة = يسلّم لكن متأخرًا، فانخفاض درجته سببه التأخير لا الغياب عن المهمة. */
   let severity = "";
-  if(flag === "⚠ نعم") severity = (lowRatio || missCount>=3) ? "urgent" : "warn";
-  return Object.assign(sums, {final,maxGrade,lateCount,missCount,ratio,flag,severity});
+  if(flag === "⚠ نعم") severity = (missCount>=3 || lowDelivery) ? "urgent" : "warn";
+  return Object.assign(sums, {final,maxGrade,assessed,lateCount,missCount,fullCount,ratio,submittedRatio,lowDelivery,flag,severity});
 }
 
 const SEV_LABEL = {urgent:"🔴 عاجل", warn:"🟡 متابعة"};   // نص خام للتصدير إلى Excel
@@ -1656,8 +1670,8 @@ function renderGuideCard(){
       </ul>
       <h3>متى يظهر الطالب في «يحتاج متابعة»؟</h3>
       <ul>
-        <li>${sevBadge("urgent")} <b>عاجل</b>: نسبة إنجازه أقل من ٦٠٪، أو عنده ٣ حالات عدم تسليم ${symIcon("❌")} فأكثر.</li>
-        <li>${sevBadge("warn")} <b>متابعة</b>: عنده ٥ تأخيرات ${symIcon("⏰")} فأكثر مع بقاء إنجازه مقبولًا.</li>
+        <li>${sevBadge("urgent")} <b>عاجل — لا يسلّم</b>: عنده ٣ حالات عدم تسليم ${symIcon("❌")} فأكثر، أو لم تصل منه ربع المهام المرصودة فأكثر.</li>
+        <li>${sevBadge("warn")} <b>متابعة — يسلّم متأخرًا</b>: يسلّم مهامه لكن بتأخير متكرر (٥ تأخيرات ${symIcon("⏰")} فأكثر). درجته منخفضة بسبب التأخير نفسه لا بسبب الغياب عن المهمة.</li>
         <li>المستويات: ممتاز ٩٠٪ فأكثر · جيد ٧٥–٨٩٪ · يحتاج تحسين أقل من ٧٥٪.</li>
       </ul>
       <h3>الطباعة</h3>
@@ -1765,7 +1779,7 @@ function renderSectionSheet(key, opts){
     <div class="legend">
       <div><b>الرموز:</b> اضغط على أي خلية لفتح قائمة الاختيار — ${symIcon("✔️")} = درجة كاملة &nbsp; ${symIcon("❌")} = صفر &nbsp; ${symIcon("⏰")} = نصف درجة (متأخر بالتسليم) &nbsp; ${symIcon("⬜")} = لم يصل له بعد (لا يُحسب)</div>
       <div><b>ألوان درجة الطالب:</b> 🟩 أخضر = 80% فأكثر من الدرجة القصوى &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
-      <div><b>شريط المتابعة (على يمين الصف):</b> ${sevBadge("urgent")} = الإنجاز أقل من 60% أو 3 حالات عدم تسليم ${symIcon("❌")} فأكثر &nbsp; ${sevBadge("warn")} = 5 تأخيرات ${symIcon("⏰")} فأكثر مع بقاء الإنجاز مقبولًا</div>
+      <div><b>شريط المتابعة (على يمين الصف):</b> ${sevBadge("urgent")} = لا يسلّم — 3 حالات عدم تسليم ${symIcon("❌")} فأكثر أو لم يصل ربع المرصود &nbsp; ${sevBadge("warn")} = يسلّم متأخرًا — 5 تأخيرات ${symIcon("⏰")} فأكثر والمهام تصل</div>
     </div>
     <div class="print-footer">
       <div>معلم المادة: ${escapeAttr(meta.teacher)}</div>
@@ -1811,9 +1825,11 @@ function needsFollowUpList(){
       const lowRatio = c.maxGrade>0 ? (c.final/c.maxGrade < 0.6) : false;
       const frequentLate = c.lateCount>=5;
       const reasons = [];
-      if(lowRatio) reasons.push("انخفاض الإنجاز");
-      if(frequentLate) reasons.push("تكرار التأخر");
       if(c.missCount>=3) reasons.push("تكرار عدم التسليم");
+      if(frequentLate) reasons.push("تكرار التأخر");
+      /* لا نكرّر «انخفاض الإنجاز» على من سلّم كل شيء متأخرًا: انخفاضه ناتج عن
+         التأخير نفسه، وذكره سببًا مستقلًا يوحي بمشكلتين وهي واحدة. */
+      if(lowRatio && !(frequentLate && !c.lowDelivery)) reasons.push("انخفاض الإنجاز");
       list.push({key, idx, name:row.name, ratioPct: c.ratio!==null ? Math.round(c.ratio*100) : null, lateCount:c.lateCount, missCount:c.missCount, severity:c.severity, reason: reasons.join(" و ") || "—"});
     });
   }
@@ -2129,7 +2145,7 @@ function renderAnalysis(opts){
       </tbody>
     </table>
     </div>
-    <div class="hint" style="margin-top:8px;">${sevBadge("urgent")} انخفاض الإنجاز عن ٦٠٪ أو ٣ حالات عدم تسليم فأكثر &nbsp;·&nbsp; ${sevBadge("warn")} تكرار التأخر (٥ تأخيرات فأكثر) مع بقاء الإنجاز مقبولًا.</div>`}
+    <div class="hint" style="margin-top:8px;">${sevBadge("urgent")} <b>لا يسلّم</b>: ٣ حالات عدم تسليم فأكثر، أو لم تصل منه ربع المهام المرصودة فأكثر &nbsp;·&nbsp; ${sevBadge("warn")} <b>يسلّم متأخرًا</b>: تأخير متكرر لكن المهام تصل. ملاحظة: التأخير نصف درجة، فمن يسلّم كل شيء متأخرًا نسبته ٥٠٪ — وهذا تأخر لا تعثّر.</div>`}
   </div>`;
 
   /* ---- 🟡 منطقة الإنذار المبكر ---- */
@@ -4241,7 +4257,7 @@ function exportXlsx(){
     footer2[24] = `مدير المدرسة: ${meta.principal}`;
     const footer3 = [null, "الرموز: ✔️ = درجة كاملة    ❌ = صفر    ⏰ = نصف درجة (متأخر بالتسليم)    ⬜ = لم يصل له بعد"];
     const footer4 = [null, "الألوان: 🟩 أخضر = 80% فأكثر   🟨 أصفر = 60–79%   🟥 أحمر = أقل من 60%"];
-    const footer5 = [null, "المتابعة: 🔴 عاجل = إنجاز أقل من 60% أو 3 حالات عدم تسليم فأكثر   🟡 متابعة = 5 تأخيرات فأكثر مع إنجاز مقبول"];
+    const footer5 = [null, "المتابعة: 🔴 عاجل (لا يسلّم) = 3 حالات عدم تسليم فأكثر أو لم يصل ربع المرصود   🟡 متابعة (يسلّم متأخرًا) = 5 تأخيرات فأكثر والمهام تصل"];
     const aoa = [headerRow1, headerRow2, titleRow, grp, sub, ...rows, [], footer2, footer3, footer4, footer5];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!dir'] = 'rtl';
