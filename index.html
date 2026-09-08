@@ -463,6 +463,21 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .att-bar{display:block; height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin:3px 0 2px;}
 .att-fill{display:block; height:6px; border-radius:3px; background:var(--teal);}
 
+/* شريط فشل الحفظ — ثابت لا يزول حتى ينجح الحفظ */
+.save-banner{
+  position:fixed; inset-inline:0; bottom:calc(var(--nav-h) + 8px); z-index:400;
+  margin:0 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:#7A2A1E; color:#fff; border-radius:12px; padding:10px 13px;
+  font-size:12px; line-height:1.7; box-shadow:0 6px 20px rgba(0,0,0,.22);
+}
+.save-banner button{
+  margin-inline-start:auto; flex:0 0 auto; border:1px solid rgba(255,255,255,.5);
+  background:transparent; color:#fff; border-radius:8px; padding:5px 11px;
+  font-size:11.5px; font-family:inherit; cursor:pointer;
+}
+.save-banner button:disabled{opacity:.6; cursor:default;}
+@media print{ .save-banner{display:none !important;} }
+
 .chip-list{display:flex; flex-wrap:wrap; gap:7px;}
 .chip-item{
   display:inline-flex; align-items:baseline; gap:5px; background:var(--surface-2); color:var(--text);
@@ -1088,9 +1103,14 @@ let STATE = {
   contacts: []
 };
 
+/* تبني حالة جديدة من SEED وحدها، لا من SECTION_KEYS.
+   السبب: SECTION_KEYS متغيّر عام يعيد applyLoadedState كتابته بأسماء شعب المعلم،
+   فكان استدعاء freshState() بعد أي تحميل ناجح يرمي خطأً على SEED[k] غير الموجود —
+   وهو ما يحدث فعلًا عند استعادة نسخة احتياطية تالفة، فيموت الاستيراد بلا رسالة. */
 function freshState(){
-  const s = { activeView:'home', activeTab: SECTION_KEYS[0], rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: SECTION_KEYS.slice(), referrals: [], contacts: [] };
-  for(const k of SECTION_KEYS){
+  const seedKeys = Object.keys(SEED);
+  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
+  for(const k of seedKeys){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
       p: row.p.slice(), h: row.h.slice(), t: row.t.slice(), j: row.j.slice()
@@ -1127,19 +1147,29 @@ function normalizeLoadedState(obj){
 /* يحمّل رصد المعلم من حسابه السحابي في Supabase (جدول rasd_data، صف واحد لكل معلم
    بمفتاح CLOUD_KEY) بدل localStorage. بدون تسجيل دخول (مثل معاينة file:// المحلية)
    يرجع بيانات افتراضية جديدة فقط، دون حفظ. */
+/* الحفظ ممنوع حتى نتأكد أننا قرأنا بيانات المعلم فعلًا.
+   السبب: هذه الدالة كانت ترجع freshState() عند فشل القراءة، فيرى المعلم شعبًا
+   تجريبية، وأول ضغطة خانة كانت ترفع تلك الحالة الفارغة فوق رصد الفصل كله.
+   الحفظ لا يُفتح إلا بعد قراءة ناجحة — ولو كان الصف غير موجود أصلًا (حساب جديد). */
+let SAVE_ENABLED = false;
+let LAST_SAVE_FAILED = false;
+
+/* يرجع {ok, state} — ok:false تعني «تعذّر الوصول للبيانات»، لا «لا توجد بيانات». */
 async function loadState(){
   try{
     const sb = window.supabaseClient;
-    const { data: sess } = await sb.auth.getSession();
+    const { data: sess, error: sessErr } = await sb.auth.getSession();
+    if(sessErr) throw sessErr;
     const uid = sess && sess.session ? sess.session.user.id : null;
-    if(!uid) return freshState();
+    /* بلا تسجيل دخول (معاينة file:// محلية): بيانات افتراضية بلا حفظ. */
+    if(!uid) return { ok:true, saveable:false, state: freshState() };
     const { data, error } = await sb.from('rasd_data').select('value').eq('user_id', uid).eq('key', CLOUD_KEY).maybeSingle();
     if(error) throw error;
-    return normalizeLoadedState(data ? data.value : null);
+    /* data === null يعني حسابًا جديدًا لا صفّ له بعد — قراءة ناجحة، والحفظ مسموح. */
+    return { ok:true, saveable:true, state: normalizeLoadedState(data ? data.value : null) };
   }catch(e){
     console.warn('تعذّر تحميل البيانات من الحساب السحابي', e);
-    showToast('⚠️ تعذّر تحميل بياناتك — تحقق من اتصالك بالإنترنت وحدّث الصفحة');
-    return freshState();
+    return { ok:false, error:e };
   }
 }
 
@@ -1228,6 +1258,8 @@ function deleteSection(name){
 
 let saveTimer;
 function persistState(){
+  /* لا نكتب شيئًا ما لم تنجح القراءة أولًا — وإلا كتبنا فوق بيانات لم نرَها. */
+  if(!SAVE_ENABLED) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
     try{
@@ -1240,11 +1272,37 @@ function persistState(){
         { onConflict: 'user_id,key' }
       );
       if(error) throw error;
+      if(LAST_SAVE_FAILED){ LAST_SAVE_FAILED = false; updateSaveBanner(); }
     }catch(e){
       console.warn('تعذّر الحفظ السحابي', e);
-      showToast('⚠️ تعذّر حفظ آخر تعديل — تحقق من اتصالك بالإنترنت');
+      /* تنبيه ثابت لا يزول: التنبيه العابر كان يختفي قبل أن يراه المعلم فيغلق
+         الصفحة ظانًّا أن عمله محفوظ. */
+      LAST_SAVE_FAILED = true;
+      updateSaveBanner();
     }
   }, 250);
+}
+
+/* شريط ثابت أعلى الصفحة يبقى ما دام آخر حفظ فاشلًا. */
+function updateSaveBanner(){
+  let el = document.getElementById('save-banner');
+  if(!LAST_SAVE_FAILED){ if(el) el.remove(); return; }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'save-banner';
+    el.className = 'save-banner';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <span>⚠️ تعذّر حفظ آخر تعديل — تحقق من اتصالك ولا تغلق الصفحة</span>
+    <button type="button" id="save-retry">إعادة المحاولة</button>`;
+  const btn = document.getElementById('save-retry');
+  if(btn) btn.addEventListener('click', ()=>{
+    btn.disabled = true;
+    btn.textContent = 'جارٍ المحاولة…';
+    persistState();
+    setTimeout(()=>{ if(LAST_SAVE_FAILED) updateSaveBanner(); }, 1500);
+  });
 }
 
 function setupSignaturePad(){
@@ -4936,10 +4994,60 @@ function printAllFollowUpReferrals(){
 /* ================= INIT ================= */
 /* يستدعيها overlay تسجيل الدخول بعد التحقق من الجلسة بنجاح (انظر السكربت بعد <body> مباشرة).
    لا شيء يُرسم قبل ذلك — الشاشة يغطيها overlay تسجيل الدخول أصلًا. */
-window.rasdStartApp = async function(){
-  applyLoadedState(await loadState());
+/* شاشة «تعذّر التحميل» — تحلّ محل التطبيق بالكامل ولا تسمح بأي تحرير، لأن
+   السماح بالتحرير فوق بيانات لم تُقرأ هو بالضبط ما كان يمحو رصد الفصل. */
+function renderLoadFailure(){
+  const main = document.getElementById('main');
+  const nav = document.getElementById('bottomnav');
+  const actions = document.getElementById('header-actions');
+  if(nav) nav.hidden = true;
+  if(actions) actions.hidden = true;
+  const bar = document.getElementById('tabbar');
+  if(bar){ bar.innerHTML = ''; bar.hidden = true; }
+  const h1 = document.querySelector('header.app-top h1');
+  const p  = document.querySelector('header.app-top p');
+  if(h1) h1.textContent = 'الرصد الإلكتروني';
+  if(p)  p.textContent  = 'تعذّر الاتصال';
+  main.innerHTML = `
+    <div class="card" style="text-align:center; padding:30px 20px;">
+      <div style="font-size:34px; line-height:1; margin-bottom:14px;">📡</div>
+      <h2 style="justify-content:center; margin-bottom:10px;">تعذّر تحميل بياناتك</h2>
+      <div class="hint" style="margin:0 auto 18px; max-width:340px; text-align:center;">
+        لم نتمكن من قراءة رصدك من حسابك السحابي — غالبًا انقطاع في الاتصال.
+        <b>بياناتك سليمة ولم يُمسّها شيء</b>، والتحرير موقوف حتى تنجح القراءة حتى لا يُكتب فوقها.
+      </div>
+      <button type="button" class="primary" id="btn-retry-load" style="min-width:170px;">🔄 إعادة المحاولة</button>
+    </div>`;
+  const btn = document.getElementById('btn-retry-load');
+  btn.addEventListener('click', async ()=>{
+    btn.disabled = true;
+    btn.textContent = 'جارٍ المحاولة…';
+    const res = await loadState();
+    if(!res.ok){
+      btn.disabled = false;
+      btn.textContent = '🔄 إعادة المحاولة';
+      showToast('لا يزال الاتصال متعذرًا — حاول مرة أخرى بعد قليل');
+      return;
+    }
+    if(nav) nav.hidden = false;
+    bootWithState(res);
+  });
+}
+
+function bootWithState(res){
+  applyLoadedState(res.state);
+  SAVE_ENABLED = !!res.saveable;
   updateAppHeader();
   render();
+}
+
+window.rasdStartApp = async function(){
+  const res = await loadState();
+  if(!res.ok){
+    renderLoadFailure();
+    return;
+  }
+  bootWithState(res);
 
   // Lock background scrolling whenever a dialog / overlay is open, so the
   // roster table can't scroll behind a modal that has its own scroll area.
