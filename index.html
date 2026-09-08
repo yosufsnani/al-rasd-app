@@ -376,10 +376,9 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .ref-card-actions .ref-delete{color:#b91c1c; border-color:#f3c6c6;}
 
 /* ===== Analysis extra widgets (summary bar / items / follow-up / delays / levels) ===== */
-.ref-summary-item.lvl-excellent .v{color:#1e6b2e;}
-.ref-summary-item.lvl-good .v{color:#2A4B7C;}
-.ref-summary-item.lvl-improve .v{color:#a15c00;}
-.ref-summary-item.lvl-followup .v{color:#9c1c28;}
+.ref-summary-item.lvl-tier{background:var(--tier-bg);}
+.ref-summary-item.lvl-tier .v{color:var(--tier-fg);}
+.ref-summary-item.lvl-tier span:last-child{color:var(--tier-fg); opacity:.85;}
 .bar-fill.bar-bad{background:#c0392b;}
 .item-perf-row{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px; padding:7px 0; border-bottom:1px dashed #eef0f3;}
 .item-perf-row:last-child{border-bottom:none;}
@@ -1436,7 +1435,7 @@ function renderSectionRows(key){
       ).join("")}
       <td class="final-c ${finalClass}">${fmt(c.final)}</td>
       <td class="max-c">${fmt(c.maxGrade)}</td>
-      <td class="level-c">${studentLevelName(c, empty)}</td>
+      <td class="level-c" style="background:${studentLevel(c, empty).bg}; color:${studentLevel(c, empty).fg};">${studentLevelName(c, empty)}</td>
       <td class="flag-c">${sevBadge(c.severity)}</td>
       <td class="row-del" data-del="${idx}" data-key="${key}" title="حذف الصف">🗑️</td>
     </tr>`;
@@ -1453,13 +1452,26 @@ function escapeAttr(s){
 
 /* ================= RENDER: عرض البطاقات ================= */
 /* نفس عتبات levelDistribution حرفيًا حتى لا تختلف البطاقة عن لوحة التحليل */
+/* التقدير يقيس الدرجة وحدها ولا يعرف شيئًا عن المتابعة: المتابعة عمود مستقل
+   وشريط مستقل. طالب ممتاز قد يسلّم متأخرًا، وطالب ضعيف قد يسلّم كل شيء في وقته —
+   ودمج المحورين في عمود واحد كان يمحو أحدهما.
+   الألوان تدرّج هادئ من الأخضر إلى البُني الدافئ، والأحمر والكهرماني محجوزان
+   لشريط المتابعة وحده حتى تُقرأ الإشارتان دون التباس. */
+const LEVEL_TIERS = [
+  { min:0.90, name:"ممتاز",    bg:"#DCEFE8", fg:"#0A6F5C" },
+  { min:0.80, name:"جيد جدًا", bg:"#E8F1EC", fg:"#2E7D64" },
+  { min:0.70, name:"جيد",      bg:"#F0EEE9", fg:"#6B6660" },
+  { min:0.60, name:"مقبول",    bg:"#EFE9E0", fg:"#7A6A55" },
+  { min:0,    name:"ضعيف",     bg:"#E4DCD1", fg:"#5C4A38" }
+];
+const LEVEL_PENDING = { name:"قيد الرصد", bg:"var(--empty)", fg:"var(--muted)" };
+const LEVEL_NONE    = { name:"لم يُرصد",  bg:"var(--empty)", fg:"var(--muted)" };
 function studentLevel(c, empty){
-  if(empty || c.maxGrade===0) return {name:"لم يُرصد",      bg:"var(--empty)",     fg:"var(--muted)"};
-  if(c.severity==="urgent")   return {name:"متابعة عاجلة",  bg:"var(--red)",       fg:"var(--red-t)"};
-  if(c.severity==="warn")     return {name:"يحتاج متابعة",  bg:"var(--orange)",    fg:"var(--orange-t)"};
-  if(c.ratio>=0.9)            return {name:"ممتاز",         bg:"var(--green)",     fg:"var(--green-t)"};
-  if(c.ratio>=0.75)           return {name:"جيد",           bg:"var(--teal-soft)", fg:"var(--teal-d)"};
-  return {name:"يحتاج تحسين", bg:"var(--yellow)", fg:"var(--yellow-t)"};
+  if(empty || !c.assessed) return LEVEL_NONE;
+  /* أقل من ثلاث خانات لا يُبنى عليها تقدير — نفس شرط العيّنة في المتابعة. */
+  if(c.assessed < 3 || c.ratio === null) return LEVEL_PENDING;
+  for(const t of LEVEL_TIERS){ if(c.ratio >= t.min) return t; }
+  return LEVEL_TIERS[LEVEL_TIERS.length-1];
 }
 function studentLevelName(c, empty){ return studentLevel(c, empty).name; }
 function studentLevelChip(c, empty){
@@ -1672,7 +1684,12 @@ function renderGuideCard(){
       <ul>
         <li>${sevBadge("urgent")} <b>عاجل — لا يسلّم</b>: عنده ٣ حالات عدم تسليم ${symIcon("❌")} فأكثر، أو لم تصل منه ربع المهام المرصودة فأكثر.</li>
         <li>${sevBadge("warn")} <b>متابعة — يسلّم متأخرًا</b>: يسلّم مهامه لكن بتأخير متكرر (٥ تأخيرات ${symIcon("⏰")} فأكثر). درجته منخفضة بسبب التأخير نفسه لا بسبب الغياب عن المهمة.</li>
-        <li>المستويات: ممتاز ٩٠٪ فأكثر · جيد ٧٥–٨٩٪ · يحتاج تحسين أقل من ٧٥٪.</li>
+        </ul>
+      <h3>التقدير شيء والمتابعة شيء آخر</h3>
+      <ul>
+        <li><b>التقدير</b> يقيس الدرجة وحدها: ممتاز ٩٠٪ فأكثر · جيد جدًا ٨٠–٨٩٪ · جيد ٧٠–٧٩٪ · مقبول ٦٠–٦٩٪ · ضعيف أقل من ٦٠٪.</li>
+        <li><b>المتابعة</b> تقيس سلوك التسليم لا الدرجة. فقد يكون الطالب <b>ممتازًا</b> ومع ذلك عليه شريط متابعة لأنه يسلّم متأخرًا، وقد يكون <b>ضعيفًا</b> بلا شريط لأنه يسلّم كل شيء في وقته ومشكلته في الفهم لا في الالتزام.</li>
+        <li>التقدير لا يظهر قبل رصد ثلاث خانات على الأقل — تظهر «قيد الرصد» حتى تكتمل.</li>
       </ul>
       <h3>الطباعة</h3>
       <ul>
@@ -1778,7 +1795,8 @@ function renderSectionSheet(key, opts){
     </div>
     <div class="legend">
       <div><b>الرموز:</b> اضغط على أي خلية لفتح قائمة الاختيار — ${symIcon("✔️")} = درجة كاملة &nbsp; ${symIcon("❌")} = صفر &nbsp; ${symIcon("⏰")} = نصف درجة (متأخر بالتسليم) &nbsp; ${symIcon("⬜")} = لم يصل له بعد (لا يُحسب)</div>
-      <div><b>ألوان درجة الطالب:</b> 🟩 أخضر = 80% فأكثر من الدرجة القصوى &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
+      <div><b>عمود المجموع النهائي:</b> 🟩 أخضر = 80% فأكثر &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
+      <div><b>عمود المستوى:</b> ممتاز 90%+ · جيد جدًا 80–89% · جيد 70–79% · مقبول 60–69% · ضعيف أقل من 60% — يقيس الدرجة وحدها، مستقلًا عن عمود المتابعة</div>
       <div><b>شريط المتابعة (على يمين الصف):</b> ${sevBadge("urgent")} = لا يسلّم — 3 حالات عدم تسليم ${symIcon("❌")} فأكثر أو لم يصل ربع المرصود &nbsp; ${sevBadge("warn")} = يسلّم متأخرًا — 5 تأخيرات ${symIcon("⏰")} فأكثر والمهام تصل</div>
     </div>
     <div class="print-footer">
@@ -1856,17 +1874,19 @@ function topLateStudents(limit){
 }
 
 /* ---- Level distribution across all sections ---- */
+/* توزيع التقديرات وحدها — عدد من يحتاج متابعة موجود في الشريط العلوي، ولا محل
+   له هنا: الخلط بينهما كان يُخرج طالبًا ممتازًا من خانة الممتازين لأنه يتأخر. */
 function levelDistribution(){
-  const buckets = {"ممتاز":0, "جيد":0, "يحتاج تحسين":0, "يحتاج متابعة":0};
+  const buckets = {};
+  LEVEL_TIERS.forEach(t=> buckets[t.name] = 0);
+  buckets[LEVEL_PENDING.name] = 0;
   for(const key of SECTION_KEYS){
     STATE.sections[key].forEach(row=>{
       if(row.name.trim()==="") return;
       const c = studentCalc(row);
-      if(c.maxGrade===0) return;
-      if(c.flag==="⚠ نعم") buckets["يحتاج متابعة"]++;
-      else if(c.ratio>=0.9) buckets["ممتاز"]++;
-      else if(c.ratio>=0.75) buckets["جيد"]++;
-      else buckets["يحتاج تحسين"]++;
+      if(!c.assessed) return;
+      const name = studentLevel(c, false).name;
+      if(buckets[name] !== undefined) buckets[name]++;
     });
   }
   return buckets;
@@ -2189,14 +2209,18 @@ function renderAnalysis(opts){
   const levels = levelDistribution();
   const levelCard = `
   <div class="card">
-    <h2>🏆 توزيع المستوى</h2>
+    <h2>🏆 توزيع التقديرات</h2>
     <div class="ref-summary">
-      <div class="ref-summary-item lvl-excellent"><span class="v">${levels["ممتاز"]}</span><span>ممتاز</span></div>
-      <div class="ref-summary-item lvl-good"><span class="v">${levels["جيد"]}</span><span>جيد</span></div>
-      <div class="ref-summary-item lvl-improve"><span class="v">${levels["يحتاج تحسين"]}</span><span>يحتاج تحسين</span></div>
-      <div class="ref-summary-item lvl-followup"><span class="v">${levels["يحتاج متابعة"]}</span><span>يحتاج متابعة</span></div>
+      ${LEVEL_TIERS.map(t=>`
+      <div class="ref-summary-item lvl-tier" style="--tier-bg:${t.bg}; --tier-fg:${t.fg};">
+        <span class="v">${levels[t.name]}</span><span>${t.name}</span>
+      </div>`).join("")}
+      ${levels[LEVEL_PENDING.name]>0 ? `
+      <div class="ref-summary-item lvl-tier" style="--tier-bg:var(--empty); --tier-fg:var(--muted);">
+        <span class="v">${levels[LEVEL_PENDING.name]}</span><span>${LEVEL_PENDING.name}</span>
+      </div>` : ``}
     </div>
-    <div class="hint">التصنيف مبني على نسبة الإنجاز من الدرجة القصوى المتاحة حاليًا لكل طالب.</div>
+    <div class="hint">ممتاز ٩٠٪ فأكثر · جيد جدًا ٨٠–٨٩٪ · جيد ٧٠–٧٩٪ · مقبول ٦٠–٦٩٪ · ضعيف أقل من ٦٠٪ — من نسبة الإنجاز من الدرجة القصوى المتاحة له حاليًا. التقدير يقيس الدرجة فقط؛ حاجة الطالب للمتابعة إشارة مستقلة تجدها في بطاقة «يحتاج متابعة».</div>
   </div>`;
 
   /* ---- 🗂️ اكتمال الرصد ---- */
