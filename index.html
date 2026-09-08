@@ -3987,13 +3987,23 @@ function drawAnalysisCharts(retriesLeft){
   }
 }
 
+/* عناصر كثيرة في هذه الشاشة اختيارية: أدوات الشعبة مطوية افتراضيًا، وبطاقة
+   بيانات الشعبة مطوية، وشاشتا «سريع» و«الحضور» تظهران في وضعهما فقط. ربطها
+   بـ getElementById(...).addEventListener مباشرة كان يرمي على أول عنصر غائب
+   فيموت كل ما بعده في هذه الدالة — ومنه مبدّل طريقة العرض نفسه. */
+function on(id, ev, fn){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(ev, fn);
+  return el;
+}
+
 function wireSectionEvents(key){
   document.querySelectorAll('[data-due-head]').forEach(th=>{
     th.addEventListener('click', ()=>{
       showDueDateDialog(th.getAttribute('data-due-head'), parseInt(th.getAttribute('data-due-headgi')));
     });
   });
-  document.getElementById('rows-body').addEventListener('click', (e)=>{
+  on('rows-body', 'click', (e)=>{
     const del = e.target.closest('[data-del]');
     if(del){
       const idx = parseInt(del.dataset.idx ?? del.getAttribute('data-del'));
@@ -4022,7 +4032,7 @@ function wireSectionEvents(key){
     }
   });
 
-  document.getElementById('btn-add-row').addEventListener('click', ()=>{
+  on('btn-add-row', 'click', ()=>{
     const cfg = STATE.config;
     const newRow = {name:""};
     for(const k of CAT_KEYS) newRow[k] = Array(cfg[k].count).fill("⬜");
@@ -4032,11 +4042,11 @@ function wireSectionEvents(key){
     showToast('تمت إضافة طالب جديد');
   });
 
-  document.getElementById('btn-import-students').addEventListener('click', ()=>{
+  on('btn-import-students', 'click', ()=>{
     showImportStudentsDialog(key);
   });
 
-  document.getElementById('btn-select-empty').addEventListener('click', ()=>{
+  on('btn-select-empty', 'click', ()=>{
     let found = 0;
     STATE.sections[key].forEach((r,idx)=>{
       if(r.name.trim()===""){ SELECTED_ROWS.add(idx); found++; }
@@ -4045,17 +4055,17 @@ function wireSectionEvents(key){
     showToast(found>0 ? `تم تحديد ${found} صف فارغ` : 'لا توجد صفوف فارغة في هذه الشعبة');
   });
 
-  document.getElementById('btn-clear-selection').addEventListener('click', ()=>{
+  on('btn-clear-selection', 'click', ()=>{
     SELECTED_ROWS.clear();
     render();
   });
 
-  document.getElementById('btn-move-selected').addEventListener('click', ()=>{
+  on('btn-move-selected', 'click', ()=>{
     if(SELECTED_ROWS.size===0){ showToast('لم يتم تحديد أي صف بعد'); return; }
     showMoveStudentsDialog(key, Array.from(SELECTED_ROWS));
   });
 
-  document.getElementById('btn-delete-selected').addEventListener('click', ()=>{
+  on('btn-delete-selected', 'click', ()=>{
     if(SELECTED_ROWS.size===0){ showToast('لم يتم تحديد أي صف بعد'); return; }
     const count = SELECTED_ROWS.size;
     showConfirmDialog('حذف الصفوف المحددة', `سيتم حذف ${count} صف محدد نهائيًا (وأي رصد بداخلها). هل تريد المتابعة؟`, ()=>{
@@ -4069,7 +4079,7 @@ function wireSectionEvents(key){
     });
   });
 
-  document.getElementById('btn-clear-section').addEventListener('click', ()=>{
+  on('btn-clear-section', 'click', ()=>{
     showConfirmDialog('تفريغ الرصد', `سيتم تفريغ كل الرصد في ${key} (الأسماء تبقى). متابعة؟`, ()=>{
       withUndo(()=>{
         const cfg = STATE.config;
@@ -4082,7 +4092,7 @@ function wireSectionEvents(key){
     });
   });
 
-  document.getElementById('btn-delete-section').addEventListener('click', ()=>{
+  on('btn-delete-section', 'click', ()=>{
     if(SECTION_KEYS.length<=1){ showAlertDialog('لا يمكن حذف آخر شعبة متبقية.'); return; }
     deleteSection(key);
   });
