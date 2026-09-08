@@ -157,6 +157,10 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
 .stu-grid .m-lbl{display:block; font-size:10px; font-weight:300; color:var(--muted); margin-bottom:5px;}
 .stu-grid .m-track{display:block; height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden;}
 .stu-grid .m-fill{display:block; height:6px; border-radius:3px;}
+.s-cmp{display:block; margin-top:10px; font-size:11px; font-weight:400;}
+.s-cmp.up{color:var(--teal-d);}
+.s-cmp.down{color:#C0392B;}
+.s-cmp.flat{color:var(--muted);}
 .stu-cells{margin-top:13px; padding-top:12px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:11px;}
 .stu-cells .cg-lbl{font-size:11px; font-weight:400; color:var(--text-2); margin-bottom:6px; display:flex; align-items:center; gap:6px;}
 .stu-cells .cg-dot{width:8px; height:8px; border-radius:2px; flex:0 0 auto;}
@@ -168,10 +172,54 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
 }
 .stu-cells .cg-cell:active{background:var(--surface-2);}
 
+/* ===== الرموز الأربعة كأشكال مرسومة ===== */
+.sym{display:inline-flex; align-items:center; justify-content:center; line-height:0; vertical-align:middle;}
+.sym svg{width:17px; height:17px; display:block;}
+.sym-full{color:#0E9179;}
+.sym-zero{color:#C0392B;}
+.sym-late{color:#B87514;}
+.sym-none{color:#C9C2B8;}
+.stu-cells .cg-cell .sym svg{width:19px; height:19px;}
+.sym-menu .sym svg{width:19px; height:19px;}
+td.cell .sym svg{width:16px; height:16px;}
+@media(max-width:640px){ td.cell .sym svg{width:14px; height:14px;} }
+@media(max-width:400px){ td.cell .sym svg{width:13px; height:13px;} }
+
 .meta-grid{display:grid; grid-template-columns:1fr; gap:10px;}
 @media(min-width:640px){.meta-grid{grid-template-columns:1fr 1fr;}}
-.cfg-row{display:grid; grid-template-columns:1fr; gap:8px; align-items:end; padding:8px; border:1px solid var(--border); border-radius:10px;}
-@media(min-width:480px){.cfg-row{grid-template-columns:2fr 1fr 1fr;}}
+.cfg-row{display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid var(--border); border-radius:12px; background:var(--card);}
+.cfg-head{display:flex; align-items:center; gap:7px;}
+.cfg-dot{width:10px; height:10px; border-radius:3px; flex:0 0 auto;}
+.cfg-num{font-size:11.5px; font-weight:500; color:var(--text-2);}
+.cfg-mini{
+  width:30px; height:30px; padding:0; flex:0 0 auto; border:1px solid var(--border); background:var(--bg);
+  border-radius:8px; font-size:12px; line-height:1; cursor:pointer; color:var(--text-2); font-family:inherit;
+}
+.cfg-mini:disabled{opacity:.35; cursor:not-allowed;}
+.cfg-mini.cfg-del{color:#b91c1c; border-color:#f3c6c6;}
+.cfg-fields{display:grid; grid-template-columns:1fr; gap:8px; align-items:end;}
+@media(min-width:480px){.cfg-fields{grid-template-columns:2fr 1fr 1fr;}}
+.guide{font-size:12.5px; line-height:1.95; color:var(--text-2);}
+.guide h3{font-size:12.5px; font-weight:600; color:var(--text); margin:12px 0 4px;}
+.guide h3:first-child{margin-top:2px;}
+.guide ul{margin:0; padding-inline-start:18px;}
+.guide li{margin-bottom:3px;}
+.guide b{color:var(--text); font-weight:500;}
+
+/* شريط بيانات الشعبة — مدخل ظاهر لتعديل المادة والفصل والعام */
+.meta-strip{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:right; cursor:pointer;
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:11px 13px; margin-bottom:10px; box-shadow:var(--shadow); font-family:inherit;
+}
+.meta-strip:active{background:var(--surface-2);}
+.meta-strip .ms-ico{flex:0 0 auto; width:32px; height:32px; border-radius:10px; background:var(--teal-soft); color:var(--teal-d); display:flex; align-items:center; justify-content:center;}
+.meta-strip .ms-ico svg{width:16px; height:16px;}
+.meta-strip .ms-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.meta-strip .ms-line1{font-size:13px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.meta-strip .ms-line2{font-size:11px; font-weight:300; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.meta-strip .ms-act{flex:0 0 auto; font-size:11.5px; font-weight:500; color:var(--teal-d);}
+@media print{ .meta-strip{display:none !important;} }
 .meta-field label{display:block; font-size:11.5px; color:var(--muted); margin-bottom:4px; font-weight:600;}
 .meta-field input{
   width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
@@ -192,8 +240,8 @@ table.grid{border-collapse:collapse; width:100%; min-width:1500px; font-size:12.
 table.grid th, table.grid td{border:1px solid #dbe1ea; text-align:center; padding:0; height:34px;}
 table.grid thead tr.grp th{color:#fff; font-weight:700; font-size:12px; padding:6px 4px;}
 table.grid thead tr.sub th{background:#eef1f5; font-size:11px; font-weight:600; padding:5px 2px; color:#374151;}
-th.g-part{background:var(--part);} th.g-hw{background:var(--hw);} th.g-task{background:var(--task);}
-th.g-proj{background:var(--proj);} th.g-idx{background:var(--gray-head);} th.g-final{background:var(--gray-head);}
+th.g-cat{background:var(--cat, var(--gray-head));}
+th.g-idx{background:var(--gray-head);} th.g-final{background:var(--gray-head);}
 col.wide{}
 th.name-h, td.name-c{
   position:sticky; right:34px; background:#fff; z-index:5; text-align:right; padding:6px 10px !important;
@@ -225,6 +273,7 @@ td.sum-c{font-weight:700; background:#f6f7f9; color:#111827;}
 td.final-c{font-weight:800; font-size:13px;}
 td.max-c{color:var(--muted); font-weight:600;}
 td.flag-c{font-size:11px; font-weight:700; white-space:nowrap;}
+td.level-c{font-size:11px; font-weight:600; color:var(--text-2); white-space:nowrap;}
 
 tr.row-empty td.name-c, tr.row-empty td.idx-c{background:var(--empty);}
 tr.row-empty{background:var(--empty);}
@@ -247,7 +296,7 @@ td.final-red{background:var(--red); color:var(--red-t);}
   table.grid thead tr.grp th{font-size:10px; padding:5px 3px;}
   table.grid thead tr.sub th{font-size:9.5px; padding:4px 1px;}
   td.cell{width:26px; font-size:13.5px;}
-  td.sum-c, td.final-c, td.max-c, td.flag-c{font-size:10px;}
+  td.sum-c, td.final-c, td.max-c, td.flag-c, td.level-c{font-size:10px;}
   col.col-data{width:26px;}
   col.col-sum{width:32px;}
   col.col-final{width:36px;}
@@ -349,6 +398,34 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .followup-table tr.sev-urgent td.fu-name, .followup-table tr.sev-warn td.fu-name{border-right:4px solid var(--flag-rail);}
 .followup-table tr.sev-urgent td.fu-sev, .followup-table tr.sev-warn td.fu-sev{color:var(--flag-rail);}
 .fu-open-btn{border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit; white-space:nowrap;}
+.followup-table .fu-actions{display:flex; flex-direction:column; gap:4px; align-items:stretch;}
+.sev-tag{display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
+.sev-dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto;}
+.cstat{display:inline-block; font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:20px; white-space:nowrap;}
+.cstat.cs-done{background:var(--green); color:var(--green-t);}
+.cstat.cs-ok{background:var(--teal-soft); color:var(--teal-d);}
+.cstat.cs-wait{background:var(--yellow); color:var(--yellow-t);}
+.cstat.cs-none{background:var(--orange); color:var(--orange-t);}
+.cstat.cs-never{background:var(--empty); color:var(--muted); font-weight:400;}
+.chip-list{display:flex; flex-wrap:wrap; gap:7px;}
+.chip-item{
+  display:inline-flex; align-items:baseline; gap:5px; background:var(--surface-2); color:var(--text);
+  border-radius:20px; padding:5px 11px; font-size:12px;
+}
+.chip-item i{font-style:normal; font-size:10.5px; color:var(--muted);}
+.contact-log{display:flex; flex-direction:column; gap:9px;}
+.ct-card{
+  border:1px solid var(--border); border-right:4px solid var(--teal); border-radius:14px;
+  padding:11px 13px; background:var(--card); box-shadow:var(--shadow);
+}
+.ct-card:has(.cs-wait){border-right-color:#D9A03C;}
+.ct-card:has(.cs-none){border-right-color:#D9822B;}
+.ct-card:has(.cs-done){border-right-color:var(--teal);}
+.ct-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:5px;}
+.ct-top .ct-nm{font-size:13px; font-weight:500; color:var(--text);}
+.ct-top .ct-sec{font-size:11px; color:var(--muted);}
+.ct-meta{font-size:11.5px; color:var(--text-2); line-height:1.9;}
+.ct-del{margin-inline-start:auto; border:none; background:none; color:#b91c1c; font-size:13px; cursor:pointer; padding:2px 4px;}
 .late-rank-row{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:7px 0; border-bottom:1px dashed #eef0f3;}
 .late-rank-row:last-child{border-bottom:none;}
 .late-rank-row .lr-badge{background:var(--orange); color:var(--orange-t); font-weight:700; font-size:11px; padding:2px 9px; border-radius:20px;}
@@ -474,9 +551,9 @@ body.modal-lock{ overflow:hidden; }
   }
   col.col-idx{width:2.2%;}
   col.col-name{width:8.5%;}
-  col.col-data{width:calc(68% / var(--item-count, 1));}
+  col.col-data{width:calc(62% / var(--item-count, 1));}
   col.col-sum{width:2%;}
-  col.col-final{width:5.5%;}
+  col.col-final{width:5.4%;}
   col.col-del{width:0.1%;}
   table.grid th, table.grid td{
     padding:1px !important; height:auto !important; border:0.5px solid #999 !important;
@@ -488,10 +565,7 @@ body.modal-lock{ overflow:hidden; }
     line-height:1.15 !important; vertical-align:middle !important;
   }
   th.g-final{ font-size:7px !important; line-height:1.1 !important; padding:1px !important; }
-  th.g-part{border-bottom:3px solid var(--part) !important;}
-  th.g-hw{border-bottom:3px solid var(--hw) !important;}
-  th.g-task{border-bottom:3px solid var(--task) !important;}
-  th.g-proj{border-bottom:3px solid var(--proj) !important;}
+  th.g-cat{border-bottom:3px solid var(--cat, #4B5563) !important;}
   th.g-idx, th.g-final, th.name-h{background:#e5e7eb !important; border-bottom:3px solid #4B5563 !important;}
 
   th.name-h, td.name-c, th.idx-h, td.idx-c{
@@ -502,6 +576,11 @@ body.modal-lock{ overflow:hidden; }
   td.name-c .name-arrow{display:none !important;}
 
   td.cell{font-size:9px !important; width:auto !important;}
+  .sym svg{width:8.5px !important; height:8.5px !important; stroke-width:3 !important;}
+  .sym-full{color:#0b6b45 !important;}
+  .sym-zero{color:#9c1c28 !important;}
+  .sym-late{color:#8a5a00 !important;}
+  .sym-none{color:#b9b3aa !important;}
   .row-del{display:none !important;}
 
   tr.sev-urgent{border-right:4px solid #9c1c28 !important;}
@@ -510,6 +589,7 @@ body.modal-lock{ overflow:hidden; }
   td.final-yellow{border-right:4px solid #8a6d00 !important;}
   td.final-red{border-right:4px solid #9c1c28 !important;}
   td.flag-c{font-weight:800 !important;}
+  td.level-c{font-size:7.5px !important; color:#000 !important;}
 
   tr{page-break-inside:avoid;}
 
@@ -816,6 +896,20 @@ const SEED = {"شعبة 1": [{"name": "أحمد عبد الله السديري",
 const SYMS = ["⬜","⏰","✔️","❌"]; // cycle order
 const SYM_LABEL = {"⬜":"لم يصل بعد", "⏰":"نصف درجة (متأخر)", "✔️":"درجة كاملة", "❌":"صفر"};
 
+/* الرموز الأربعة تُرسم كأشكال SVG لا كإيموجي: الإيموجي يختلف شكله بين أندرويد
+   و iOS والويندوز، وكثير من الطابعات تُسقطه. القيمة المخزّنة تبقى نفس الحرف. */
+const SYM_CLASS = {"⬜":"none", "⏰":"late", "✔️":"full", "❌":"zero"};
+const SYM_PATH = {
+  "✔️": '<path d="M4 12.6l5.2 5.2L20 6.8"/>',
+  "❌": '<path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"/>',
+  "⏰": '<circle cx="12" cy="12.6" r="7.6"/><path d="M12 8.6v4.2l2.8 1.8M8.4 2.9 5.2 5.3M15.6 2.9l3.2 2.4"/>',
+  "⬜": '<rect x="4.8" y="4.8" width="14.4" height="14.4" rx="3.4" stroke-dasharray="3 2.6"/>'
+};
+function symIcon(v){
+  const cls = SYM_CLASS[v] || 'none';
+  return `<span class="sym sym-${cls}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${SYM_PATH[v] || SYM_PATH["⬜"]}</svg></span>`;
+}
+
 function blankMeta(){
   return { subject:"علوم", term:"", year:"", teacher:"يوسف السناني", principal:"فالح العنمي" };
 }
@@ -829,33 +923,57 @@ function blankLetterhead(){
 }
 
 /* ================= CATEGORY CONFIG (customizable elements) ================= */
-const CAT_KEYS = ["p","h","t","j"];
+/* بنود الرصد صارت قابلة للإضافة والحذف، فما عادت مفاتيحها ثابتة: CAT_KEYS تتبع
+   STATE.configOrder وتُزامَن بـ syncCatKeys() بعد كل تحميل أو تعديل. */
+let CAT_KEYS = ["p","h","t","j"];
+const CAT_PALETTE = ['var(--part)','var(--hw)','var(--task)','var(--proj)','#2F7E9E','#5B8C3E','#B0743A','#7A3FA8'];
 function blankConfig(){
   return {
-    p: { name: "المشاركة", count: 10, point: 1 },
-    h: { name: "الواجبات", count: 10, point: 1 },
-    t: { name: "المهام الأدائية", count: 10, point: 1 },
-    j: { name: "المشاريع", count: 5, point: 2 }
+    p: { name: "المشاركة", count: 10, point: 1, color: CAT_PALETTE[0] },
+    h: { name: "الواجبات", count: 10, point: 1, color: CAT_PALETTE[1] },
+    t: { name: "المهام الأدائية", count: 10, point: 1, color: CAT_PALETTE[2] },
+    j: { name: "المشاريع", count: 5, point: 2, color: CAT_PALETTE[3] }
   };
 }
-function normalizeConfig(cfg){
-  const out = blankConfig();
-  if(cfg){
-    for(const k of CAT_KEYS){
-      if(cfg[k]){
-        if(typeof cfg[k].name === 'string' && cfg[k].name.trim()!=="") out[k].name = cfg[k].name;
-        let c = parseInt(cfg[k].count);
-        if(!isNaN(c)) out[k].count = Math.max(1, Math.min(20, c));
-        let p = parseFloat(cfg[k].point);
-        if(!isNaN(p) && p>0) out[k].point = p;
-      }
-    }
-  }
-  return out;
+function blankConfigOrder(){ return ["p","h","t","j"]; }
+function genCatKey(cfg){ let i = 1; while(cfg['c'+i]) i++; return 'c'+i; }
+
+/* تُرجع {config, order} بعد تنظيف القيم — تقبل أي عدد من البنود لا الأربعة الأصلية فقط. */
+function normalizeConfig(cfg, order){
+  const fallback = blankConfig();
+  const src = (cfg && typeof cfg === 'object' && Object.keys(cfg).length) ? cfg : fallback;
+  let keys = Array.isArray(order) ? order.filter(k=>src[k]) : [];
+  if(keys.length === 0) keys = Object.keys(src);
+  if(keys.length === 0) return { config: fallback, order: blankConfigOrder() };
+  const out = {};
+  keys.forEach((k, i)=>{
+    const raw = src[k] || {};
+    const def = fallback[k] || { name:`عنصر ${i+1}`, count:5, point:1 };
+    let count = parseInt(raw.count); if(isNaN(count)) count = def.count;
+    let point = parseFloat(raw.point); if(isNaN(point) || point<=0) point = def.point;
+    out[k] = {
+      name: (typeof raw.name === 'string' && raw.name.trim()!=="") ? raw.name.trim() : def.name,
+      count: Math.max(1, Math.min(20, count)),
+      point,
+      color: (typeof raw.color === 'string' && raw.color.trim()!=="") ? raw.color : CAT_PALETTE[i % CAT_PALETTE.length]
+    };
+  });
+  return { config: out, order: keys.slice() };
 }
-function configTotalMax(cfg){
+function syncCatKeys(){
+  const order = (STATE.configOrder && STATE.configOrder.length) ? STATE.configOrder : Object.keys(STATE.config || {});
+  CAT_KEYS = order.filter(k=> STATE.config && STATE.config[k]);
+}
+function catColor(k){
+  const c = STATE.config && STATE.config[k];
+  if(c && c.color) return c.color;
+  const i = CAT_KEYS.indexOf(k);
+  return CAT_PALETTE[(i<0?0:i) % CAT_PALETTE.length];
+}
+function configTotalMax(cfg, order){
   cfg = cfg || STATE.config;
-  return CAT_KEYS.reduce((a,k)=> a + cfg[k].count*cfg[k].point, 0);
+  const keys = order || (cfg === STATE.config ? CAT_KEYS : Object.keys(cfg));
+  return keys.reduce((a,k)=> a + (cfg[k] ? cfg[k].count*cfg[k].point : 0), 0);
 }
 function resizeArr(arr, len){
   arr = (arr||[]).slice();
@@ -863,12 +981,13 @@ function resizeArr(arr, len){
   while(arr.length < len) arr.push("⬜");
   return arr;
 }
-function applyConfigToAllRows(cfg){
+/* يوفّق صفوف الطلاب مع البنود الحالية: يحذف بيانات البنود الملغاة، ويضبط أطوال الباقي. */
+function applyConfigToAllRows(cfg, order){
+  const keys = order || CAT_KEYS;
   for(const key of SECTION_KEYS){
     STATE.sections[key].forEach(row=>{
-      for(const k of CAT_KEYS){
-        row[k] = resizeArr(row[k], cfg[k].count);
-      }
+      Object.keys(row).forEach(k=>{ if(k!=='name' && !cfg[k]) delete row[k]; });
+      for(const k of keys) row[k] = resizeArr(row[k], cfg[k].count);
     });
   }
 }
@@ -893,12 +1012,15 @@ let STATE = {
   signatureOpen: false,
   sectionMetaOpen: false,
   config: blankConfig(),
+  configOrder: blankConfigOrder(),
   configOpen: false,
-  referrals: []
+  guideOpen: false,
+  referrals: [],
+  contacts: []
 };
 
 function freshState(){
-  const s = { activeView:'home', activeTab: SECTION_KEYS[0], rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: false, config: blankConfig(), configOpen: false, sectionOrder: SECTION_KEYS.slice(), referrals: [] };
+  const s = { activeView:'home', activeTab: SECTION_KEYS[0], rosterView:'table', sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, sectionOrder: SECTION_KEYS.slice(), referrals: [], contacts: [] };
   for(const k of SECTION_KEYS){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -916,8 +1038,12 @@ function normalizeLoadedState(obj){
     if(typeof obj.signature !== 'string') obj.signature = '';
     if(typeof obj.signatureOpen !== 'boolean') obj.signatureOpen = true;
     if(typeof obj.sectionMetaOpen !== 'boolean') obj.sectionMetaOpen = true;
-    obj.config = normalizeConfig(obj.config);
+    const nc = normalizeConfig(obj.config, obj.configOrder);
+    obj.config = nc.config;
+    obj.configOrder = nc.order;
     if(typeof obj.configOpen !== 'boolean') obj.configOpen = true;
+    if(typeof obj.guideOpen !== 'boolean') obj.guideOpen = false;
+    if(!Array.isArray(obj.contacts)) obj.contacts = [];
     if(!Array.isArray(obj.sectionOrder) || obj.sectionOrder.length===0){
       obj.sectionOrder = Object.keys(obj.sections);
     }
@@ -950,6 +1076,7 @@ async function loadState(){
    مع ترتيب الشعب المحفوظ، حتى تنجو الشعب المضافة أو المحذوفة من إعادة التحميل. */
 function applyLoadedState(obj){
   STATE = obj;
+  syncCatKeys();
   SECTION_KEYS.length = 0;
   STATE.sectionOrder.forEach(k=>{ if(STATE.sections[k]) SECTION_KEYS.push(k); });
   Object.keys(STATE.sections).forEach(k=>{ if(!SECTION_KEYS.includes(k)) SECTION_KEYS.push(k); });
@@ -1159,36 +1286,47 @@ function studentCalc(row){
   }
   const ratio = maxGrade>0 ? final/maxGrade : null;
   const lowRatio = maxGrade>0 ? (final/maxGrade < 0.6) : false;
+  /* ثلاثة مُشغّلات للمتابعة، مطابقة لكشف المتابعة الورقي: انخفاض الإنجاز،
+     أو تكرار التأخر، أو تكرار عدم التسليم. */
   let flag = "";
   if(row.name.trim()!==""){
-    if(lowRatio || lateCount>=5) flag = "⚠ نعم";
+    if(lowRatio || lateCount>=5 || missCount>=3) flag = "⚠ نعم";
   }
   /* درجة الخطورة داخل من يحتاج متابعة — لا تضيف طلابًا جددًا، تفرّق بينهم فقط:
      عاجل = انخفاض إنجاز أو ٣ حالات عدم تسليم فأكثر، وإلا تنبيه (تكرار تأخر). */
   let severity = "";
   if(flag === "⚠ نعم") severity = (lowRatio || missCount>=3) ? "urgent" : "warn";
-  return {pSum:sums.pSum, hSum:sums.hSum, tSum:sums.tSum, jSum:sums.jSum, final,maxGrade,lateCount,missCount,ratio,flag,severity};
+  return Object.assign(sums, {final,maxGrade,lateCount,missCount,ratio,flag,severity});
 }
 
-const SEV_LABEL = {urgent:"🔴 عاجل", warn:"🟡 متابعة"};
+const SEV_LABEL = {urgent:"🔴 عاجل", warn:"🟡 متابعة"};   // نص خام للتصدير إلى Excel
+const SEV_TEXT  = {urgent:"عاجل", warn:"متابعة"};
+const SEV_COLOR = {urgent:"#C0392B", warn:"#D9822B"};
+/* داخل الصفحة نرسم النقطة بدل الإيموجي حتى يتطابق شكلها بين الأجهزة والطابعات */
+function sevBadge(sev){
+  if(!sev) return "";
+  return `<span class="sev-tag"><span class="sev-dot" style="background:${SEV_COLOR[sev]};"></span>${SEV_TEXT[sev]}</span>`;
+}
 
 function sectionAnalysis(key){
   const rows = STATE.sections[key].filter(r=>r.name.trim()!=="");
   const n = rows.length;
-  if(n===0) return {n:0, avgFinal:0, maxFinal:0, minFinal:0, avgP:0, avgH:0, avgT:0, avgJ:0};
+  if(n===0){
+    const zero = {n:0, avgFinal:0, maxFinal:0, minFinal:0};
+    CAT_KEYS.forEach(k=> zero['avg_'+k] = 0);
+    return zero;
+  }
   const calcs = rows.map(studentCalc);
   const finals = calcs.map(c=>c.final);
   const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
-  return {
+  const out = {
     n,
     avgFinal: avg(finals),
     maxFinal: Math.max(...finals),
-    minFinal: Math.min(...finals),
-    avgP: avg(calcs.map(c=>c.pSum)),
-    avgH: avg(calcs.map(c=>c.hSum)),
-    avgT: avg(calcs.map(c=>c.tSum)),
-    avgJ: avg(calcs.map(c=>c.jSum)),
+    minFinal: Math.min(...finals)
   };
+  CAT_KEYS.forEach(k=> out['avg_'+k] = avg(calcs.map(c=> c[k+'Sum'] || 0)));
+  return out;
 }
 
 /* ================= ROW SELECTION (for bulk-deleting extra/empty rows) ================= */
@@ -1220,7 +1358,6 @@ function renderTabs(){
 }
 
 /* ================= RENDER: SECTION SHEET ================= */
-const CAT_CLASS = { p:'g-part', h:'g-hw', t:'g-task', j:'g-proj' };
 function colGroupHeader(){
   const cfg = STATE.config;
   const cols = [];
@@ -1229,11 +1366,11 @@ function colGroupHeader(){
     for(let i=0;i<cfg[k].count;i++) cols.push('col-data');
     cols.push('col-sum');
   }
-  cols.push('col-final','col-final','col-final','col-del');
+  cols.push('col-final','col-final','col-final','col-final','col-del');
   const colgroup = `<colgroup>${cols.map(c=>`<col class="${c}">`).join("")}</colgroup>`;
   const grpCells = CAT_KEYS.map(k=>{
     const c = cfg[k];
-    return `<th class="${CAT_CLASS[k]}" colspan="${c.count+1}">${escapeAttr(c.name)} (${fmt(c.count*c.point)})</th>`;
+    return `<th class="g-cat" style="--cat:${catColor(k)};" colspan="${c.count+1}">${escapeAttr(c.name)} (${fmt(c.count*c.point)})</th>`;
   }).join("");
   const subCells = CAT_KEYS.map(k=>{
     const c = cfg[k];
@@ -1250,6 +1387,7 @@ function colGroupHeader(){
       ${grpCells}
       <th class="g-final" rowspan="2">المجموع النهائي</th>
       <th class="g-final" rowspan="2">الدرجة القصوى</th>
+      <th class="g-final" rowspan="2">المستوى</th>
       <th class="g-final" rowspan="2">بحاجة متابعة</th>
       <th class="g-final" rowspan="2"></th>
     </tr>
@@ -1260,7 +1398,7 @@ function colGroupHeader(){
 }
 
 function cellHtml(key, idx, group, gi, val){
-  return `<td class="cell" data-key="${key}" data-idx="${idx}" data-group="${group}" data-gi="${gi}" title="${SYM_LABEL[val]}">${val}</td>`;
+  return `<td class="cell" data-key="${key}" data-idx="${idx}" data-group="${group}" data-gi="${gi}" title="${SYM_LABEL[val]}" aria-label="${SYM_LABEL[val]}">${symIcon(val)}</td>`;
 }
 
 function renderSectionRows(key){
@@ -1278,17 +1416,14 @@ function renderSectionRows(key){
     return `<tr class="${rowClass}" data-row="${idx}">
       <td class="idx-c">${idx+1}</td>
       <td class="name-c"><div class="name-wrap"><span class="name-text${empty?' empty-name':''}">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span><button type="button" class="name-arrow" data-name-idx="${idx}" data-key="${key}" title="خيارات الطالب">▾</button></div></td>
-      ${row.p.map((v,gi)=>cellHtml(key,idx,'p',gi,v)).join("")}
-      <td class="sum-c">${fmt(c.pSum)}</td>
-      ${row.h.map((v,gi)=>cellHtml(key,idx,'h',gi,v)).join("")}
-      <td class="sum-c">${fmt(c.hSum)}</td>
-      ${row.t.map((v,gi)=>cellHtml(key,idx,'t',gi,v)).join("")}
-      <td class="sum-c">${fmt(c.tSum)}</td>
-      ${row.j.map((v,gi)=>cellHtml(key,idx,'j',gi,v)).join("")}
-      <td class="sum-c">${fmt(c.jSum)}</td>
+      ${CAT_KEYS.map(k=>
+        (row[k]||[]).map((v,gi)=>cellHtml(key,idx,k,gi,v)).join("") +
+        `<td class="sum-c">${fmt(c[k+'Sum'])}</td>`
+      ).join("")}
       <td class="final-c ${finalClass}">${fmt(c.final)}</td>
       <td class="max-c">${fmt(c.maxGrade)}</td>
-      <td class="flag-c">${c.severity ? SEV_LABEL[c.severity] : ""}</td>
+      <td class="level-c">${studentLevelName(c, empty)}</td>
+      <td class="flag-c">${sevBadge(c.severity)}</td>
       <td class="row-del" data-del="${idx}" data-key="${key}" title="حذف الصف">🗑️</td>
     </tr>`;
   }).join("");
@@ -1304,19 +1439,25 @@ function escapeAttr(s){
 
 /* ================= RENDER: عرض البطاقات ================= */
 /* نفس عتبات levelDistribution حرفيًا حتى لا تختلف البطاقة عن لوحة التحليل */
+function studentLevel(c, empty){
+  if(empty || c.maxGrade===0) return {name:"لم يُرصد",      bg:"var(--empty)",     fg:"var(--muted)"};
+  if(c.severity==="urgent")   return {name:"متابعة عاجلة",  bg:"var(--red)",       fg:"var(--red-t)"};
+  if(c.severity==="warn")     return {name:"يحتاج متابعة",  bg:"var(--orange)",    fg:"var(--orange-t)"};
+  if(c.ratio>=0.9)            return {name:"ممتاز",         bg:"var(--green)",     fg:"var(--green-t)"};
+  if(c.ratio>=0.75)           return {name:"جيد",           bg:"var(--teal-soft)", fg:"var(--teal-d)"};
+  return {name:"يحتاج تحسين", bg:"var(--yellow)", fg:"var(--yellow-t)"};
+}
+function studentLevelName(c, empty){ return studentLevel(c, empty).name; }
 function studentLevelChip(c, empty){
-  if(empty || c.maxGrade===0) return `<span class="pill-badge" style="background:var(--empty); color:var(--muted);">لم يُرصد</span>`;
-  if(c.severity==="urgent")  return `<span class="pill-badge" style="background:var(--red); color:var(--red-t);">متابعة عاجلة</span>`;
-  if(c.severity==="warn")    return `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">يحتاج متابعة</span>`;
-  if(c.ratio>=0.9)           return `<span class="pill-badge" style="background:var(--green); color:var(--green-t);">ممتاز</span>`;
-  if(c.ratio>=0.75)          return `<span class="pill-badge" style="background:var(--teal-soft); color:var(--teal-d);">جيد</span>`;
-  return `<span class="pill-badge" style="background:var(--yellow); color:var(--yellow-t);">يحتاج تحسين</span>`;
+  const l = studentLevel(c, empty);
+  return `<span class="pill-badge" style="background:${l.bg}; color:${l.fg};">${escapeAttr(l.name)}</span>`;
 }
 
 function renderSectionCards(key){
   const cfg = STATE.config;
   const rows = STATE.sections[key] || [];
   const maxTotal = configTotalMax(cfg);
+  const secAvg = sectionAvgRatio(key);
   if(rows.length === 0){
     return `<div class="card" style="text-align:center; color:var(--muted); font-size:12.5px; font-weight:300; padding:24px;">لا يوجد طلاب في هذه الشعبة بعد.</div>`;
   }
@@ -1330,16 +1471,22 @@ function renderSectionCards(key){
       const pct = maxK>0 ? Math.max(0, Math.min(100, Math.round((sum/maxK)*100))) : 0;
       return `<div>
         <span class="m-lbl">${escapeAttr(cfg[k].name)} ${fmt(sum)}/${fmt(maxK)}</span>
-        <span class="m-track"><span class="m-fill" style="width:${pct}%; background:${CAT_COLOR[k]};"></span></span>
+        <span class="m-track"><span class="m-fill" style="width:${pct}%; background:${catColor(k)};"></span></span>
       </div>`;
     }).join('');
     const cells = open ? `<div class="stu-cells">${CAT_KEYS.map(k=>`
       <div>
-        <div class="cg-lbl"><span class="cg-dot" style="background:${CAT_COLOR[k]};"></span>${escapeAttr(cfg[k].name)}</div>
+        <div class="cg-lbl"><span class="cg-dot" style="background:${catColor(k)};"></span>${escapeAttr(cfg[k].name)}</div>
         <div class="cg-row">${(row[k]||[]).map((v,gi)=>
-          `<button type="button" class="cg-cell" data-idx="${idx}" data-group="${k}" data-gi="${gi}" title="${escapeAttr(SYM_LABEL[v]||'')}">${v}</button>`
+          `<button type="button" class="cg-cell" data-idx="${idx}" data-group="${k}" data-gi="${gi}" title="${escapeAttr(SYM_LABEL[v]||'')}" aria-label="${escapeAttr(SYM_LABEL[v]||'')}">${symIcon(v)}</button>`
         ).join('')}</div>
       </div>`).join('')}</div>` : '';
+    const compare = (!empty && c.ratio!==null && secAvg!==null) ? (()=>{
+      const diff = Math.round((c.ratio - secAvg)*100);
+      if(diff > 0) return `<span class="s-cmp up">▲ أعلى من متوسط الشعبة بـ ${diff}%</span>`;
+      if(diff < 0) return `<span class="s-cmp down">▼ أقل من متوسط الشعبة بـ ${Math.abs(diff)}%</span>`;
+      return `<span class="s-cmp flat">مطابق لمتوسط الشعبة</span>`;
+    })() : '';
     return `<div class="stu-card${c.severity?` is-flag sev-${c.severity}`:''}${open?' open':''}">
       <div class="stu-top" data-toggle-card="${idx}">
         <span class="s-nm">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span>
@@ -1348,6 +1495,7 @@ function renderSectionCards(key){
         <span class="s-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
       </div>
       <div class="stu-grid">${bars}</div>
+      ${compare}
       ${cells}
     </div>`;
   }).join('');
@@ -1451,22 +1599,74 @@ function renderSettingsPanels(){
     </h2>
     ${STATE.configOpen ? `
     <div class="meta-grid" style="grid-template-columns:1fr;">
-      ${CAT_KEYS.map(k=>{
+      ${CAT_KEYS.map((k,i)=>{
         const c = STATE.config[k];
-        return `<div class="cfg-row">
-          <div class="meta-field"><label>اسم العنصر</label><input data-cfg-name="${k}" value="${escapeAttr(c.name)}"></div>
-          <div class="meta-field"><label>عدد الخانات</label><input type="number" min="1" max="20" step="1" data-cfg-count="${k}" value="${c.count}"></div>
-          <div class="meta-field"><label>الدرجة لكل خانة كاملة</label><input type="number" min="0.5" step="0.5" data-cfg-point="${k}" value="${c.point}"></div>
+        return `<div class="cfg-row" data-cfg-key="${k}">
+          <div class="cfg-head">
+            <span class="cfg-dot" style="background:${catColor(k)};"></span>
+            <span class="cfg-num">البند ${i+1}</span>
+            <span style="flex:1 1 auto;"></span>
+            <button type="button" class="cfg-mini" data-cfg-up="${k}" title="تحريك لأعلى" ${i===0?'disabled':''}>▲</button>
+            <button type="button" class="cfg-mini" data-cfg-down="${k}" title="تحريك لأسفل" ${i===CAT_KEYS.length-1?'disabled':''}>▼</button>
+            <button type="button" class="cfg-mini cfg-del" data-cfg-del="${k}" title="حذف هذا البند" ${CAT_KEYS.length<=1?'disabled':''}>🗑️</button>
+          </div>
+          <div class="cfg-fields">
+            <div class="meta-field"><label>اسم البند</label><input data-cfg-name="${k}" value="${escapeAttr(c.name)}"></div>
+            <div class="meta-field"><label>عدد الخانات</label><input type="number" min="1" max="20" step="1" data-cfg-count="${k}" value="${c.count}"></div>
+            <div class="meta-field"><label>الدرجة لكل خانة كاملة</label><input type="number" min="0.5" step="0.5" data-cfg-point="${k}" value="${c.point}"></div>
+          </div>
         </div>`;
       }).join("")}
     </div>
     <div class="toolbar" style="margin-top:10px;">
       <button class="primary" id="btn-apply-config">✅ تطبيق التغييرات</button>
+      <button id="btn-add-cat">➕ إضافة بند جديد</button>
     </div>
-    <div class="hint">💡 عند تغيير عدد الخانات: الخانات الزائدة تُحذف (تفقد رصدها) والخانات الجديدة تُضاف فارغة ⬜. الدرجة القصوى الحالية للكشف: <b>${fmt(configTotalMax())}</b>.</div>
+    <div class="hint">💡 «إضافة بند» تُنشئ بندًا جديدًا فورًا بخانات فارغة لكل الطلاب، و«🗑️» تحذف البند وكل ما رُصد فيه. عند تقليل عدد الخانات تُحذف الزائدة ويُفقد رصدها، والجديدة تُضاف فارغة ${symIcon("⬜")}. الدرجة القصوى الحالية للكشف: <b>${fmt(configTotalMax())}</b>.</div>
     ` : ``}
   </div>
 
+  ${renderGuideCard()}
+`;
+}
+
+/* ---- دليل الاستخدام: يشرح الرموز والألوان وأين تُضبط كل إعدادة ---- */
+function renderGuideCard(){
+  return `
+  <div class="card meta-card">
+    <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <span>📖 دليل الاستخدام السريع</span>
+      <button type="button" id="btn-toggle-guide" class="icon-btn" style="background:#eef2f7; color:var(--navy); border-color:var(--border); padding:5px 10px; font-size:11.5px;">${STATE.guideOpen ? "🔼 إخفاء" : "🔽 إظهار"}</button>
+    </h2>
+    ${STATE.guideOpen ? `
+    <div class="guide">
+      <h3>الرموز الأربعة</h3>
+      <ul>
+        <li>${symIcon("✔️")} <b>درجة كاملة</b> — سلّم في وقته.</li>
+        <li>${symIcon("⏰")} <b>نصف درجة</b> — سلّم متأخرًا.</li>
+        <li>${symIcon("❌")} <b>صفر</b> — لم يسلّم.</li>
+        <li>${symIcon("⬜")} <b>لم يصل بعد</b> — لا يدخل في الحساب إطلاقًا، لا في درجة الطالب ولا في الدرجة القصوى.</li>
+      </ul>
+      <h3>أين أغيّر ماذا؟</h3>
+      <ul>
+        <li><b>المادة، الصف والشعبة، الفصل الدراسي، العام، معلم المادة، مدير المدرسة</b> ← تبويب <b>الرصد</b>، بطاقة «بيانات الشعبة» أعلى الصفحة (لكل شعبة بياناتها الخاصة). هذه بالضبط هي التي تظهر في <b>الجزء الأيسر من الكليشة</b> عند الطباعة.</li>
+        <li><b>الدولة والوزارة واسم المدرسة وعنوان الكشف</b> (يمين الكليشة ووسطها) ← بطاقة «بيانات الكليشة» في هذا التبويب، وتُطبَّق على كل الشعب.</li>
+        <li><b>بنود الرصد</b> — إضافة بند أو حذفه أو تغيير عدد خاناته ودرجته ← بطاقة «عناصر الرصد» أعلاه.</li>
+        <li><b>التوقيع</b> الذي يُدرج تلقائيًا في التقارير ← بطاقة «التوقيع الإلكتروني».</li>
+      </ul>
+      <h3>متى يظهر الطالب في «يحتاج متابعة»؟</h3>
+      <ul>
+        <li>${sevBadge("urgent")} <b>عاجل</b>: نسبة إنجازه أقل من ٦٠٪، أو عنده ٣ حالات عدم تسليم ${symIcon("❌")} فأكثر.</li>
+        <li>${sevBadge("warn")} <b>متابعة</b>: عنده ٥ تأخيرات ${symIcon("⏰")} فأكثر مع بقاء إنجازه مقبولًا.</li>
+        <li>المستويات: ممتاز ٩٠٪ فأكثر · جيد ٧٥–٨٩٪ · يحتاج تحسين أقل من ٧٥٪.</li>
+      </ul>
+      <h3>الطباعة</h3>
+      <ul>
+        <li>جدول الشعبة يُطبع <b>عرضيًا</b> تلقائيًا — لا تغيّر الاتجاه يدويًا من نافذة الطباعة.</li>
+        <li>تقرير الإحالة وتقرير ولي الأمر يُطبعان <b>طوليًا</b> على A4.</li>
+      </ul>
+    </div>` : ``}
+  </div>
 `;
 }
 
@@ -1495,9 +1695,19 @@ function renderSectionSheet(key, opts){
     <h1>${escapeAttr(lh.docTitle)}</h1>
   </div>
 
+  ${forPrint ? `` : `
+  <button type="button" class="meta-strip" id="btn-toggle-sectionmeta-strip" title="تعديل بيانات الشعبة">
+    <span class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+    <span class="ms-body">
+      <span class="ms-line1">${escapeAttr(meta.subject) || 'لم تُحدَّد المادة'} · ${escapeAttr(key)}</span>
+      <span class="ms-line2">${[escapeAttr(meta.term), escapeAttr(meta.year)].filter(Boolean).join(' · ') || 'اضغط لتحديد المادة والفصل والعام الدراسي'}</span>
+    </span>
+    <span class="ms-act">${STATE.sectionMetaOpen ? 'إخفاء' : 'تعديل'}</span>
+  </button>`}
+
   <div class="card meta-card">
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-      <span>بيانات الشعبة</span>
+      <span>بيانات الشعبة — تظهر في الجزء الأيسر من الكليشة عند الطباعة</span>
       <button type="button" id="btn-toggle-sectionmeta" class="icon-btn" style="background:#eef2f7; color:var(--navy); border-color:var(--border); padding:5px 10px; font-size:11.5px;">${STATE.sectionMetaOpen ? "🔼 إخفاء" : "🔽 إظهار"}</button>
     </h2>
     ${STATE.sectionMetaOpen ? `
@@ -1553,9 +1763,9 @@ function renderSectionSheet(key, opts){
       </table>
     </div>
     <div class="legend">
-      <div><b>الرموز:</b> اضغط على أي خلية لفتح قائمة الاختيار — ✔️ = درجة كاملة &nbsp; ❌ = صفر &nbsp; ⏰ = نصف درجة (متأخر بالتسليم) &nbsp; ⬜ = لم يصل له بعد (لا يُحسب)</div>
+      <div><b>الرموز:</b> اضغط على أي خلية لفتح قائمة الاختيار — ${symIcon("✔️")} = درجة كاملة &nbsp; ${symIcon("❌")} = صفر &nbsp; ${symIcon("⏰")} = نصف درجة (متأخر بالتسليم) &nbsp; ${symIcon("⬜")} = لم يصل له بعد (لا يُحسب)</div>
       <div><b>ألوان درجة الطالب:</b> 🟩 أخضر = 80% فأكثر من الدرجة القصوى &nbsp; 🟨 أصفر = 60–79% &nbsp; 🟥 أحمر = أقل من 60% &nbsp; ⬜ رمادي فاتح = لم يُدرَج اسم الطالب بعد</div>
-      <div><b>شريط المتابعة (على يمين الصف):</b> 🔴 <b>عاجل</b> = الإنجاز أقل من 60% أو 3 حالات عدم تسليم (❌) فأكثر &nbsp; 🟡 <b>متابعة</b> = 5 تأخيرات (⏰) فأكثر مع بقاء الإنجاز مقبولًا</div>
+      <div><b>شريط المتابعة (على يمين الصف):</b> ${sevBadge("urgent")} = الإنجاز أقل من 60% أو 3 حالات عدم تسليم ${symIcon("❌")} فأكثر &nbsp; ${sevBadge("warn")} = 5 تأخيرات ${symIcon("⏰")} فأكثر مع بقاء الإنجاز مقبولًا</div>
     </div>
     <div class="print-footer">
       <div>معلم المادة: ${escapeAttr(meta.teacher)}</div>
@@ -1673,13 +1883,90 @@ function earlyWarningList(){
       if(c.maxGrade===0) return;
       const nearLowRatio = c.ratio!==null && c.ratio>=0.6 && c.ratio<0.7;
       const nearLate = c.lateCount>=3 && c.lateCount<5;
-      if(nearLowRatio || nearLate){
-        list.push({key, name:row.name, ratioPct: c.ratio!==null?Math.round(c.ratio*100):null, lateCount:c.lateCount});
+      const nearMiss = c.missCount===2;
+      if(nearLowRatio || nearLate || nearMiss){
+        list.push({key, name:row.name, ratioPct: c.ratio!==null?Math.round(c.ratio*100):null, lateCount:c.lateCount, missCount:c.missCount});
       }
     });
   }
   list.sort((a,b)=>(a.ratioPct??101)-(b.ratioPct??101));
   return list;
+}
+
+/* ---- طلاب لم يُرصد لهم أي شيء بعد ---- */
+function unassessedList(){
+  const list = [];
+  for(const key of SECTION_KEYS){
+    STATE.sections[key].forEach(row=>{
+      if(row.name.trim()==="") return;
+      if(studentCalc(row).maxGrade===0) list.push({key, name:row.name});
+    });
+  }
+  return list;
+}
+
+/* ---- ترتيب البنود من الأضعف للأقوى (نسبة مئوية من درجة البند) ---- */
+function categoryPerformance(){
+  const cfg = STATE.config;
+  const out = [];
+  for(const k of CAT_KEYS){
+    let sum = 0, max = 0;
+    for(const key of SECTION_KEYS){
+      for(const row of STATE.sections[key]){
+        if(row.name.trim()==="") continue;
+        const arr = row[k] || [];
+        sum += sumGroup(arr, cfg[k].point, cfg[k].point/2);
+        max += (arr.length - countSym(arr,"⬜")) * cfg[k].point;
+      }
+    }
+    out.push({ key:k, name:cfg[k].name, pct: max>0 ? Math.round((sum/max)*100) : null, color: catColor(k) });
+  }
+  return out;
+}
+
+/* ---- كل المتميزين (٩٠٪ فأكثر) لا أعلى خمسة فقط ---- */
+function excellenceList(){
+  const list = [];
+  for(const key of SECTION_KEYS){
+    STATE.sections[key].forEach(row=>{
+      if(row.name.trim()==="") return;
+      const c = studentCalc(row);
+      if(c.maxGrade===0 || c.ratio===null) return;
+      if(c.ratio>=0.9) list.push({key, name:row.name, ratioPct: Math.round(c.ratio*100), final:c.final});
+    });
+  }
+  list.sort((a,b)=>b.ratioPct-a.ratioPct);
+  return list;
+}
+
+/* ---- متوسط نسبة إنجاز الشعبة (للمقارنة الفردية) ---- */
+function sectionAvgRatio(key){
+  const rows = (STATE.sections[key]||[]).filter(r=>r.name.trim()!=="");
+  const ratios = rows.map(studentCalc).filter(c=>c.maxGrade>0 && c.ratio!==null).map(c=>c.ratio);
+  if(ratios.length===0) return null;
+  return ratios.reduce((a,b)=>a+b,0)/ratios.length;
+}
+
+/* ---- مقارنة الفترات: تُطابق كل شعبة حالية بنسخها المؤرشفة «٢/١ (الفصل الأول - ١٤٤٧)» ---- */
+function periodComparison(){
+  const rows = [];
+  for(const key of SECTION_KEYS){
+    if(key.includes(' (')) continue; // نفسها نسخة مؤرشفة
+    const archived = SECTION_KEYS.filter(k=> k !== key && k.startsWith(key + ' ('));
+    if(archived.length === 0) continue;
+    const cur = sectionAvgRatio(key);
+    archived.forEach(ak=>{
+      const prev = sectionAvgRatio(ak);
+      if(cur===null && prev===null) return;
+      rows.push({
+        key, archivedKey: ak,
+        prevPct: prev===null ? null : Math.round(prev*100),
+        curPct:  cur===null  ? null : Math.round(cur*100),
+        delta: (cur!==null && prev!==null) ? Math.round((cur-prev)*100) : null
+      });
+    });
+  }
+  return rows;
 }
 
 /* ---- Top performers leaderboard ---- */
@@ -1714,11 +2001,10 @@ function renderAnalysis(opts){
 
   const cfg = STATE.config;
   const totalMax = configTotalMax(cfg);
-  const catField = { p:'avgP', h:'avgH', t:'avgT', j:'avgJ' };
   const cards = SECTION_KEYS.map(k=>{
     const s = stats[k];
     const pct = s.n>0 && totalMax>0 ? Math.min(100, (s.avgFinal/totalMax)*100) : 0;
-    const catRows = CAT_KEYS.map(ck=>`<div class="stat-row"><span>متوسط ${escapeAttr(cfg[ck].name)}</span><span class="v">${fmt(s[catField[ck]])}</span></div>`).join("");
+    const catRows = CAT_KEYS.map(ck=>`<div class="stat-row"><span>متوسط ${escapeAttr(cfg[ck].name)}</span><span class="v">${fmt(s['avg_'+ck])}</span></div>`).join("");
     return `<div class="stat-card">
       <h3>${k} <span class="badge">${s.n} طالب مرصود</span></h3>
       <div class="stat-row"><span>متوسط المجموع النهائي</span><span class="v">${fmt(s.avgFinal)}</span></div>
@@ -1817,22 +2103,33 @@ function renderAnalysis(opts){
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
     <table class="followup-table">
-      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th><th></th></tr></thead>
+      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th><th>حالة التواصل</th><th></th></tr></thead>
       <tbody>
-        ${followUps.map(f=>`<tr class="sev-${f.severity}">
+        ${followUps.map(f=>{
+          const ct = lastContactFor(f.key, f.name);
+          return `<tr class="sev-${f.severity}">
           <td class="fu-name">${escapeAttr(f.name)}</td>
           <td>${escapeAttr(f.key)}</td>
-          <td class="fu-sev">${SEV_LABEL[f.severity]||''}</td>
+          <td class="fu-sev">${sevBadge(f.severity)}</td>
           <td class="fu-reason">${escapeAttr(f.reason)}</td>
           <td>${f.ratioPct!==null?f.ratioPct+'%':'—'}</td>
           <td>${f.lateCount}</td>
           <td>${f.missCount}</td>
-          <td><button type="button" class="fu-open-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📋 إحالة</button></td>
-        </tr>`).join("")}
+          <td>${ct
+            ? `<span class="cstat ${contactStatusClass(ct.status)}">${escapeAttr(ct.status)}</span><br><span style="font-size:10px; color:var(--muted);">${escapeAttr(ct.savedAtHijri||'')}</span>`
+            : `<span class="cstat cs-never">لم يتم التواصل</span>`}</td>
+          <td>
+            <div class="fu-actions">
+              <button type="button" class="fu-open-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📋 إحالة</button>
+              <button type="button" class="fu-open-btn fu-parent-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">👪 تقرير ولي أمر</button>
+              <button type="button" class="fu-open-btn fu-contact-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">☎️ تسجيل تواصل</button>
+            </div>
+          </td>
+        </tr>`;}).join("")}
       </tbody>
     </table>
     </div>
-    <div class="hint" style="margin-top:8px;">🔴 <b>عاجل</b>: انخفاض الإنجاز عن ٦٠٪ أو ٣ حالات عدم تسليم فأكثر &nbsp;·&nbsp; 🟡 <b>متابعة</b>: تكرار التأخر (٥ تأخيرات فأكثر) مع بقاء الإنجاز مقبولًا.</div>`}
+    <div class="hint" style="margin-top:8px;">${sevBadge("urgent")} انخفاض الإنجاز عن ٦٠٪ أو ٣ حالات عدم تسليم فأكثر &nbsp;·&nbsp; ${sevBadge("warn")} تكرار التأخر (٥ تأخيرات فأكثر) مع بقاء الإنجاز مقبولًا.</div>`}
   </div>`;
 
   /* ---- 🟡 منطقة الإنذار المبكر ---- */
@@ -1840,16 +2137,17 @@ function renderAnalysis(opts){
   const earlyWarnCard = earlyWarn.length===0 ? `` : `
   <div class="card">
     <h2>🟡 منطقة الإنذار المبكر</h2>
-    <div class="hint" style="margin-top:0; margin-bottom:8px;">طلاب يقتربون من حد "يحتاج متابعة" (60–70% إنجاز أو 3–4 تأخيرات) لكنهم لم يصلوه بعد — فرصة للتدخل المبكر.</div>
+    <div class="hint" style="margin-top:0; margin-bottom:8px;">طلاب يقتربون من حد "يحتاج متابعة" (٦٠–٧٠٪ إنجاز، أو ٣–٤ تأخيرات، أو حالتا عدم تسليم) لكنهم لم يصلوه بعد — فرصة للتدخل المبكر.</div>
     <div class="table-wrap">
     <table class="followup-table">
-      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الإنجاز</th><th>التأخيرات</th></tr></thead>
+      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th></tr></thead>
       <tbody>
         ${earlyWarn.map(f=>`<tr>
           <td class="fu-name">${escapeAttr(f.name)}</td>
           <td>${escapeAttr(f.key)}</td>
           <td>${f.ratioPct!==null?f.ratioPct+'%':'—'}</td>
           <td>${f.lateCount}</td>
+          <td>${f.missCount}</td>
         </tr>`).join("")}
       </tbody>
     </table>
@@ -1895,7 +2193,7 @@ function renderAnalysis(opts){
       <span class="ip-track bar-track"><span class="bar-fill" style="width:${completion.pct}%"></span></span>
       <span class="ip-val">${completion.pct}%</span>
     </div>
-    <div class="hint">${completion.filled} من ${completion.total} خانة تم رصدها؛ الباقي ⬜ لم يصل بعد.</div>
+    <div class="hint">${completion.filled} من ${completion.total} خانة تم رصدها؛ الباقي ${symIcon("⬜")} لم يصل بعد.</div>
   </div>`;
 
   /* ---- جدول مقارنة الشعب ---- */
@@ -1912,18 +2210,126 @@ function renderAnalysis(opts){
       <tbody>
         ${SECTION_KEYS.map(k=>{
           const s=stats[k];
-          const catTds = CAT_KEYS.map(ck=>`<td>${fmt(s[catField[ck]])}</td>`).join("");
+          const catTds = CAT_KEYS.map(ck=>`<td>${fmt(s['avg_'+ck])}</td>`).join("");
           return `<tr><td>${k}</td><td>${s.n}</td><td>${fmt(s.avgFinal)}</td><td>${fmt(s.maxFinal)}</td><td>${fmt(s.minFinal)}</td>${catTds}</tr>`;
         }).join("")}
         <tr><td>الكل</td><td>${totalN}</td><td>${fmt(overallAvgFinal)}</td><td>${fmt(overallMax)}</td><td>${fmt(overallMin)}</td>
-        ${CAT_KEYS.map(ck=>`<td>${fmt(weightedAvg(catField[ck]))}</td>`).join("")}</tr>
+        ${CAT_KEYS.map(ck=>`<td>${fmt(weightedAvg('avg_'+ck))}</td>`).join("")}</tr>
       </tbody>
     </table>
     </div>
     <div class="hint">يتم تحديث هذا التحليل تلقائيًا كلما رصدت درجة جديدة في أي شعبة.</div>
   </div>`;
 
-  return analysisToolbar + summaryBar + sectionPerf + itemPerfCard + topPerfCard + followUpCard + earlyWarnCard + delaysCard + levelCard + completionCard + comparisonTable;
+  /* ---- ⛔ طلاب لم يُرصد لهم شيء بعد ---- */
+  const unassessed = unassessedList();
+  const unassessedCard = unassessed.length===0 ? `` : `
+  <div class="card">
+    <h2>⛔ طلاب لم يبدأ رصدهم</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:8px;">${unassessed.length} طالبًا لم تُرصد لهم أي خانة بعد، فلا يظهرون في أي متوسط أو مستوى. راجعهم قبل اعتماد الكشف.</div>
+    <div class="chip-list">
+      ${unassessed.map(s=>`<span class="chip-item">${escapeAttr(s.name)} <i>${escapeAttr(s.key)}</i></span>`).join("")}
+    </div>
+  </div>`;
+
+  /* ---- 🧭 أضعف البنود ---- */
+  const catPerf = categoryPerformance().filter(c=>c.pct!==null);
+  const catSorted = catPerf.slice().sort((a,b)=>a.pct-b.pct);
+  const weakestCard = catPerf.length===0 ? `` : `
+  <div class="card">
+    <h2>🧭 أداء البنود</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">
+      ${catSorted.length>1
+        ? `أضعف بند لدى طلابك هو <b>${escapeAttr(catSorted[0].name)}</b> بنسبة <b>${catSorted[0].pct}%</b>، وأقواها <b>${escapeAttr(catSorted[catSorted.length-1].name)}</b> بنسبة <b>${catSorted[catSorted.length-1].pct}%</b> — ركّز خطتك العلاجية على الأول.`
+        : `نسبة إنجاز بند <b>${escapeAttr(catSorted[0].name)}</b> هي <b>${catSorted[0].pct}%</b>.`}
+    </div>
+    ${catPerf.map(c=>`
+      <div class="ip-row">
+        <span class="ip-label">${escapeAttr(c.name)}</span>
+        <span class="ip-track bar-track"><span class="bar-fill" style="width:${c.pct}%; background:${c.color};"></span></span>
+        <span class="ip-val">${c.pct}%</span>
+      </div>`).join("")}
+  </div>`;
+
+  /* ---- 🌟 قائمة التميز الكاملة ---- */
+  const excellence = excellenceList();
+  const excellenceCard = `
+  <div class="card">
+    <h2>🌟 قائمة التميز (٩٠٪ فأكثر)</h2>
+    ${excellence.length===0
+      ? `<div class="empty-note">لا يوجد طلاب بلغوا ٩٠٪ حتى الآن.</div>`
+      : `<div class="hint" style="margin-top:0; margin-bottom:8px;">${excellence.length} طالبًا يستحقون التكريم.</div>
+      <div class="table-wrap">
+      <table class="followup-table">
+        <thead><tr><th>الطالب</th><th>الشعبة</th><th>الإنجاز</th><th>المجموع</th></tr></thead>
+        <tbody>
+          ${excellence.map(s=>`<tr>
+            <td class="fu-name">${escapeAttr(s.name)}</td>
+            <td>${escapeAttr(s.key)}</td>
+            <td>${s.ratioPct}%</td>
+            <td>${fmt(s.final)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+      </div>`}
+  </div>`;
+
+  /* ---- 🔁 مقارنة الفترات ---- */
+  const periods = periodComparison();
+  const periodCard = periods.length===0 ? `` : `
+  <div class="card">
+    <h2>🔁 مقارنة الفترات</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:8px;">مقارنة متوسط نسبة الإنجاز في كل شعبة بينها وبين نسختها المؤرشفة من فصل سابق.</div>
+    <div class="table-wrap">
+    <table class="followup-table">
+      <thead><tr><th>الشعبة</th><th>الفترة السابقة</th><th>الفترة الحالية</th><th>الفرق</th></tr></thead>
+      <tbody>
+        ${periods.map(p=>{
+          const up = p.delta!==null && p.delta>0;
+          const flat = p.delta===null || p.delta===0;
+          const col = flat ? 'var(--muted)' : (up ? 'var(--teal-d)' : '#C0392B');
+          const sign = p.delta===null ? '—' : (up?'▲ +':(p.delta<0?'▼ ':'')) + p.delta + '%';
+          return `<tr>
+            <td class="fu-name">${escapeAttr(p.key)}</td>
+            <td class="fu-reason">${escapeAttr(p.archivedKey)}<br>${p.prevPct===null?'—':p.prevPct+'%'}</td>
+            <td>${p.curPct===null?'—':p.curPct+'%'}</td>
+            <td style="color:${col}; font-weight:700;">${sign}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+    </div>
+  </div>`;
+
+  return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + topPerfCard + excellenceCard + followUpCard + earlyWarnCard + unassessedCard + delaysCard + levelCard + periodCard + completionCard + comparisonTable;
+}
+
+/* ================= سجل التواصل مع أولياء الأمور ================= */
+const CONTACT_METHODS = ["اتصال هاتفي", "رسالة نصية", "واتساب", "لقاء في المدرسة", "عبر المرشد الطلابي"];
+const CONTACT_STATUSES = ["تم التواصل", "لم يُرد", "بانتظار الرد", "تم الحل"];
+function contactStatusClass(status){
+  if(status==="تم الحل") return "cs-done";
+  if(status==="تم التواصل") return "cs-ok";
+  if(status==="لم يُرد") return "cs-none";
+  return "cs-wait";
+}
+/* آخر تواصل مسجّل لطالب بعينه (المطابقة بالاسم داخل الشعبة حتى تنجو من تغيّر ترتيب الصفوف) */
+function lastContactFor(key, name){
+  const n = (name||'').trim();
+  const list = (STATE.contacts||[]).filter(c=> c.key===key && (c.name||'').trim()===n);
+  if(list.length===0) return null;
+  return list.slice().sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''))[0];
+}
+function saveContact(data){
+  const entry = Object.assign({}, data, {
+    id: 'ct_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+    savedAt: new Date().toISOString(),
+    savedAtHijri: getHijriDateStr()
+  });
+  if(!Array.isArray(STATE.contacts)) STATE.contacts = [];
+  STATE.contacts.unshift(entry);
+  persistState();
+  return entry;
 }
 
 /* ================= RENDER: REFERRAL ARCHIVE (أرشيف الإحالات) ================= */
@@ -1993,7 +2399,35 @@ function renderArchive(){
     </div>
     <div class="hint">هذا الأرشيف سجل توثيقي لكل تقرير إحالة تم حفظه — يبقى محفوظًا هنا حتى لو تغيّر رصد الطالب لاحقًا. غيّر الحالة من القائمة المنسدلة لمتابعة كل حالة.</div>
   </div>
-  <div class="ref-list">${cards}</div>`;
+  <div class="ref-list">${cards}</div>
+  ${renderContactLog()}`;
+}
+
+/* ---- 📞 سجل التواصل مع أولياء الأمور ---- */
+function renderContactLog(){
+  const list = (STATE.contacts || []).slice();
+  return `
+  <div class="card">
+    <h2>📞 سجل التواصل مع أولياء الأمور</h2>
+    ${list.length===0
+      ? `<div class="hint">لا توجد محاولات تواصل مسجّلة بعد. سجّل تواصلك من تبويب «التحليل» ← جدول «يحتاج متابعة» ← زر «☎️ تسجيل تواصل»، أو من قائمة الطالب في جدول الرصد.</div>`
+      : `<div class="hint" style="margin-bottom:10px;">${list.length} محاولة تواصل مسجّلة. هذا السجل يوثّق تعاملك مع الحالة، وهو ما يُطلب عادة عند رفع الحالة للإدارة.</div>
+      <div class="contact-log">
+        ${list.map(c=>`
+        <div class="ct-card" data-ct-id="${c.id}">
+          <div class="ct-top">
+            <span class="ct-nm">${escapeAttr(c.name)}</span>
+            <span class="ct-sec">${escapeAttr(c.key)}</span>
+            <span class="cstat ${contactStatusClass(c.status)}">${escapeAttr(c.status)}</span>
+            <button type="button" class="ct-del" data-ct-delete="${c.id}" title="حذف">🗑️</button>
+          </div>
+          <div class="ct-meta">
+            <b>التاريخ:</b> ${escapeAttr(c.dateHijri || c.savedAtHijri || '')} &nbsp;·&nbsp; <b>الوسيلة:</b> ${escapeAttr(c.method)}<br>
+            <b>مع:</b> ${escapeAttr(c.person || 'ولي الأمر')}${c.note ? `<br><b>ما دار في التواصل:</b> ${escapeAttr(c.note)}` : ''}
+          </div>
+        </div>`).join("")}
+      </div>`}
+  </div>`;
 }
 function wireArchiveEvents(){
   const list = document.querySelector('.ref-list');
@@ -2029,6 +2463,20 @@ function wireArchiveEvents(){
   });
 }
 
+function wireContactLogEvents(){
+  document.querySelectorAll('[data-ct-delete]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-ct-delete');
+      showConfirmDialog('حذف من سجل التواصل', 'سيتم حذف محاولة التواصل هذه نهائيًا. هل تريد المتابعة؟', ()=>{
+        STATE.contacts = (STATE.contacts||[]).filter(c=>c.id!==id);
+        persistState();
+        render();
+        showToast('تم حذف محاولة التواصل');
+      });
+    });
+  });
+}
+
 /* ================= MAIN RENDER ================= */
 function sortSectionArray(key){
   const arr = STATE.sections[key];
@@ -2043,7 +2491,6 @@ function sortSectionArray(key){
 }
 
 /* ================= RENDER: الرئيسية ================= */
-const CAT_COLOR = { p:'var(--part)', h:'var(--hw)', t:'var(--task)', j:'var(--proj)' };
 
 function greetingWord(){
   const h = new Date().getHours();
@@ -2148,6 +2595,7 @@ function wireNoSectionsEvents(){
 }
 
 function render(){
+  syncCatKeys();
   closePopupMenu();
   renderTabs();
   renderBottomNav();
@@ -2164,6 +2612,7 @@ function render(){
   } else if(view === 'archive'){
     main.innerHTML = renderArchive();
     wireArchiveEvents();
+    wireContactLogEvents();
   } else if(view === 'account'){
     main.innerHTML = renderAccount();
     wireAccountEvents();
@@ -2243,7 +2692,9 @@ function wireAnalysisEvents(){
     btn.addEventListener('click', ()=>{
       const key = btn.dataset.key;
       const idx = parseInt(btn.dataset.idx);
-      openReferralReportDialog(key, idx);
+      if(btn.classList.contains('fu-parent-btn')) printParentReport(key, idx);
+      else if(btn.classList.contains('fu-contact-btn')) showContactDialog(key, idx);
+      else openReferralReportDialog(key, idx);
     });
   });
   const printAllBtn = document.querySelector('.fu-print-all-btn');
@@ -2415,14 +2866,19 @@ function wireSectionEvents(key){
     });
   });
 
+  const toggleSectionMeta = ()=>{
+    STATE.sectionMetaOpen = !STATE.sectionMetaOpen;
+    persistState();
+    render();
+    if(STATE.sectionMetaOpen){
+      const f = document.getElementById('m-subject');
+      if(f) f.focus();
+    }
+  };
   const btnToggleSectionMeta = document.getElementById('btn-toggle-sectionmeta');
-  if(btnToggleSectionMeta){
-    btnToggleSectionMeta.addEventListener('click', ()=>{
-      STATE.sectionMetaOpen = !STATE.sectionMetaOpen;
-      persistState();
-      render();
-    });
-  }
+  if(btnToggleSectionMeta) btnToggleSectionMeta.addEventListener('click', toggleSectionMeta);
+  const btnToggleSectionMetaStrip = document.getElementById('btn-toggle-sectionmeta-strip');
+  if(btnToggleSectionMetaStrip) btnToggleSectionMetaStrip.addEventListener('click', toggleSectionMeta);
 
   /* مبدّل جدول / بطاقات */
   document.querySelectorAll('[data-roster-view]').forEach(b=>{
@@ -2492,22 +2948,36 @@ function wireSettingsPanelEvents(){
     });
   }
 
+  const btnToggleGuide = document.getElementById('btn-toggle-guide');
+  if(btnToggleGuide){
+    btnToggleGuide.addEventListener('click', ()=>{
+      STATE.guideOpen = !STATE.guideOpen;
+      persistState();
+      render();
+    });
+  }
+
   const btnApplyConfig = document.getElementById('btn-apply-config');
   if(btnApplyConfig){
     btnApplyConfig.addEventListener('click', ()=>{
       const draft = {};
       for(const k of CAT_KEYS){
+        const nameEl = document.querySelector(`[data-cfg-name="${k}"]`);
+        if(!nameEl) continue;
         draft[k] = {
-          name: document.querySelector(`[data-cfg-name="${k}"]`).value,
+          name: nameEl.value,
           count: document.querySelector(`[data-cfg-count="${k}"]`).value,
-          point: document.querySelector(`[data-cfg-point="${k}"]`).value
+          point: document.querySelector(`[data-cfg-point="${k}"]`).value,
+          color: STATE.config[k].color
         };
       }
-      const newCfg = normalizeConfig(draft);
-      const shrinking = CAT_KEYS.some(k=> newCfg[k].count < STATE.config[k].count);
+      const { config: newCfg, order: newOrder } = normalizeConfig(draft, CAT_KEYS.filter(k=>draft[k]));
+      const shrinking = newOrder.some(k=> newCfg[k].count < STATE.config[k].count);
       const doApply = ()=>{
         STATE.config = newCfg;
-        applyConfigToAllRows(newCfg);
+        STATE.configOrder = newOrder;
+        syncCatKeys();
+        applyConfigToAllRows(newCfg, newOrder);
         persistState();
         render();
         showToast('تم تحديث عناصر الرصد');
@@ -2519,6 +2989,57 @@ function wireSettingsPanelEvents(){
       }
     });
   }
+
+  const btnAddCat = document.getElementById('btn-add-cat');
+  if(btnAddCat){
+    btnAddCat.addEventListener('click', ()=>{
+      if(CAT_KEYS.length >= 8){ showAlertDialog('الحد الأقصى ٨ بنود في الكشف الواحد'); return; }
+      const k = genCatKey(STATE.config);
+      STATE.config[k] = { name:`بند جديد ${CAT_KEYS.length+1}`, count:5, point:1, color: CAT_PALETTE[CAT_KEYS.length % CAT_PALETTE.length] };
+      STATE.configOrder = CAT_KEYS.concat([k]);
+      syncCatKeys();
+      applyConfigToAllRows(STATE.config, CAT_KEYS);
+      STATE.configOpen = true;
+      persistState();
+      render();
+      showToast('تمت إضافة بند جديد — غيّر اسمه ودرجته ثم اضغط «تطبيق التغييرات»');
+    });
+  }
+
+  document.querySelectorAll('[data-cfg-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.getAttribute('data-cfg-del');
+      if(!STATE.config[k] || CAT_KEYS.length<=1) return;
+      const name = STATE.config[k].name;
+      showConfirmDialog('حذف بند الرصد', `سيتم حذف بند "${name}" وكل ما رُصد فيه لدى جميع الطلاب في كل الشعب، ولا يمكن التراجع. هل تريد المتابعة؟`, ()=>{
+        delete STATE.config[k];
+        STATE.configOrder = CAT_KEYS.filter(x=>x!==k);
+        syncCatKeys();
+        applyConfigToAllRows(STATE.config, CAT_KEYS);
+        persistState();
+        render();
+        showToast(`تم حذف بند "${name}"`);
+      });
+    });
+  });
+
+  const moveCat = (k, dir)=>{
+    const order = CAT_KEYS.slice();
+    const i = order.indexOf(k);
+    const j = i + dir;
+    if(i<0 || j<0 || j>=order.length) return;
+    order[i] = order[j]; order[j] = k;
+    STATE.configOrder = order;
+    syncCatKeys();
+    persistState();
+    render();
+  };
+  document.querySelectorAll('[data-cfg-up]').forEach(btn=>{
+    btn.addEventListener('click', ()=> moveCat(btn.getAttribute('data-cfg-up'), -1));
+  });
+  document.querySelectorAll('[data-cfg-down]').forEach(btn=>{
+    btn.addEventListener('click', ()=> moveCat(btn.getAttribute('data-cfg-down'), +1));
+  });
 }
 
 /* الترويسة صارت تتبع التبويب المفتوح — انظر updateAppChrome */
@@ -3113,7 +3634,7 @@ function openSymMenu(cellEl, key, idx, group, gi){
   closePopupMenu();
   const menu = document.createElement('div');
   menu.className = 'sym-menu';
-  menu.innerHTML = SYMS.map(s=>`<button type="button" class="sym-opt" data-sym="${s}"><span>${s}</span><span class="sym-lbl">${SYM_LABEL[s]}</span></button>`).join("");
+  menu.innerHTML = SYMS.map(s=>`<button type="button" class="sym-opt" data-sym="${s}">${symIcon(s)}<span class="sym-lbl">${SYM_LABEL[s]}</span></button>`).join("");
   menu.querySelectorAll('.sym-opt').forEach(btn=>{
     btn.addEventListener('click', (ev)=>{
       ev.stopPropagation();
@@ -3135,6 +3656,8 @@ function openNameMenu(anchorEl, key, idx){
     <button type="button" class="sym-opt" data-act="rename"><span>✏️</span><span>تعديل الاسم</span></button>
     <button type="button" class="sym-opt" data-act="move"><span>🔀</span><span>نقل إلى شعبة أخرى</span></button>
     <button type="button" class="sym-opt" data-act="referral"><span>📋</span><span>تقرير إحالة</span></button>
+    <button type="button" class="sym-opt" data-act="parent"><span>👪</span><span>تقرير لولي الأمر</span></button>
+    <button type="button" class="sym-opt" data-act="contact"><span>☎️</span><span>تسجيل تواصل</span></button>
   `;
   menu.querySelector('[data-act="rename"]').addEventListener('click', (ev)=>{
     ev.stopPropagation();
@@ -3150,6 +3673,16 @@ function openNameMenu(anchorEl, key, idx){
     ev.stopPropagation();
     closePopupMenu();
     openReferralReportDialog(key, idx);
+  });
+  menu.querySelector('[data-act="parent"]').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closePopupMenu();
+    printParentReport(key, idx);
+  });
+  menu.querySelector('[data-act="contact"]').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closePopupMenu();
+    showContactDialog(key, idx);
   });
   positionPopupMenu(menu, anchorEl);
 }
@@ -3432,6 +3965,205 @@ function printReferralReport(data){
   printHolder(holder);
 }
 
+/* ================= تقرير ولي الأمر ================= */
+/* ورقة مختصرة موجَّهة للبيت لا للإدارة: تفصيل البنود، مقارنة بمتوسط الشعبة،
+   وتوصية المعلم، مع حقل توقيع ولي الأمر للإعادة. */
+function buildParentReportData(key, idx){
+  const row = STATE.sections[key][idx];
+  const meta = STATE.meta[key] || blankMeta();
+  const cfg = STATE.config;
+  const c = studentCalc(row);
+  const ind = computeReferralIndicators(row);
+  const secAvg = sectionAvgRatio(key);
+  const ratio = c.ratio;
+  const cats = CAT_KEYS.map(k=>{
+    const arr = row[k] || [];
+    const maxK = (arr.length - countSym(arr,"⬜")) * cfg[k].point;
+    const sum = sumGroup(arr, cfg[k].point, cfg[k].point/2);
+    return {
+      name: cfg[k].name,
+      sum, max: maxK,
+      full: countSym(arr,"✔️"), late: countSym(arr,"⏰"), miss: countSym(arr,"❌"),
+      pct: maxK>0 ? Math.round((sum/maxK)*100) : null
+    };
+  });
+  let recommendation;
+  if(c.severity==='urgent'){
+    recommendation = 'نأمل متابعة الطالب في المنزل والتأكد من إنجاز المهام وتسليمها في مواعيدها، والتواصل مع معلم المادة لوضع خطة علاجية.';
+  } else if(c.severity==='warn'){
+    recommendation = 'مستوى الطالب مقبول، غير أن تكرار التأخر في التسليم يؤثر على درجته. نأمل متابعته في مواعيد التسليم.';
+  } else if(ratio!==null && ratio>=0.9){
+    recommendation = 'نشكر لكم متابعتكم؛ مستوى الطالب متميز ونأمل استمراره على هذا المستوى.';
+  } else {
+    recommendation = 'مستوى الطالب جيد، ونأمل مزيدًا من المتابعة للوصول به إلى مستوى التميز.';
+  }
+  return {
+    studentName: row.name, section: key, subject: meta.subject, teacher: meta.teacher,
+    principal: meta.principal, term: meta.term, year: meta.year,
+    final: c.final, maxGrade: c.maxGrade,
+    ratioPct: ratio!==null ? Math.round(ratio*100) : null,
+    sectionAvgPct: secAvg!==null ? Math.round(secAvg*100) : null,
+    lateCount: c.lateCount, missCount: c.missCount,
+    assessedCount: ind.assessedCount,
+    levelName: studentLevelName(c, row.name.trim()===""),
+    cats, recommendation
+  };
+}
+
+function parentReportHtml(d){
+  const lh = STATE.letterhead;
+  const logoSrc = document.querySelector('header.app-top img')?.src || '';
+  let compare = '—';
+  if(d.ratioPct!==null && d.sectionAvgPct!==null){
+    const diff = d.ratioPct - d.sectionAvgPct;
+    if(diff > 0) compare = `أعلى من متوسط الشعبة بـ ${diff}% (متوسط الشعبة ${d.sectionAvgPct}%)`;
+    else if(diff < 0) compare = `أقل من متوسط الشعبة بـ ${Math.abs(diff)}% (متوسط الشعبة ${d.sectionAvgPct}%)`;
+    else compare = `مطابق لمتوسط الشعبة (${d.sectionAvgPct}%)`;
+  }
+  return `
+    <div class="referral-sheet" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; color:#111;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:22px;">
+        <div style="text-align:right; font-size:12px; line-height:1.9; flex:1;">
+          <div>${escapeAttr(lh.line1)}</div>
+          <div>${escapeAttr(lh.line2)}</div>
+          <div style="font-weight:700;">${escapeAttr(lh.school)}</div>
+        </div>
+        ${logoSrc ? `<img alt="شعار وزارة التعليم" src="${logoSrc}" style="height:46px; width:auto; max-width:120px; object-fit:contain; flex-shrink:0;">` : ''}
+        <div style="text-align:left; font-size:12px; line-height:1.9; flex:1;">
+          <div>الفصل الدراسي: ${escapeAttr(d.term)||"...................."}</div>
+          <div>التاريخ: ${escapeAttr(getHijriDateStr())} هـ</div>
+        </div>
+      </div>
+
+      <h2 class="rf-title" style="text-align:center; font-size:18px; font-weight:700; margin:0 0 6px;">تقرير مستوى طالب لولي الأمر</h2>
+      <p style="text-align:center; font-size:12px; color:#444; margin:0 0 22px;">مادة ${escapeAttr(d.subject)||'..........'} — ${escapeAttr(d.section)}</p>
+
+      <div class="rf-section">
+        <h3>بيانات الطالب</h3>
+        <div class="rf-grid">
+          <div class="rf-row"><span class="rf-label">اسم الطالب:</span><span>${escapeAttr(d.studentName)}</span></div>
+          <div class="rf-row"><span class="rf-label">الصف / الشعبة:</span><span>${escapeAttr(d.section)}</span></div>
+          <div class="rf-row"><span class="rf-label">المادة:</span><span>${escapeAttr(d.subject)}</span></div>
+          <div class="rf-row"><span class="rf-label">معلم المادة:</span><span>${escapeAttr(d.teacher)}</span></div>
+        </div>
+      </div>
+
+      <div class="rf-section">
+        <h3>ملخص المستوى</h3>
+        <div class="rf-grid">
+          <div class="rf-row"><span class="rf-label">الدرجة:</span><span>${fmt(d.final)} من ${fmt(d.maxGrade)}</span></div>
+          <div class="rf-row"><span class="rf-label">نسبة الإنجاز:</span><span>${d.ratioPct!==null?d.ratioPct+'%':'—'}</span></div>
+          <div class="rf-row"><span class="rf-label">التقدير:</span><span>${escapeAttr(d.levelName)}</span></div>
+          <div class="rf-row"><span class="rf-label">عدد المهام المرصودة:</span><span>${d.assessedCount}</span></div>
+          <div class="rf-row"><span class="rf-label">مرات التأخر في التسليم:</span><span>${d.lateCount}</span></div>
+          <div class="rf-row"><span class="rf-label">مرات عدم التسليم:</span><span>${d.missCount}</span></div>
+          <div class="rf-row full"><span class="rf-label">مقارنة بزملائه:</span><span>${escapeAttr(compare)}</span></div>
+        </div>
+      </div>
+
+      <div class="rf-section">
+        <h3>تفصيل البنود</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">البند</th>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">الدرجة</th>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">النسبة</th>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">سُلّم</th>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">متأخر</th>
+              <th style="border:1px solid #cbd5e1; padding:6px; background:#f1f5f9;">لم يُسلّم</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${d.cats.map(c=>`<tr>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">${escapeAttr(c.name)}</td>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${fmt(c.sum)} / ${fmt(c.max)}</td>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${c.pct!==null?c.pct+'%':'—'}</td>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${c.full}</td>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${c.late}</td>
+              <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${c.miss}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rf-section">
+        <h3>توصية المعلم</h3>
+        <div class="rf-note">${escapeAttr(d.recommendation)}</div>
+      </div>
+
+      <div class="rf-sign">
+        <div>معلم المادة<span class="ln">${escapeAttr(d.teacher)}</span></div>
+        <div>التوقيع<span class="ln">${STATE.signature ? `<img src="${STATE.signature}" alt="توقيع المعلم" style="height:34px; max-width:110px; object-fit:contain; vertical-align:middle;">` : '&nbsp;'}</span></div>
+        <div>توقيع ولي الأمر<span class="ln">&nbsp;</span></div>
+      </div>
+    </div>`;
+}
+
+function printParentReport(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  if(row.name.trim()===""){ showAlertDialog('يجب إدخال اسم الطالب أولًا قبل إنشاء التقرير'); return; }
+  const holder = document.getElementById('print-referral-holder');
+  holder.innerHTML = parentReportHtml(buildParentReportData(key, idx));
+  printHolder(holder);
+}
+
+/* ================= نافذة تسجيل تواصل ولي أمر ================= */
+function showContactDialog(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  if(row.name.trim()===""){ showAlertDialog('يجب إدخال اسم الطالب أولًا'); return; }
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:460px;">
+        <h3>☎️ تسجيل تواصل مع ولي الأمر</h3>
+        <p style="margin:0 0 12px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+        <div class="meta-field" style="margin-bottom:10px;">
+          <label>وسيلة التواصل</label>
+          <select id="ct-method" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; background:#fafbfc;">
+            ${CONTACT_METHODS.map((m,i)=>`<option value="${escapeAttr(m)}"${i===0?' selected':''}>${escapeAttr(m)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="meta-field" style="margin-bottom:10px;">
+          <label>نتيجة التواصل</label>
+          <select id="ct-status" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; background:#fafbfc;">
+            ${CONTACT_STATUSES.map((m,i)=>`<option value="${escapeAttr(m)}"${i===0?' selected':''}>${escapeAttr(m)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="meta-field" style="margin-bottom:10px;">
+          <label>مع من تم التواصل</label>
+          <input id="ct-person" value="ولي الأمر" placeholder="مثال: والد الطالب">
+        </div>
+        <div class="meta-field" style="margin-bottom:14px;">
+          <label>ما دار في التواصل (اختياري)</label>
+          <textarea id="ct-note" rows="3" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;" placeholder="أُبلغ ولي الأمر بتكرار عدم التسليم ووعد بالمتابعة"></textarea>
+        </div>
+        <div class="warn-actions">
+          <button type="button" class="btn-cancel" id="ct-cancel">إلغاء</button>
+          <button type="button" class="btn-ok" id="ct-save">💾 حفظ في السجل</button>
+        </div>
+      </div>
+    </div>`;
+  const close = ()=> closeDialog();
+  document.getElementById('ct-cancel').addEventListener('click', close);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') close(); });
+  document.getElementById('ct-save').addEventListener('click', ()=>{
+    saveContact({
+      key, name: row.name,
+      method: document.getElementById('ct-method').value,
+      status: document.getElementById('ct-status').value,
+      person: document.getElementById('ct-person').value.trim() || 'ولي الأمر',
+      note: document.getElementById('ct-note').value.trim(),
+      dateHijri: getHijriDateStr()
+    });
+    close();
+    render();
+    showToast('تم تسجيل التواصل — تجده في تبويب الإحالات ضمن «سجل التواصل»');
+  });
+}
+
 
 
 /* ================= EXPORT / IMPORT ================= */
@@ -3494,14 +4226,14 @@ function exportXlsx(){
       for(let i=1;i<=c.count;i++) sub.push(String(i));
       sub.push("المجموع");
     }
-    grp.push("المجموع النهائي","الدرجة القصوى","بحاجة متابعة");
+    grp.push("المجموع النهائي","الدرجة القصوى","المستوى","بحاجة متابعة");
     const rows = STATE.sections[key].map((row,idx)=>{
       const c = studentCalc(row);
       const cells = [idx+1, row.name];
       for(const k of CAT_KEYS){
         cells.push(...row[k], fmt2(c[k+'Sum']));
       }
-      cells.push(fmt2(c.final), fmt2(c.maxGrade), c.severity ? SEV_LABEL[c.severity] : "");
+      cells.push(fmt2(c.final), fmt2(c.maxGrade), studentLevelName(c, row.name.trim()===""), c.severity ? SEV_LABEL[c.severity] : "");
       return cells;
     });
     const footer1 = [];
@@ -3517,10 +4249,9 @@ function exportXlsx(){
   }
   // analysis sheet
   const aStats = {}; for(const k of SECTION_KEYS) aStats[k]=sectionAnalysis(k);
-  const catFieldX = { p:'avgP', h:'avgH', t:'avgT', j:'avgJ' };
   const aoa2 = [["تحليل أداء الشعب"], [],
     ["الشعبة","عدد الطلاب المرصودين","متوسط المجموع النهائي","أعلى مجموع","أقل مجموع", ...CAT_KEYS.map(k=>`متوسط ${cfg[k].name}`)],
-    ...SECTION_KEYS.map(k=>{const s=aStats[k]; return [k,s.n,fmt2(s.avgFinal),fmt2(s.maxFinal),fmt2(s.minFinal), ...CAT_KEYS.map(ck=>fmt2(s[catFieldX[ck]]))];})
+    ...SECTION_KEYS.map(k=>{const s=aStats[k]; return [k,s.n,fmt2(s.avgFinal),fmt2(s.maxFinal),fmt2(s.minFinal), ...CAT_KEYS.map(ck=>fmt2(s['avg_'+ck]))];})
   ];
   const wsA = XLSX.utils.aoa_to_sheet(aoa2);
   XLSX.utils.book_append_sheet(wb, wsA, "تحليل");
