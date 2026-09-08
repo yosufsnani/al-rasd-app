@@ -5212,11 +5212,13 @@ function loadPdfJs(){
   return __pdfjsPromise;
 }
 
-/* يجمع قطع النص في سطور حسب إحداثي y — الـPDF لا يعرف السطور، فنعيد بناءها. */
-async function extractPdfLines(arrayBuffer){
+/* كل قطعة نص في هذه الملفات خليةٌ كاملة (اسم، أو رقم سجل، أو تسلسل)، فنحفظها
+   خلايا لا نلصقها سطورًا. لصقها كان يخلط أعمدة الصف في نص واحد فينهار التحليل —
+   وهو ما حدث فعلًا: المفكّك اختُبر على تقسيم أداة أخرى للسطور لا على هذا. */
+async function extractPdfCells(arrayBuffer){
   const pdfjs = await loadPdfJs();
   const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-  const lines = [];
+  const rows = [];
   for(let pn=1; pn<=doc.numPages; pn++){
     const page = await doc.getPage(pn);
     const tc = await page.getTextContent();
@@ -5224,19 +5226,44 @@ async function extractPdfLines(arrayBuffer){
     tc.items.forEach(it=>{
       const str = (it.str || '');
       if(!str.trim()) return;
-      /* التقريب لأقرب ٢ نقطة يجمع ما كان على سطر واحد رغم فروق الارتفاع الطفيفة. */
+      /* التقريب لأقرب نقطتين يجمع خلايا الصف الواحد رغم فروق ارتفاع طفيفة. */
       const y = Math.round((it.transform ? it.transform[5] : 0) / 2) * 2;
       if(!buckets.has(y)) buckets.set(y, []);
-      buckets.get(y).push({ x: it.transform ? it.transform[4] : 0, str });
+      buckets.get(y).push({ x: it.transform ? it.transform[4] : 0, str: str.replace(/\s+$/,'') });
     });
-    /* من أعلى الصفحة لأسفلها، وداخل السطر من اليمين لليسار (عربي). */
+    /* من أعلى الصفحة لأسفلها، وداخل الصف من اليمين لليسار (ترتيب القراءة). */
     Array.from(buckets.keys()).sort((a,b)=>b-a).forEach(y=>{
-      const parts = buckets.get(y).sort((a,b)=>b.x - a.x).map(p=>p.str);
-      const line = parts.join('').trim();
-      if(line) lines.push(line);
+      const cells = buckets.get(y).sort((a,b)=>b.x - a.x);
+      if(cells.length) rows.push(cells);
     });
   }
-  return lines;
+  return rows;
+}
+
+/* يفكّ ترميز الخلايا — قرار النوع والاتجاه يُتخذ مرة واحدة على كل الملف. */
+function decodeCellRows(rows){
+  const flat = [];
+  rows.forEach(r=> r.forEach(c=> flat.push(c.str)));
+  const decoded = normalizeNoorText(flat);
+  let i = 0;
+  return rows.map(r=> r.map(c=> ({ x: c.x, text: decoded[i++] })));
+}
+
+/* يتعرّف على صفوف الطلاب من الخلايا لا من ترتيب السطور: الخلية العربية هي
+   الاسم، وأيمن خليتين رقميتين هو التسلسل (عمود «م» أقصى اليمين في جدول عربي). */
+function parseNoorRowsFromCells(rows){
+  const out = [];
+  rows.forEach(cells=>{
+    const nameCell = cells.find(c=> AR_LOGICAL.test(c.text) && c.text.split(/\s+/).length >= 2);
+    const nums = cells.filter(c=> /^[0-9]+$/.test(c.text));
+    if(!nameCell || nums.length < 2) return;
+    const sorted = nums.slice().sort((a,b)=> b.x - a.x);
+    const seq = parseInt(sorted[0].text, 10);
+    const id  = sorted[1].text;
+    if(!Number.isFinite(seq) || seq <= 0 || sorted[0].text.length > 3) return;
+    out.push({ seq, name: nameCell.text, id });
+  });
+  return out;
 }
 
 /* ===== معاينة الاستيراد =====
@@ -5361,21 +5388,25 @@ function showImportStudentsDialog(key){
     setStatus('جارٍ القراءة…');
     try{
       const buf = await file.arrayBuffer();
-      const rawLines = await extractPdfLines(buf);
-      if(rawLines.length === 0){
+      const cellRows = await extractPdfCells(buf);
+      if(cellRows.length === 0){
         setStatus('');
         showAlertDialog('لا يوجد نص في هذا الملف — يبدو أنه صورة ممسوحة. استخدم اللصق اليدوي.');
         return;
       }
-      const lines = normalizeNoorText(rawLines);
-      const rows = parseNoorRows(lines);
+      const decoded = decodeCellRows(cellRows);
+      let rows = parseNoorRowsFromCells(decoded);
+      /* احتياط: بعض القرّاء يعيدون الصف كخلية واحدة، فنجرّب التحليل بالسطور. */
+      const flat = [];
+      decoded.forEach(r=> r.forEach(c=> flat.push(c.text)));
+      if(rows.length === 0) rows = parseNoorRows(flat);
       if(rows.length === 0){
         setStatus('');
         showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء من نور — جرّب اللصق اليدوي.');
         return;
       }
       setStatus('');
-      showImportPreviewDialog(key, rows, parseNoorHeader(lines), file.name);
+      showImportPreviewDialog(key, rows, parseNoorHeader(flat), file.name);
     }catch(err){
       console.warn('تعذّر قراءة PDF', err);
       setStatus('');
