@@ -476,6 +476,7 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
   font-size:11.5px; font-family:inherit; cursor:pointer;
 }
 .save-banner button:disabled{opacity:.6; cursor:default;}
+.save-banner.is-offline{background:#7A5B12;}
 @media print{ .save-banner{display:none !important;} }
 
 .chip-list{display:flex; flex-wrap:wrap; gap:7px;}
@@ -1152,25 +1153,256 @@ function normalizeLoadedState(obj){
    تجريبية، وأول ضغطة خانة كانت ترفع تلك الحالة الفارغة فوق رصد الفصل كله.
    الحفظ لا يُفتح إلا بعد قراءة ناجحة — ولو كان الصف غير موجود أصلًا (حساب جديد). */
 let SAVE_ENABLED = false;
-let LAST_SAVE_FAILED = false;
 
-/* يرجع {ok, state} — ok:false تعني «تعذّر الوصول للبيانات»، لا «لا توجد بيانات». */
-async function loadState(){
+/* ===== طبقة الحفظ: الجهاز أولًا ثم السحابة =====
+   المعلم يرصد داخل الفصل حيث الشبكة أسوأ ما تكون. فالكتابة تذهب فورًا إلى
+   تخزين الجهاز (لا تفشل ولا تنتظر شبكة)، ثم تُرفع للسحابة عند توفرها.
+   ولأن نفس الحساب قد يُفتح على جهازين، كل رفع مشروط بأن السحابة لم تتغيّر منذ
+   آخر قراءة — نستعمل updated_at الموجود أصلًا في الجدول ككلمة سرّ للإصدار، فلا
+   حاجة لتعديل قاعدة البيانات. إن تغيّرت، نسأل المعلم ولا نمحو شيئًا بصمت. */
+const LOCAL_PREFIX = 'rasd_local_v1:';
+let CURRENT_UID   = null;
+let REMOTE_STAMP  = null;   // updated_at لآخر نسخة نعرفها في السحابة
+let PENDING_PUSH  = false;  // هل عندنا تعديلات لم تصل السحابة؟
+let SYNC_STATE    = 'idle'; // idle | saving | offline | error
+let retryTimer    = null;
+
+function localKey(uid){ return LOCAL_PREFIX + uid; }
+function saveLocal(){
+  if(!CURRENT_UID) return;
   try{
-    const sb = window.supabaseClient;
+    localStorage.setItem(localKey(CURRENT_UID), JSON.stringify({
+      value: STATE, stamp: REMOTE_STAMP, dirty: PENDING_PUSH, savedAt: new Date().toISOString()
+    }));
+  }catch(e){
+    /* امتلأ التخزين أو مُنع (تصفح خاص) — السحابة تبقى المسار الوحيد. */
+    console.warn('تعذّر الحفظ على الجهاز', e);
+  }
+}
+function loadLocal(uid){
+  try{
+    const raw = localStorage.getItem(localKey(uid));
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && o.value && o.value.sections) ? o : null;
+  }catch(e){ return null; }
+}
+function clearLocal(uid){ try{ localStorage.removeItem(localKey(uid || CURRENT_UID)); }catch(e){} }
+
+/* يرجع {ok, saveable, state, offline, conflict} —
+   ok:false تعني «تعذّر الوصول للبيانات ولا نسخة على الجهاز»، لا «لا توجد بيانات». */
+async function loadState(){
+  const sb = window.supabaseClient;
+  let uid = null;
+  try{
     const { data: sess, error: sessErr } = await sb.auth.getSession();
     if(sessErr) throw sessErr;
-    const uid = sess && sess.session ? sess.session.user.id : null;
-    /* بلا تسجيل دخول (معاينة file:// محلية): بيانات افتراضية بلا حفظ. */
-    if(!uid) return { ok:true, saveable:false, state: freshState() };
-    const { data, error } = await sb.from('rasd_data').select('value').eq('user_id', uid).eq('key', CLOUD_KEY).maybeSingle();
-    if(error) throw error;
-    /* data === null يعني حسابًا جديدًا لا صفّ له بعد — قراءة ناجحة، والحفظ مسموح. */
-    return { ok:true, saveable:true, state: normalizeLoadedState(data ? data.value : null) };
+    uid = sess && sess.session ? sess.session.user.id : null;
   }catch(e){
-    console.warn('تعذّر تحميل البيانات من الحساب السحابي', e);
+    console.warn('تعذّر التحقق من الجلسة', e);
     return { ok:false, error:e };
   }
+  /* بلا تسجيل دخول (معاينة file:// محلية): بيانات افتراضية بلا حفظ. */
+  if(!uid) return { ok:true, saveable:false, state: freshState() };
+
+  CURRENT_UID = uid;
+  const local = loadLocal(uid);
+
+  try{
+    const { data, error } = await sb.from('rasd_data')
+      .select('value, updated_at').eq('user_id', uid).eq('key', CLOUD_KEY).maybeSingle();
+    if(error) throw error;
+    const remoteStamp = data ? data.updated_at : null;
+
+    /* تعديلات على الجهاز لم تُرفع بعد */
+    if(local && local.dirty){
+      if(local.stamp === remoteStamp){
+        /* السحابة كما تركناها — تعديلات الجهاز أحدث، ترفع فورًا */
+        REMOTE_STAMP = remoteStamp;
+        PENDING_PUSH = true;
+        return { ok:true, saveable:true, state: normalizeLoadedState(local.value), pushNow:true };
+      }
+      /* السحابة تغيّرت من جهاز آخر بينما عندنا تعديلات — لا نختار عن المعلم */
+      REMOTE_STAMP = remoteStamp;
+      return {
+        ok:true, saveable:true, state: normalizeLoadedState(data ? data.value : null),
+        conflict: { localValue: local.value, localSavedAt: local.savedAt, remoteStamp }
+      };
+    }
+
+    REMOTE_STAMP = remoteStamp;
+    PENDING_PUSH = false;
+    return { ok:true, saveable:true, state: normalizeLoadedState(data ? data.value : null) };
+
+  }catch(e){
+    console.warn('تعذّر تحميل البيانات من الحساب السحابي', e);
+    /* الشبكة غائبة لكن على الجهاز نسخة — نعمل بها ونرفع لاحقًا. */
+    if(local){
+      REMOTE_STAMP = local.stamp;
+      PENDING_PUSH = !!local.dirty;
+      return { ok:true, saveable:true, offline:true, state: normalizeLoadedState(local.value) };
+    }
+    return { ok:false, error:e };
+  }
+}
+
+/* ===== الحفظ ===== */
+let saveTimer;
+function persistState(){
+  if(!SAVE_ENABLED) return;
+  PENDING_PUSH = true;
+  saveLocal();                    // فوري ولا يفشل
+  setSyncState('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushRemote, 900);
+}
+
+async function pushRemote(){
+  if(!SAVE_ENABLED || !CURRENT_UID || !PENDING_PUSH) return;
+  const sb = window.supabaseClient;
+  const payload = STATE;
+  const now = new Date().toISOString();
+  try{
+    let stamp;
+    if(REMOTE_STAMP === null){
+      const { data, error } = await sb.from('rasd_data')
+        .insert({ user_id: CURRENT_UID, key: CLOUD_KEY, value: payload, updated_at: now })
+        .select('updated_at').maybeSingle();
+      if(error){
+        /* 23505: صفٌّ أُنشئ من جهاز آخر بيننا — تضارب لا خطأ شبكة. */
+        if(error.code === '23505'){ return onConflictDetected(); }
+        throw error;
+      }
+      stamp = data ? data.updated_at : now;
+    } else {
+      /* الشرط .eq('updated_at', REMOTE_STAMP) هو قفل الإصدار: صفر صفوف = تغيّر خلفنا. */
+      const { data, error } = await sb.from('rasd_data')
+        .update({ value: payload, updated_at: now })
+        .eq('user_id', CURRENT_UID).eq('key', CLOUD_KEY).eq('updated_at', REMOTE_STAMP)
+        .select('updated_at');
+      if(error) throw error;
+      if(!data || data.length === 0) return onConflictDetected();
+      stamp = data[0].updated_at;
+    }
+    REMOTE_STAMP = stamp;
+    PENDING_PUSH = false;
+    saveLocal();
+    setSyncState('idle');
+  }catch(e){
+    console.warn('تعذّر الرفع للسحابة', e);
+    PENDING_PUSH = true;
+    saveLocal();
+    setSyncState(navigator.onLine === false ? 'offline' : 'error');
+    scheduleRetry();
+  }
+}
+
+function scheduleRetry(){
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(()=>{ if(PENDING_PUSH) pushRemote(); }, 20000);
+}
+
+/* ===== التضارب بين جهازين ===== */
+let CONFLICT_OPEN = false;
+async function onConflictDetected(){
+  if(CONFLICT_OPEN) return;
+  CONFLICT_OPEN = true;
+  PENDING_PUSH = true;
+  saveLocal();
+  setSyncState('error');
+  const sb = window.supabaseClient;
+  let remote = null;
+  try{
+    const { data } = await sb.from('rasd_data')
+      .select('value, updated_at').eq('user_id', CURRENT_UID).eq('key', CLOUD_KEY).maybeSingle();
+    remote = data;
+  }catch(e){}
+  showConflictDialog(remote);
+}
+
+function showConflictDialog(remote, localValueOverride){
+  const localValue = localValueOverride || STATE;
+  const holder = document.getElementById('dialog-holder');
+  const when = remote && remote.updated_at ? new Date(remote.updated_at).toLocaleString('ar-SA') : 'وقت غير معروف';
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:440px;">
+        <h3>⚠️ بياناتك تغيّرت من جهاز آخر</h3>
+        <p style="margin:0 0 8px; font-size:12.5px; line-height:1.9; color:var(--text-2);">
+          رُصد شيء في حسابك من جهاز أو تبويب آخر (آخر تعديل هناك: ${escapeAttr(when)})، وعندك هنا تعديلات لم تُرفع بعد.
+          <b>لن يُمحى شيء دون اختيارك.</b>
+        </p>
+        <div class="hint" style="margin-top:0; margin-bottom:14px;">لو لم تكن متأكدًا: اختر «احتفظ بنسخة الجهاز الآخر»، فنسخة هذا الجهاز تبقى محفوظة عليه ويمكن استرجاعها بنسخة احتياطية.</div>
+        <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <button type="button" class="btn-ok" id="cf-keep-local">💾 اعتمد ما على هذا الجهاز (يستبدل الآخر)</button>
+          <button type="button" class="btn-cancel" id="cf-take-remote">☁️ احتفظ بنسخة الجهاز الآخر (يلغي تعديلاتي هنا)</button>
+          <button type="button" class="btn-cancel" id="cf-backup">📦 نزّل نسخة احتياطية من بيانات هذا الجهاز أولًا</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('cf-backup').addEventListener('click', ()=> exportJson(localValue));
+  document.getElementById('cf-keep-local').addEventListener('click', async ()=>{
+    /* نتبنّى ختم السحابة الحالي ثم نكتب فوقه — قرار صريح من المعلم. */
+    REMOTE_STAMP = remote ? remote.updated_at : null;
+    CONFLICT_OPEN = false;
+    closeDialog();
+    if(localValueOverride){
+      applyLoadedState(normalizeLoadedState(localValueOverride));
+      render();
+    }
+    PENDING_PUSH = true;
+    await pushRemote();
+    showToast('تم اعتماد نسخة هذا الجهاز');
+  });
+  document.getElementById('cf-take-remote').addEventListener('click', ()=>{
+    if(!remote){ showToast('تعذّر جلب نسخة الجهاز الآخر — حاول لاحقًا'); return; }
+    CONFLICT_OPEN = false;
+    closeDialog();
+    REMOTE_STAMP = remote.updated_at;
+    PENDING_PUSH = false;
+    applyLoadedState(normalizeLoadedState(remote.value));
+    saveLocal();
+    setSyncState('idle');
+    render();
+    showToast('تم اعتماد نسخة الجهاز الآخر');
+  });
+}
+
+/* ===== مؤشر حالة الحفظ ===== */
+function setSyncState(st){
+  SYNC_STATE = st;
+  updateSaveBanner();
+}
+function updateSaveBanner(){
+  let el = document.getElementById('save-banner');
+  const show = (SYNC_STATE === 'offline' || SYNC_STATE === 'error');
+  if(!show){ if(el) el.remove(); return; }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'save-banner';
+    document.body.appendChild(el);
+  }
+  const offline = SYNC_STATE === 'offline';
+  el.className = 'save-banner' + (offline ? ' is-offline' : '');
+  el.innerHTML = `
+    <span>${offline
+      ? '📴 غير متصل — تعديلاتك محفوظة على جهازك وسترفع تلقائيًا عند عودة الاتصال'
+      : '⚠️ تعذّر رفع آخر تعديل إلى حسابك — محفوظ على جهازك حاليًا'}</span>
+    <button type="button" id="save-retry">إعادة المحاولة</button>`;
+  const btn = document.getElementById('save-retry');
+  if(btn) btn.addEventListener('click', ()=>{
+    btn.disabled = true;
+    btn.textContent = 'جارٍ المحاولة…';
+    pushRemote();
+  });
+}
+
+/* عودة الاتصال ترفع ما تراكم فورًا بدل انتظار دورة إعادة المحاولة. */
+if(typeof window !== 'undefined' && window.addEventListener){
+  window.addEventListener('online', ()=>{ if(PENDING_PUSH) pushRemote(); });
+  window.addEventListener('beforeunload', (e)=>{
+    if(PENDING_PUSH && SAVE_ENABLED){ e.preventDefault(); e.returnValue = ''; return ''; }
+  });
 }
 
 /* يضبط STATE على البيانات المحمَّلة، ويزامن مصفوفة SECTION_KEYS (تُستخدم في كل مكان)
@@ -1256,54 +1488,7 @@ function deleteSection(name){
   });
 }
 
-let saveTimer;
-function persistState(){
-  /* لا نكتب شيئًا ما لم تنجح القراءة أولًا — وإلا كتبنا فوق بيانات لم نرَها. */
-  if(!SAVE_ENABLED) return;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async ()=>{
-    try{
-      const sb = window.supabaseClient;
-      const { data: sess } = await sb.auth.getSession();
-      const uid = sess && sess.session ? sess.session.user.id : null;
-      if(!uid) return; // معاينة محلية بدون تسجيل دخول — لا يوجد حساب سحابي يُحفظ فيه
-      const { error } = await sb.from('rasd_data').upsert(
-        { user_id: uid, key: CLOUD_KEY, value: STATE, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,key' }
-      );
-      if(error) throw error;
-      if(LAST_SAVE_FAILED){ LAST_SAVE_FAILED = false; updateSaveBanner(); }
-    }catch(e){
-      console.warn('تعذّر الحفظ السحابي', e);
-      /* تنبيه ثابت لا يزول: التنبيه العابر كان يختفي قبل أن يراه المعلم فيغلق
-         الصفحة ظانًّا أن عمله محفوظ. */
-      LAST_SAVE_FAILED = true;
-      updateSaveBanner();
-    }
-  }, 250);
-}
 
-/* شريط ثابت أعلى الصفحة يبقى ما دام آخر حفظ فاشلًا. */
-function updateSaveBanner(){
-  let el = document.getElementById('save-banner');
-  if(!LAST_SAVE_FAILED){ if(el) el.remove(); return; }
-  if(!el){
-    el = document.createElement('div');
-    el.id = 'save-banner';
-    el.className = 'save-banner';
-    document.body.appendChild(el);
-  }
-  el.innerHTML = `
-    <span>⚠️ تعذّر حفظ آخر تعديل — تحقق من اتصالك ولا تغلق الصفحة</span>
-    <button type="button" id="save-retry">إعادة المحاولة</button>`;
-  const btn = document.getElementById('save-retry');
-  if(btn) btn.addEventListener('click', ()=>{
-    btn.disabled = true;
-    btn.textContent = 'جارٍ المحاولة…';
-    persistState();
-    setTimeout(()=>{ if(LAST_SAVE_FAILED) updateSaveBanner(); }, 1500);
-  });
-}
 
 function setupSignaturePad(){
   const canvas = document.getElementById('sig-pad');
@@ -1689,7 +1874,13 @@ function wireAccountEvents(){
   if(nt) nt.addEventListener('click', ()=> showNewTermDialog());
   const lo = document.getElementById('btn-logout');
   if(lo) lo.addEventListener('click', ()=>{
-    showConfirmDialog('تسجيل الخروج', 'هل تريد تسجيل الخروج من حسابك؟', ()=>{
+    const warn = PENDING_PUSH
+      ? 'عندك تعديلات لم تُرفع إلى حسابك بعد. الخروج الآن يحذف نسخة هذا الجهاز وتضيع تلك التعديلات. هل تريد المتابعة؟'
+      : 'هل تريد تسجيل الخروج من حسابك؟';
+    showConfirmDialog('تسجيل الخروج', warn, ()=>{
+      /* نسخة الجهاز تُمحى عند الخروج حتى لا يراها معلم آخر على جهاز مشترك. */
+      SAVE_ENABLED = false;
+      clearLocal();
       if(window.rasdAuth) window.rasdAuth.signOut();
     });
   });
@@ -4787,8 +4978,8 @@ function showContactDialog(key, idx){
 
 
 /* ================= EXPORT / IMPORT ================= */
-function exportJson(){
-  const blob = new Blob([JSON.stringify(STATE,null,2)], {type:'application/json'});
+function exportJson(stateOverride){
+  const blob = new Blob([JSON.stringify(stateOverride || STATE,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `سجل_رصد_المشاريع_${new Date().toISOString().slice(0,10)}.json`;
@@ -5039,6 +5230,21 @@ function bootWithState(res){
   SAVE_ENABLED = !!res.saveable;
   updateAppHeader();
   render();
+  if(res.offline){
+    setSyncState('offline');
+    showToast('📴 تعمل الآن على نسخة جهازك — سترفع تعديلاتك عند عودة الاتصال');
+  } else if(res.conflict){
+    /* السحابة تغيّرت من جهاز آخر بينما هنا تعديلات لم تُرفع — الشاشة تعرض نسخة
+       السحابة، والمعلم يختار. نحتفظ بنسخة الجهاز داخل النافذة نفسها. */
+    setSyncState('error');
+    showConflictDialog({ value: res.state, updated_at: res.conflict.remoteStamp }, res.conflict.localValue);
+  } else if(res.pushNow){
+    /* تعديلات جهاز لم تُرفع والسحابة لم تتغيّر — ارفعها الآن. */
+    setSyncState('saving');
+    pushRemote();
+  } else {
+    saveLocal();
+  }
 }
 
 window.rasdStartApp = async function(){
