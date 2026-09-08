@@ -702,9 +702,12 @@ body.modal-lock{ overflow:hidden; }
    touch the orientation control, it's already correct before the print
    dialog even opens. Everything else (referral/analysis reports, which
    read naturally as a portrait A4 form) stays on the default page. */
-@page{ margin:6mm; }
-@page wide{ size:A4 landscape; margin:6mm; }
-@page referral-page{ size:A4 portrait; margin:12mm; }
+/* الاتجاه يُحقن قبل الطباعة في <style id="print-page-rule"> عبر setPrintPage().
+   كان هنا @page مُسمّاة (wide / referral-page) مع خاصية page: على العناصر، وهي
+   غير مدعومة في متصفحات أندرويد وSamsung ومحرّك الطباعة فيها: تُتجاهل الأسماء
+   فتُطبع الصفحة طوليًا، ثم يُصغَّر المحتوى العريض ليتّسع عرضًا فيشغل ثلث الورقة
+   طولًا. القاعدة غير المسمّاة مدعومة في كل مكان. */
+@page{ size:A4 landscape; margin:6mm; }
 
 @media print{
   html,body{background:#fff !important; height:auto !important;}
@@ -730,7 +733,7 @@ body.modal-lock{ overflow:hidden; }
     text-align:center; font-size:13px; margin:3px 0 2px; color:#000;
   }
 
-  main{padding:0; max-width:none; page:wide;}
+  main{padding:0; max-width:none;}
   .card{border:none; box-shadow:none; padding:0; margin:0; border-radius:0;}
 
   .table-wrap{overflow:visible !important; border:none;}
@@ -797,16 +800,21 @@ body.modal-lock{ overflow:hidden; }
      repeating via thead{display:table-header-group}) is what actually
      prevents content from being clipped/lost: a hand-computed fixed page
      height that's even slightly wrong either leaves blank gaps or — worse —
-     hides whole rows/sections behind overflow:hidden. Orientation comes
-     from the named "wide" @page rule above (landscape, 285mm usable width
-     after margins — matches the width set below). */
-  body.printing-all #print-all-holder{padding:0; margin:0; background:#fff; width:285mm; page:wide;}
+     hides whole rows/sections behind overflow:hidden. العرض 100% لا مقاسًا
+     ثابتًا: 285mm كان يفيض على ورقة طولية إن لم يُطبَّق الاتجاه، فيُصغَّر كل شيء. */
+  body.printing-all #print-all-holder{padding:0; margin:0; background:#fff; width:100%;}
   body.printing-all #print-all-holder .print-block{
     display:block !important; width:100%;
     break-before:page; page-break-before:always;
     break-after:auto; page-break-after:auto;
   }
-  body.printing-all #print-all-holder .print-block:first-child{
+  /* أول كتلة لا يسبقها فاصل — :first-of-type إضافة إلى :first-child لأن أي عقدة
+     نصية أو عنصر مخفي قبلها كان يُبطل :first-child فتظهر صفحة أولى فارغة. */
+  body.printing-all #print-all-holder .print-block:first-child,
+  body.printing-all #print-all-holder .print-block:first-of-type{
+    break-before:auto !important; page-break-before:auto !important;
+  }
+  body.printing-all #print-all-holder > :first-child{
     break-before:auto !important; page-break-before:auto !important;
   }
   body.printing-all #print-all-holder .print-header{display:block !important;}
@@ -827,6 +835,8 @@ body.modal-lock{ overflow:hidden; }
    ومتصفحات التطبيقات المدمجة (واتساب/تيليجرام). */
 @media print{
   body.printing-doc main{display:none !important;}
+  /* لا هوامش أو ارتفاعات من الشاشة تولّد صفحة فارغة قبل المحتوى. */
+  html,body{margin:0 !important; padding:0 !important;}
   body.printing-doc #print-referral-holder{
     display:block !important; position:static !important; left:auto !important; top:auto !important;
     width:100% !important; padding:8mm !important; background:#fff;
@@ -5964,6 +5974,7 @@ function exportXlsx(){
 function fmt2(n){ return Math.round(n*100)/100; }
 
 function printCurrentSection(){
+  setPrintPage('landscape');
   showToast('الاتجاه (عرضي) مضبوط تلقائيًا — لا تغيّره يدويًا من نافذة الطباعة، بعض متصفحات الجوال يفقد صفحات عند التبديل اليدوي');
   setTimeout(()=> window.print(), 600);
 }
@@ -5972,7 +5983,22 @@ function printCurrentSection(){
 // تقارير، أو تقرير التحليل) عبر window.print() مباشرة — بنفس أسلوب طباعة
 // الشعب بالأسفل، بدل توليد ملف PDF عبر html2canvas الذي كان يطلع فاضيًا أو
 // مقصوصًا على بعض متصفحات الجوال ومتصفحات التطبيقات المدمجة.
+/* الاتجاه يُضبط لحظة الطباعة بقاعدة @page غير مسمّاة — الوحيدة المدعومة في كل
+   المتصفحات. المسمّاة كانت تُتجاهل على الجوال فتخرج الورقة طولية والمحتوى مصغّرًا. */
+function setPrintPage(orientation){
+  let el = document.getElementById('print-page-rule');
+  if(!el){
+    el = document.createElement('style');
+    el.id = 'print-page-rule';
+    document.head.appendChild(el);
+  }
+  el.textContent = (orientation === 'portrait')
+    ? '@page{ size:A4 portrait; margin:12mm; }'
+    : '@page{ size:A4 landscape; margin:6mm; }';
+}
+
 function printHolder(holder){
+  setPrintPage('portrait');
   document.body.classList.add('printing-doc');
   const cleanup = ()=>{
     document.body.classList.remove('printing-doc');
@@ -6018,6 +6044,7 @@ async function printAllSections(){
       holder.appendChild(block);
     });
 
+    setPrintPage('landscape');
     document.body.classList.add('printing-all');
     showToast(`تم تجهيز ${printKeys.length} شعب — الاتجاه (عرضي) مضبوط تلقائيًا، اختر «حفظ كملف PDF» بدون تغيير الاتجاه يدويًا`);
     await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,150)));
