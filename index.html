@@ -599,6 +599,42 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .cstat.cs-wait{background:var(--yellow); color:var(--yellow-t);}
 .cstat.cs-none{background:var(--orange); color:var(--orange-t);}
 .cstat.cs-never{background:var(--empty); color:var(--muted); font-weight:400;}
+/* ===== البحث عن طالب ===== */
+.search-box{
+  display:flex; align-items:center; gap:8px; background:var(--card);
+  border:1px solid var(--border); border-radius:14px; padding:9px 12px;
+  margin-bottom:10px; box-shadow:var(--shadow);
+}
+.search-box .sb-ico{flex:0 0 auto; color:var(--muted); display:flex;}
+.search-box .sb-ico svg{width:17px; height:17px;}
+.search-box input{
+  flex:1 1 auto; min-width:0; border:none; background:none; outline:none;
+  font-family:inherit; font-size:13.5px; color:var(--text); padding:2px 0;
+}
+.search-box input::placeholder{color:var(--muted); font-weight:300;}
+.search-box input::-webkit-search-cancel-button{display:none;}
+.search-box #search-clear{
+  flex:0 0 auto; border:none; background:none; color:var(--muted);
+  font-size:13px; cursor:pointer; padding:2px 4px; font-family:inherit;
+}
+.search-results{margin-bottom:10px;}
+.search-results:empty{display:none;}
+.sr-count{font-size:11px; color:var(--muted); padding:2px 4px 7px;}
+.sr-note{font-size:12px; color:var(--muted); padding:9px 12px; background:var(--card); border:1px solid var(--border); border-radius:12px;}
+.sr-row{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:right; font-family:inherit;
+  background:var(--card); border:1px solid var(--border); border-radius:13px;
+  padding:10px 12px; margin-bottom:7px; cursor:pointer; box-shadow:var(--shadow);
+}
+.sr-row:active{background:var(--surface-2);}
+.sr-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.sr-name{font-size:13.5px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.sr-meta{font-size:11px; font-weight:300; color:var(--muted);}
+
+/* إبراز الصف بعد الانتقال إليه من البحث */
+tr.row-found td{background:#FFF6D8 !important; transition:background .4s;}
+.stu-card.row-found{box-shadow:0 0 0 2px #D9A03C; transition:box-shadow .4s;}
+
 /* بطاقة «يحتاج انتباهك» في الرئيسية */
 .att-card h2{margin-bottom:10px;}
 .att-row{
@@ -2379,6 +2415,7 @@ function renderGuideCard(){
       </ul>
       <h3>أين أجد ماذا؟</h3>
       <ul>
+        <li><b>البحث عن طالب</b> 🔍 في أعلى الرئيسية: اكتب أي جزء من الاسم فيبحث في <b>كل الشعب والمؤرشفة</b>، ويتجاوز فروق الهمزة والتاء المربوطة والألف المقصورة والمسافات — «عبدالله» تجد «عبد الله»، و«اسامه» تجد «أسامة». والضغط على النتيجة ينقلك لشعبته ويبرز صفه.</li>
         <li><b>الرئيسية</b>: ما ينتظرك اليوم — الحالات العاجلة، ومن لم تبدأ رصدهم، ونسبة اكتمال الكشف، وقائمة شعبك.</li>
         <li><b>الرصد</b>: ثلاثة أوضاع — <b>جدول</b> للمراجعة الشاملة، <b>بطاقات</b> لطالب طالب، و<b>سريع</b> لرصد بند واحد لكل الشعبة. وأدوات الشعبة في شريط مطوي فوقها.</li>
         <li><b>الرصد السريع</b> هو الأسرع داخل الحصة: اختر البند، ثم ارصد المتأخرين وغير المسلّمين فقط، واضغط «الباقي سلّموا» لإنهاء البقية دفعة واحدة. والضغط على الرمز نفسه مرة أخرى يلغيه.</li>
@@ -3826,6 +3863,113 @@ function sectionFollowUpCount(key){
   return out;
 }
 
+/* ===== البحث عن طالب في كل الشعب =====
+   المعلم يتذكّر اسم العائلة لا الشعبة، ويكتب «عبدالله» حيث الكشف «عبد الله»،
+   و«اسامه» حيث الكشف «أسامة». فالمطابقة تجري على صورة مطبَّعة من الاسم:
+   الهمزات إلى ألف، والتاء المربوطة إلى هاء، والألف المقصورة إلى ياء، وتُحذف
+   التشكيل والتطويل — ثم تُجرَّب مرة أخرى بلا مسافات إطلاقًا. */
+function normalizeArabic(str){
+  return (str || '')
+    .replace(/[\u064B-\u0652\u0670\u0640]/g, '')   // تشكيل وتطويل
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/[ىي]/g, 'ي')
+    .replace(/[ؤئء]/g, 'ء')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+function searchStudents(query){
+  const q = normalizeArabic(query);
+  if(q.length < 2) return [];
+  const qTight = q.replace(/\s/g, '');
+  const out = [];
+  for(const key of SECTION_KEYS){
+    (STATE.sections[key] || []).forEach((row, idx)=>{
+      const name = (row.name || '').trim();
+      if(!name) return;
+      const n = normalizeArabic(name);
+      if(n.includes(q) || n.replace(/\s/g,'').includes(qTight)){
+        const c = studentCalc(row);
+        out.push({
+          key, idx, name, calc: c,
+          archived: key.includes(' ('),
+          /* البدء بالمكتوب أولى بالعرض ممن يطابق في وسط اسمه. */
+          rank: n.startsWith(q) ? 0 : 1
+        });
+      }
+    });
+  }
+  out.sort((a,b)=> a.rank - b.rank || a.name.localeCompare(b.name, 'ar'));
+  return out;
+}
+
+let SEARCH_QUERY = '';
+function renderSearchResults(){
+  const list = searchStudents(SEARCH_QUERY);
+  if(normalizeArabic(SEARCH_QUERY).length < 2){
+    return SEARCH_QUERY.trim() ? `<div class="sr-note">اكتب حرفين على الأقل</div>` : '';
+  }
+  if(list.length === 0) return `<div class="sr-note">لا يوجد طالب بهذا الاسم في أي شعبة</div>`;
+  return `
+    <div class="sr-count">${fmt(list.length)} نتيجة</div>
+    ${list.slice(0, 40).map(r=>{
+      const lvl = studentLevel(r.calc, false);
+      return `<button type="button" class="sr-row" data-go-key="${escapeAttr(r.key)}" data-go-idx="${r.idx}">
+        <span class="sr-body">
+          <span class="sr-name">${escapeAttr(r.name)}</span>
+          <span class="sr-meta">${escapeAttr(r.key)}${r.archived ? ' · مؤرشفة' : ''}</span>
+        </span>
+        ${r.calc.severity ? sevBadge(r.calc.severity) : ''}
+        <span class="pill-badge" style="background:${lvl.bg}; color:${lvl.fg};">${escapeAttr(lvl.name)}</span>
+      </button>`;
+    }).join('')}
+    ${list.length > 40 ? `<div class="sr-note">وعدد ${fmt(list.length - 40)} نتيجة أخرى — أكمل الاسم لتضييق البحث</div>` : ''}`;
+}
+
+/* بعد الانتقال نبرز صف الطالب لحظة حتى لا يبحث عنه بعينه في ثلاثين اسمًا. */
+let HIGHLIGHT_ROW = null;
+function flashHighlightedRow(){
+  if(HIGHLIGHT_ROW === null) return;
+  const idx = HIGHLIGHT_ROW;
+  HIGHLIGHT_ROW = null;
+  requestAnimationFrame(()=>{
+    const el = document.querySelector(`tr[data-row="${idx}"]`) || document.querySelector(`.stu-card:nth-of-type(${idx+1})`);
+    if(!el) return;
+    el.classList.add('row-found');
+    try{ el.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){ el.scrollIntoView(); }
+    setTimeout(()=> el.classList.remove('row-found'), 2600);
+  });
+}
+
+function wireSearchEvents(){
+  const box = document.getElementById('student-search');
+  const results = document.getElementById('search-results');
+  if(!box || !results) return;
+  const refresh = ()=>{
+    results.innerHTML = renderSearchResults();
+    results.querySelectorAll('[data-go-key]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.getAttribute('data-go-key');
+        const idx = parseInt(btn.getAttribute('data-go-idx'), 10);
+        if(!STATE.sections[key]) return;
+        SELECTED_ROWS.clear();
+        EXPANDED_CARDS.clear();
+        if(STATE.rosterView === 'cards') EXPANDED_CARDS.add(idx);
+        HIGHLIGHT_ROW = idx;
+        STATE.activeTab = key;
+        STATE.activeView = 'rasd';
+        persistState();
+        render();
+      });
+    });
+  };
+  box.addEventListener('input', ()=>{ SEARCH_QUERY = box.value; refresh(); });
+  const clr = document.getElementById('search-clear');
+  if(clr) clr.addEventListener('click', ()=>{ SEARCH_QUERY = ''; box.value = ''; refresh(); box.focus(); });
+  refresh();
+}
+
 /* ---- «يحتاج انتباهك»: مهام المعلم نفسه، لا حالات الطلاب ----
    الطالب الذي لم يُرصد لم يخطئ في شيء — أنت من لم ترصده. ولهذا مكانها الرئيسية
    (لوحة «ماذا ينتظرني اليوم») لا التحليل ولا المتابعة. */
@@ -3927,6 +4071,13 @@ function renderHome(){
     <div class="home-avatar">${escapeAttr(initial)}</div>
   </div>
 
+  <div class="search-box">
+    <span class="sb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></span>
+    <input type="search" id="student-search" placeholder="ابحث عن طالب في كل الشعب…" value="${escapeAttr(SEARCH_QUERY)}" autocomplete="off">
+    <button type="button" id="search-clear" title="مسح">✕</button>
+  </div>
+  <div id="search-results" class="search-results"></div>
+
   ${renderAttentionCard()}
 
   <div class="list-head"><b>شعبك</b><span>${SECTION_KEYS.length===0 ? 'لا توجد شعب بعد' : fmt(SECTION_KEYS.length)+' شعب'}</span></div>
@@ -3954,6 +4105,7 @@ function wireHomeEvents(){
     });
   });
   wireViewLinks();
+  wireSearchEvents();
   const add = document.getElementById('home-add-section');
   if(add) add.addEventListener('click', ()=> showAddSectionDialog());
   const nt = document.getElementById('home-new-term');
@@ -4010,6 +4162,7 @@ function render(){
     sortSectionArray(STATE.activeTab);
     main.innerHTML = renderSectionSheet(STATE.activeTab);
     wireSectionEvents(STATE.activeTab);
+    flashHighlightedRow();
     const headerLogo = document.querySelector('header.app-top img');
     const printLogo = document.querySelector('.print-logo');
     if(headerLogo && printLogo) printLogo.src = headerLogo.src;
