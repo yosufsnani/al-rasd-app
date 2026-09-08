@@ -636,6 +636,22 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .save-banner.is-offline{background:#7A5B12;}
 @media print{ .save-banner{display:none !important;} }
 
+/* معاينة الاستيراد */
+.imp-count{font-size:13px; color:var(--text-2); margin-bottom:4px;}
+.imp-count b{font-size:19px; font-weight:600; color:var(--teal-d);}
+.imp-warn{
+  font-size:11.5px; line-height:1.85; color:#8A6112; background:var(--yellow);
+  border-radius:10px; padding:9px 11px; margin:10px 0;
+}
+.imp-list{
+  max-height:230px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;
+  background:var(--bg); padding:4px 0;
+}
+.imp-row{display:flex; align-items:center; gap:9px; padding:5px 11px; font-size:12.5px;}
+.imp-row + .imp-row{border-top:1px solid var(--border);}
+.imp-seq{flex:0 0 auto; width:22px; text-align:center; font-size:10.5px; color:var(--muted);}
+.imp-name{flex:1 1 auto; min-width:0; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
 .chip-list{display:flex; flex-wrap:wrap; gap:7px;}
 .chip-item{
   display:inline-flex; align-items:baseline; gap:5px; background:var(--surface-2); color:var(--text);
@@ -2372,6 +2388,7 @@ function renderGuideCard(){
       </ul>
       <h3>الطباعة</h3>
       <ul>
+        <li><b>استيراد كشف نور</b> 📄 من «إضافة عدة طلاب ← نور PDF»: اختر الكشف كما ينزل من نظام نور، فتُستخرج الأسماء و<b>تُعرض للمراجعة قبل إضافتها</b>. راجع العدد والأسماء قبل التأكيد — لو ظهرت رموز غريبة أو نقص، ألغِ الاستيراد.</li>
         <li><b>قرعة المشاركة</b> 🎲 زر بجانب «إضافة طالب» في تبويب الرصد: يسحب اسمًا، وترصد إجابته بضغطة في نفس النافذة. القرعة <b>عادلة افتراضيًا</b> — من قلّ نصيبه أوفر حظًا فلا يُنسى أحد ولا يُستهدف أحد — ويمكن جعلها عشوائية محضة من المفتاح أسفل النافذة. تستبعد تلقائيًا <b>الغائبين اليوم</b> (إن كان الحضور مفعّلًا واليوم مسجّلًا) ومن اختير في الجولة. و«تخطّي» لا يرصد ولا يحتسب.</li>
         <li><b>استبعاد طالب من القرعة</b> 🚫 من قائمة الطالب — يبقى في الكشف ويُرصد عاديًا، لكن لا يُسحب اسمه فجأة أمام الفصل.</li>
         <li><b>ملاحظة عن الطالب</b> 📝 من قائمة الطالب — ملاحظة خاصة بك يظهر مؤشرها بجانب الاسم، و<b>تُمهَّد بها تقارير الإحالة الداخلية</b>. لا تُرسل لولي الأمر ولا تظهر في تقريره أو رسالته.</li>
@@ -5174,6 +5191,104 @@ function startNewTermFreshSections(term, year){
 /* ================= BULK ADD / IMPORT STUDENTS ================= */
 let __pendingExcelAOA = null;
 
+/* ===== قراءة ملف PDF عبر pdf.js =====
+   المكتبة تُحمَّل عند اختيار ملف PDF فقط — لا تُثقل فتح الموقع على من لا يستوردها. */
+let __pdfjsPromise = null;
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(__pdfjsPromise) return __pdfjsPromise;
+  __pdfjsPromise = new Promise((resolve, reject)=>{
+    const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+    const sc = document.createElement('script');
+    sc.src = base + '/pdf.min.js';
+    sc.onload = ()=>{
+      if(!window.pdfjsLib){ reject(new Error('pdfjsLib غير متاح')); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    sc.onerror = ()=> reject(new Error('تعذّر تحميل مكتبة قراءة PDF'));
+    document.head.appendChild(sc);
+  });
+  return __pdfjsPromise;
+}
+
+/* يجمع قطع النص في سطور حسب إحداثي y — الـPDF لا يعرف السطور، فنعيد بناءها. */
+async function extractPdfLines(arrayBuffer){
+  const pdfjs = await loadPdfJs();
+  const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const lines = [];
+  for(let pn=1; pn<=doc.numPages; pn++){
+    const page = await doc.getPage(pn);
+    const tc = await page.getTextContent();
+    const buckets = new Map();
+    tc.items.forEach(it=>{
+      const str = (it.str || '');
+      if(!str.trim()) return;
+      /* التقريب لأقرب ٢ نقطة يجمع ما كان على سطر واحد رغم فروق الارتفاع الطفيفة. */
+      const y = Math.round((it.transform ? it.transform[5] : 0) / 2) * 2;
+      if(!buckets.has(y)) buckets.set(y, []);
+      buckets.get(y).push({ x: it.transform ? it.transform[4] : 0, str });
+    });
+    /* من أعلى الصفحة لأسفلها، وداخل السطر من اليمين لليسار (عربي). */
+    Array.from(buckets.keys()).sort((a,b)=>b-a).forEach(y=>{
+      const parts = buckets.get(y).sort((a,b)=>b.x - a.x).map(p=>p.str);
+      const line = parts.join('').trim();
+      if(line) lines.push(line);
+    });
+  }
+  return lines;
+}
+
+/* ===== معاينة الاستيراد =====
+   إجبارية عمدًا: فكّ ترميز نور مستنتج من ملفاته لا معلَن في مواصفة PDF، فلو
+   تغيّر مولّد التقارير يومًا وجب أن يرى المعلم الخلل قبل أن يدخل كشفه. */
+let __importPreview = null;
+function showImportPreviewDialog(key, rows, header, source){
+  __importPreview = { key, rows, header, source };
+  const holder = document.getElementById('dialog-holder');
+  const hdrBits = [header.school, header.grade, header.section ? 'فصل ' + header.section : ''].filter(Boolean).join(' · ');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:460px;">
+        <h3>👁️ راجع قبل الإضافة</h3>
+        <div class="imp-count"><b>${fmt(rows.length)}</b> اسمًا استُخرجت من ${escapeAttr(source)}</div>
+        ${hdrBits ? `<div class="hint" style="margin-top:0;">${escapeAttr(hdrBits)}</div>` : ``}
+        <div class="imp-warn">تأكّد أن الأسماء ظاهرة بالعربية وصحيحة. لو رأيت رموزًا غريبة أو نقصًا في العدد، ألغِ الاستيراد وأخبرني بالملف.</div>
+        <div class="imp-list">
+          ${rows.map(r=>`<div class="imp-row"><span class="imp-seq">${r.seq || ''}</span><span class="imp-name">${escapeAttr(r.name)}</span></div>`).join("")}
+        </div>
+        ${header.section || header.grade ? `
+        <label class="checkbox-row" style="margin-top:12px;">
+          <input type="checkbox" id="imp-meta" checked>
+          تعبئة بيانات الشعبة من الكشف (${escapeAttr([header.grade, header.section?'فصل '+header.section:''].filter(Boolean).join(' · '))})
+        </label>` : ``}
+        <label class="checkbox-row">
+          <input type="checkbox" id="imp-fill" checked>
+          استخدام الصفوف الفارغة الموجودة أولًا
+        </label>
+        <div style="display:flex; gap:8px; margin-top:14px;">
+          <button type="button" id="imp-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
+          <button type="button" id="imp-ok" style="flex:1; width:auto; background:var(--teal);">➕ إضافة ${fmt(rows.length)}</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('imp-cancel').addEventListener('click', ()=>{ __importPreview = null; closeDialog(); });
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay'){ __importPreview = null; closeDialog(); } });
+  document.getElementById('imp-ok').addEventListener('click', ()=>{
+    const fillEmpty = document.getElementById('imp-fill').checked;
+    const metaEl = document.getElementById('imp-meta');
+    if(metaEl && metaEl.checked){
+      const m = STATE.meta[key];
+      if(header.grade && !((m.subject||'').trim())) { /* الصف ليس مادة — لا نكتبه في المادة */ }
+      if(header.school && !((STATE.letterhead.school||'').trim())) STATE.letterhead.school = header.school;
+      if(header.teacher && !((m.teacher||'').trim())) m.teacher = header.teacher;
+    }
+    addStudentsToSection(key, rows.map(r=>r.name), fillEmpty);
+    __importPreview = null;
+    closeDialog();
+  });
+}
+
 function showImportStudentsDialog(key){
   __pendingExcelAOA = null;
   const holder = document.getElementById('dialog-holder');
@@ -5182,12 +5297,21 @@ function showImportStudentsDialog(key){
       <div class="warn-modal" style="max-width:440px;">
         <h3>📥 إضافة عدة طلاب</h3>
         <div class="import-tabs">
-          <button type="button" class="active" id="tab-paste">📋 لصق الأسماء</button>
-          <button type="button" id="tab-excel">📊 ملف إكسل</button>
+          <button type="button" class="active" id="tab-paste">📋 لصق</button>
+          <button type="button" id="tab-excel">📊 إكسل</button>
+          <button type="button" id="tab-pdf">📄 نور PDF</button>
         </div>
         <div class="import-pane active" id="pane-paste">
           <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px;">الصق أسماء الطلاب، كل اسم في سطر مستقل:</p>
           <textarea id="dlg-paste-names" rows="8" placeholder="أحمد محمد&#10;سعد علي&#10;..."></textarea>
+        </div>
+        <div class="import-pane" id="pane-pdf">
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر كشف أسماء الطلاب كما ينزل من <b>نظام نور</b> بصيغة PDF. ستُعرض الأسماء للمراجعة قبل إضافتها.</p>
+          <div class="file-pick-row">
+            <button type="button" id="dlg-btn-pick-pdf">📄 اختيار ملف PDF</button>
+            <input type="file" id="dlg-pdf-file" accept="application/pdf,.pdf" style="display:none">
+            <span id="dlg-pdf-status"></span>
+          </div>
         </div>
         <div class="import-pane" id="pane-excel">
           <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px;">اختر ملف إكسل (xlsx/xls/csv) يحتوي عمودًا بأسماء الطلاب:</p>
@@ -5208,17 +5332,55 @@ function showImportStudentsDialog(key){
       </div>
     </div>`;
 
-  const tabPaste = document.getElementById('tab-paste');
-  const tabExcel = document.getElementById('tab-excel');
-  const panePaste = document.getElementById('pane-paste');
-  const paneExcel = document.getElementById('pane-excel');
-  tabPaste.addEventListener('click', ()=>{
-    tabPaste.classList.add('active'); tabExcel.classList.remove('active');
-    panePaste.classList.add('active'); paneExcel.classList.remove('active');
+  const tabs = { paste:'tab-paste', excel:'tab-excel', pdf:'tab-pdf' };
+  const panes = { paste:'pane-paste', excel:'pane-excel', pdf:'pane-pdf' };
+  const showTab = (which)=>{
+    Object.keys(tabs).forEach(t=>{
+      const tb = document.getElementById(tabs[t]);
+      const pn = document.getElementById(panes[t]);
+      if(tb) tb.classList.toggle('active', t===which);
+      if(pn) pn.classList.toggle('active', t===which);
+    });
+    /* زر «إضافة» لا معنى له في تبويب نور: المعاينة هي من تضيف. */
+    const ok = document.getElementById('dlg-ok');
+    if(ok) ok.style.display = (which==='pdf') ? 'none' : '';
+  };
+  Object.keys(tabs).forEach(t=>{
+    const tb = document.getElementById(tabs[t]);
+    if(tb) tb.addEventListener('click', ()=> showTab(t));
   });
-  tabExcel.addEventListener('click', ()=>{
-    tabExcel.classList.add('active'); tabPaste.classList.remove('active');
-    paneExcel.classList.add('active'); panePaste.classList.remove('active');
+
+  const pickPdf = document.getElementById('dlg-btn-pick-pdf');
+  if(pickPdf) pickPdf.addEventListener('click', ()=> document.getElementById('dlg-pdf-file').click());
+  const pdfInput = document.getElementById('dlg-pdf-file');
+  if(pdfInput) pdfInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const status = document.getElementById('dlg-pdf-status');
+    const setStatus = (t)=>{ if(status) status.textContent = t; };
+    setStatus('جارٍ القراءة…');
+    try{
+      const buf = await file.arrayBuffer();
+      const rawLines = await extractPdfLines(buf);
+      if(rawLines.length === 0){
+        setStatus('');
+        showAlertDialog('لا يوجد نص في هذا الملف — يبدو أنه صورة ممسوحة. استخدم اللصق اليدوي.');
+        return;
+      }
+      const lines = normalizeNoorText(rawLines);
+      const rows = parseNoorRows(lines);
+      if(rows.length === 0){
+        setStatus('');
+        showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء من نور — جرّب اللصق اليدوي.');
+        return;
+      }
+      setStatus('');
+      showImportPreviewDialog(key, rows, parseNoorHeader(lines), file.name);
+    }catch(err){
+      console.warn('تعذّر قراءة PDF', err);
+      setStatus('');
+      showAlertDialog('تعذّرت قراءة الملف: ' + (err && err.message ? err.message : 'خطأ غير معروف'));
+    }
   });
 
   document.getElementById('dlg-btn-pick-excel').addEventListener('click', ()=>{
@@ -5270,6 +5432,128 @@ function showImportStudentsDialog(key){
 /* Extracts a flat list of student names from a sheet parsed as an array-of-arrays (AOA).
    Tries to detect a header column containing "اسم"/"name"; otherwise uses the first column,
    skipping a leading row that itself looks like a header. */
+/* ===== فك ترميز كشوف نور (PDF) =====
+   ملفات نور تحمل طبقة نص حقيقية، لكن خريطة ToUnicode فيها معلَنة وفارغة — بلا
+   أي تحويل. فكل قارئ (pdf.js، وبرامج القراءة، والنسخ واللصق) يخرج حروفًا
+   يونانية/كيريلية مثل «ϝλϔϟΎΑ» بدل «بالفصل».
+   معرّفات الرسوم في هذه الملفات تساوي شكل الحرف العربي المتصل ناقص 0xFB00،
+   فنعيد الإزاحة ثم نعكس (الملف بترتيب بصري) ثم نفكّ الأشكال والرباطات.
+   ترتيب الخطوتين الأخيرتين حرج: تفكيك الرباطات قبل العكس يخرج «الطلاب» بشكل
+   «الطالب» و«عبدالله» بشكل «عبدهللا».
+
+   تنبيه: الإزاحة مستنتجة من ملفات نور الحالية لا معلَنة في مواصفة PDF. ولذلك
+   لا يُضاف أي اسم دون معاينة يؤكدها المعلم — لو تغيّر مولّد التقارير يومًا
+   ظهر الخلل أمام عينه بدل أن يتسرب إلى كشفه بصمت. */
+const NOOR_EXC = { 0x03:' ', 0x10:' ', 0x2EF:'ء', 0x0BCC:'ﷲ' };
+const AR_LOGICAL = /[\u0600-\u06FF\u0750-\u077F]/;
+const AR_FORMS   = /[\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+/* لا نفترض ما سيخرجه قارئ الـPDF — نقيسه. ثلاث حالات ممكنة:
+   ١) عربية منطقية سليمة (لو أصلح مولّد نور خريطته يومًا) — تُترك كما هي.
+   ٢) أشكال عربية متصلة — تحتاج تفكيكًا (وغالبًا عكسًا).
+   ٣) رموز مزاحة في نطاق اليوناني/الكيريلي — تحتاج إزاحة ثم ما سبق.
+   pdf.js قد يعطي (٢) بقراءة جدول cmap في الخط المضمّن، وpypdf يعطي (٣). */
+function noorTextKind(text){
+  let shifted=0, forms=0, logical=0, letters=0;
+  for(const ch of text){
+    const cp = ch.codePointAt(0);
+    if(cp < 0x80) continue;
+    letters++;
+    if(AR_FORMS.test(ch)) forms++;
+    else if(AR_LOGICAL.test(ch)) logical++;
+    else if(cp >= 0x370 && cp <= 0x5FF) shifted++;
+  }
+  if(letters < 8) return 'plain';
+  if(shifted / letters > 0.4) return 'shifted';
+  if(forms / letters > 0.3) return 'forms';
+  return 'plain';
+}
+
+function noorShiftToForms(text){
+  let out = '';
+  for(const ch of text){
+    const cp = ch.codePointAt(0);
+    if(NOOR_EXC[cp] !== undefined){ out += NOOR_EXC[cp]; continue; }
+    if(cp >= 0x20 && cp <= 0x7E){ out += ch; continue; }
+    const m = cp + 0xFB00;
+    out += ((m >= 0xFB50 && m <= 0xFDFF) || (m >= 0xFE70 && m <= 0xFEFF)) ? String.fromCodePoint(m) : ch;
+  }
+  return out;
+}
+
+/* العكس على مستوى الأشكال، مع إعادة الأرقام لاتجاهها لأنها لا تُعكس بصريًا. */
+function noorReverse(text){
+  let rev = Array.from(text).reverse().join('');
+  return rev.replace(/[0-9]+/g, d => Array.from(d).reverse().join(''));
+}
+function noorFinish(text){
+  return text.normalize('NFKC').replace(/\s+/g, ' ').trim();
+}
+
+/* أي الاتجاهين هو الصحيح؟ لا نخمّن — نقيس بلغة النص نفسه: أداة التعريف «ال»
+   في أول الكلمة شائعة جدًا في العربية، ومقلوبها «لا» في أول الكلمة نادر. */
+function arabicPlausibility(lines){
+  let score = 0;
+  lines.forEach(l=>{
+    (l.split(/\s+/) || []).forEach(w=>{
+      if(w.startsWith('ال')) score += 2;
+      else if(w.startsWith('لا')) score -= 2;
+      if(w.startsWith('عبد')) score += 2;
+      if(w.endsWith('ي') || w.endsWith('ى')) score += 1;
+    });
+  });
+  return score;
+}
+
+/* يعيد سطورًا عربية منطقية. القرار على مستوى الملف لا السطر حتى لا تختلط
+   الاتجاهات، والمعاينة بعدها هي الحكم الأخير قبل أن يدخل شيء إلى الكشف. */
+function normalizeNoorText(lines){
+  const kind = noorTextKind(lines.join('\n'));
+  if(kind === 'plain') return lines.map(l => (l||'').replace(/\s+/g,' ').trim());
+  const base = lines.map(l => kind === 'shifted' ? noorShiftToForms(l||'') : (l||''));
+  const asIs = base.map(noorFinish);
+  const rev  = base.map(l => noorFinish(noorReverse(l)));
+  return arabicPlausibility(rev) >= arabicPlausibility(asIs) ? rev : asIs;
+}
+
+/* يستخرج صفوف الطلاب: اسم عربي ثم رقم سجل ثم تسلسل.
+   لا نشترط طول رقم السجل — كشف حقيقي فيه طالب سجله من خمس خانات فقط، وشرط
+   «٩ خانات فأكثر» كان يُسقطه بصمت. */
+function parseNoorRows(lines){
+  const rows = [];
+  const isDigits = v => /^[0-9]+$/.test(v);
+  for(let i=0; i<lines.length-2; i++){
+    const a = lines[i], b = lines[i+1], c = lines[i+2];
+    if(!a || !b || !c) continue;
+    if(isDigits(b) && isDigits(c) && c.length<=3 && AR_LOGICAL.test(a) && a.split(/\s+/).length>=2){
+      rows.push({ seq: parseInt(c,10), name: a, id: b });
+      i += 2;
+    }
+  }
+  return rows;
+}
+
+/* بيانات الترويسة: المدرسة والصف والفصل والمعلم — تُعرض لتعبئة بيانات الشعبة. */
+function parseNoorHeader(lines){
+  const out = {};
+  const grab = (label)=>{
+    for(let i=0;i<lines.length;i++){
+      if(lines[i] === label){
+        /* التخطيط: التسمية ثم القيمة ثم ':' — أو التسمية ثم ':' ثم القيمة. */
+        const a = lines[i+1], b = lines[i+2];
+        if(a && a !== ':') return a;
+        if(b && b !== ':') return b;
+      }
+    }
+    return '';
+  };
+  out.school  = grab('المدرسة');
+  out.grade   = grab('الصف');
+  out.section = grab('الفصل');
+  out.teacher = grab('المعلم');
+  return out;
+}
+
 function parseNamesFromAOA(aoa){
   if(!aoa || aoa.length===0) return [];
   const headerRow = (aoa[0]||[]).map(v => (v===undefined||v===null) ? "" : String(v).trim());
