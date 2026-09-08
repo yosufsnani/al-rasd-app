@@ -403,6 +403,12 @@ td.name-c .name-arrow{
 }
 td.name-c .name-arrow:active{background:#dfe7ee;}
 td.idx-c{color:var(--muted); font-weight:600;}
+.name-wrap .note-dot{flex:0 0 auto; font-size:10px; line-height:1; opacity:.75; cursor:help;}
+@media print{ .name-wrap .note-dot{display:none !important;} }
+.stu-note{
+  display:block; margin-top:10px; font-size:11.5px; line-height:1.8; color:var(--text-2);
+  background:var(--surface-2); border-radius:10px; padding:8px 10px;
+}
 
 td.cell{cursor:pointer; user-select:none; font-size:15px; width:34px;}
 td.cell:active{background:#e3f2ef;}
@@ -1884,7 +1890,7 @@ function renderSectionRows(key){
     }
     return `<tr class="${rowClass}" data-row="${idx}">
       <td class="idx-c">${idx+1}</td>
-      <td class="name-c"><div class="name-wrap"><span class="name-text${empty?' empty-name':''}">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span><button type="button" class="name-arrow" data-name-idx="${idx}" data-key="${key}" title="خيارات الطالب">▾</button></div></td>
+      <td class="name-c"><div class="name-wrap"><span class="name-text${empty?' empty-name':''}">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span>${studentNote(row) ? `<span class="note-dot" title="${escapeAttr(studentNote(row))}">📝</span>` : ``}<button type="button" class="name-arrow" data-name-idx="${idx}" data-key="${key}" title="خيارات الطالب">▾</button></div></td>
       ${CAT_KEYS.map(k=>
         (row[k]||[]).map((v,gi)=>cellHtml(key,idx,k,gi,v)).join("") +
         `<td class="sum-c">${fmt(c[k+'Sum'])}</td>`
@@ -1981,6 +1987,7 @@ function renderSectionCards(key){
         <span class="s-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
       </div>
       <div class="stu-grid">${bars}</div>
+      ${studentNote(row) ? `<span class="stu-note">📝 ${escapeAttr(studentNote(row))}</span>` : ''}
       ${attRow}
       ${compare}
       ${cells}
@@ -2304,6 +2311,7 @@ function renderGuideCard(){
       </ul>
       <h3>الطباعة</h3>
       <ul>
+        <li><b>ملاحظة عن الطالب</b> 📝 من قائمة الطالب — ملاحظة خاصة بك يظهر مؤشرها بجانب الاسم، و<b>تُمهَّد بها تقارير الإحالة الداخلية</b>. لا تُرسل لولي الأمر ولا تظهر في تقريره أو رسالته.</li>
         <li><b>مشاركة الحالة</b> 📲 ترسل ملخّص الطالب نصًّا جاهزًا لولي أمره عبر واتساب أو غيره — من قائمة الطالب في الجدول، أو من تبويب المتابعة. النص قابل للتعديل قبل الإرسال.</li>
         <li><b>التراجع</b> ↩︎ يظهر في التنبيه بعد كل عملية حذف أو تفريغ ويبقى ست ثوانٍ. بعدها لا رجعة — والنسخة الاحتياطية من «حسابي» هي شبكة الأمان الأبعد.</li>
       </ul>
@@ -5124,6 +5132,7 @@ function openNameMenu(anchorEl, key, idx){
   menu.innerHTML = `
     <button type="button" class="sym-opt" data-act="rename"><span>✏️</span><span>تعديل الاسم</span></button>
     <button type="button" class="sym-opt" data-act="move"><span>🔀</span><span>نقل إلى شعبة أخرى</span></button>
+    <button type="button" class="sym-opt" data-act="note"><span>📝</span><span>ملاحظة عن الطالب</span></button>
     <button type="button" class="sym-opt" data-act="referral"><span>📋</span><span>تقرير إحالة</span></button>
     <button type="button" class="sym-opt" data-act="parent"><span>👪</span><span>تقرير لولي الأمر</span></button>
     <button type="button" class="sym-opt" data-act="share"><span>📲</span><span>مشاركة الحالة (واتساب)</span></button>
@@ -5138,6 +5147,11 @@ function openNameMenu(anchorEl, key, idx){
     ev.stopPropagation();
     closePopupMenu();
     showMoveStudentsDialog(key, [idx]);
+  });
+  menu.querySelector('[data-act="note"]').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closePopupMenu();
+    showStudentNoteDialog(key, idx);
   });
   menu.querySelector('[data-act="referral"]').addEventListener('click', (ev)=>{
     ev.stopPropagation();
@@ -5424,7 +5438,9 @@ function buildDefaultReferralData(key, idx){
   const frequentLate = ind.lateCount>=5;
   const bothReasons = lowAchievement && frequentLate;
   const recipientLabel = 'المرشد الطلابي';
-  const note = referralDefaultNote(recipientLabel, bothReasons, lowAchievement, frequentLate);
+  const own = studentNote(row);
+  /* ملاحظة المعلم تسبق الصياغة الجاهزة لأنها الأخصّ بالحالة. */
+  const note = (own ? own + '\n' : '') + referralDefaultNote(recipientLabel, bothReasons, lowAchievement, frequentLate);
   return {
     studentName: row.name, section:key, subject:meta.subject, teacher:meta.teacher,
     recipientLabel, term:meta.term,
@@ -5742,6 +5758,45 @@ function printParentReport(key, idx){
 }
 
 /* ================= نافذة تسجيل تواصل ولي أمر ================= */
+/* ===== ملاحظة المعلم عن الطالب =====
+   ملاحظة خاصة بالمعلم: تُمهَّد بها تقارير الإحالة الداخلية (للمرشد أو الوكيل)،
+   ولا تُدرَج تلقائيًا في تقرير ولي الأمر ولا في رسالة المشاركة — قد تحمل ظرفًا
+   أسريًا أو حكمًا شخصيًا لا يُرسل للبيت دون قرار صريح من المعلم. */
+function studentNote(row){ return (row && typeof row.note === 'string') ? row.note.trim() : ''; }
+
+function showStudentNoteDialog(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  if((row.name||'').trim()===''){ showAlertDialog('يجب إدخال اسم الطالب أولًا'); return; }
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:440px;">
+        <h3>📝 ملاحظة عن الطالب</h3>
+        <p style="margin:0 0 10px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+        <textarea id="note-text" rows="5" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:10px; font-size:13px; font-family:inherit; line-height:1.9; resize:vertical;" placeholder="مثال: تحسّن ملحوظ بعد التواصل مع ولي الأمر · يحتاج جلوسًا في الصف الأول · لديه ظرف أسري"></textarea>
+        <div class="hint" style="margin-top:8px; margin-bottom:14px;">🔒 ملاحظة خاصة بك: تُمهَّد بها <b>تقارير الإحالة الداخلية</b> فقط، ولا تُرسل لولي الأمر ولا تظهر في تقريره أو رسالته إلا إن كتبتها بنفسك هناك.</div>
+        <div class="warn-actions">
+          <button type="button" class="btn-cancel" id="note-cancel">إلغاء</button>
+          <button type="button" class="btn-ok" id="note-save">💾 حفظ</button>
+        </div>
+      </div>
+    </div>`;
+  const ta = document.getElementById('note-text');
+  ta.value = studentNote(row);
+  ta.focus();
+  document.getElementById('note-cancel').addEventListener('click', closeDialog);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('note-save').addEventListener('click', ()=>{
+    const v = ta.value.trim();
+    if(v) row.note = v; else delete row.note;
+    persistState();
+    closeDialog();
+    render();
+    showToast(v ? 'تم حفظ الملاحظة' : 'تم مسح الملاحظة');
+  });
+}
+
 function showContactDialog(key, idx){
   const row = STATE.sections[key] && STATE.sections[key][idx];
   if(!row) return;
@@ -5859,7 +5914,7 @@ function exportXlsx(){
       sub.push("المجموع");
     }
     if(attEnabled()) grp.push("أيام الحضور","التأخر","الغياب","بعذر", ...(attCounts() ? ["درجة المواظبة"] : []));
-    grp.push("المجموع النهائي","الدرجة القصوى","المستوى","بحاجة متابعة");
+    grp.push("المجموع النهائي","الدرجة القصوى","المستوى","بحاجة متابعة","ملاحظة المعلم");
     const rows = STATE.sections[key].map((row,idx)=>{
       const c = studentCalc(row);
       const cells = [idx+1, row.name];
@@ -5871,7 +5926,7 @@ function exportXlsx(){
         cells.push(a.present, a.late, a.absent, a.excused);
         if(attCounts()) cells.push(fmt2(c.attEarned));
       }
-      cells.push(fmt2(c.final), fmt2(c.maxGrade), studentLevelName(c, row.name.trim()===""), c.severity ? SEV_LABEL[c.severity] : "");
+      cells.push(fmt2(c.final), fmt2(c.maxGrade), studentLevelName(c, row.name.trim()===""), c.severity ? SEV_LABEL[c.severity] : "", studentNote(row));
       return cells;
     });
     const footer1 = [];
