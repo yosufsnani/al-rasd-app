@@ -206,6 +206,34 @@ td.cell .sym svg{width:16px; height:16px;}
 .guide li{margin-bottom:3px;}
 .guide b{color:var(--text); font-weight:500;}
 
+/* ===== الحضور والغياب ===== */
+.sw-row{
+  display:flex; align-items:flex-start; gap:11px; cursor:pointer;
+  padding:11px 0; border-bottom:1px solid var(--border);
+}
+.sw-row:last-of-type{border-bottom:none;}
+.sw-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.sw-body b{font-size:13px; font-weight:500; color:var(--text);}
+.sw-body i{font-style:normal; font-size:11px; font-weight:300; color:var(--muted); line-height:1.75;}
+.sw-row input{position:absolute; opacity:0; width:0; height:0;}
+.sw-track{
+  flex:0 0 auto; width:44px; height:26px; border-radius:14px; background:var(--surface-2);
+  border:1px solid var(--border); position:relative; transition:background .15s; margin-top:2px;
+}
+.sw-knob{
+  position:absolute; top:2px; inset-inline-end:2px; width:20px; height:20px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.18); transition:transform .15s;
+}
+.sw-row input:checked ~ .sw-track{background:var(--teal); border-color:var(--teal);}
+.sw-row input:checked ~ .sw-track .sw-knob{transform:translateX(-18px);}
+.sw-row input:focus-visible ~ .sw-track{outline:2px solid var(--teal); outline-offset:2px;}
+
+.att-tally{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:0 2px;}
+.att-pill{font-size:11px; padding:4px 10px; border-radius:20px; white-space:nowrap;}
+.att-pill b{font-weight:700; font-size:12px;}
+.qe-btn.att-btn{font-size:15px; font-weight:600; color:var(--text-2); font-family:inherit;}
+.qe-btn.att-btn.on{border-width:2px;}
+
 /* ===== الرصد السريع بالعمود ===== */
 .qp-group{margin-bottom:15px;}
 .qp-group:last-child{margin-bottom:0;}
@@ -1163,6 +1191,9 @@ let STATE = {
   activeTab: SECTION_KEYS[0],
   rosterView: 'table',
   quickItem: null,
+  attDayIndex: null,
+  attendance: blankAttendance(),
+  attDays: {},
   sections: {},
   meta: {},
   letterhead: blankLetterhead(),
@@ -1186,7 +1217,7 @@ let STATE = {
    وهو ما يحدث فعلًا عند استعادة نسخة احتياطية تالفة، فيموت الاستيراد بلا رسالة. */
 function freshState(){
   const seedKeys = Object.keys(SEED);
-  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
+  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
   for(const k of seedKeys){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -1212,6 +1243,14 @@ function normalizeLoadedState(obj){
     if(typeof obj.toolsOpen !== 'boolean') obj.toolsOpen = false;
     if(typeof obj.datesOpen !== 'boolean') obj.datesOpen = false;
     if(!Array.isArray(obj.contacts)) obj.contacts = [];
+    /* الحضور: الإخفاء لا يحذف — نحافظ على attDays وسلاسل الطلاب مهما كانت حالة المفتاح. */
+    const a = (obj.attendance && typeof obj.attendance === 'object') ? obj.attendance : {};
+    obj.attendance = {
+      enabled: !!a.enabled,
+      affectsGrade: !!a.affectsGrade,
+      weight: (isNaN(parseFloat(a.weight)) ? 5 : Math.max(0, Math.min(50, parseFloat(a.weight))))
+    };
+    if(!obj.attDays || typeof obj.attDays !== 'object') obj.attDays = {};
     if(!Array.isArray(obj.sectionOrder) || obj.sectionOrder.length===0){
       obj.sectionOrder = Object.keys(obj.sections);
     }
@@ -1496,11 +1535,18 @@ function applyLoadedState(obj){
   if(STATE.activeTab === "تحليل"){ STATE.activeView = 'analysis'; STATE.activeTab = null; }
   else if(STATE.activeTab === "الأرشيف"){ STATE.activeView = 'archive'; STATE.activeTab = null; }
   if(!VIEWS.includes(STATE.activeView)) STATE.activeView = 'home';
-  if(STATE.rosterView !== 'cards' && STATE.rosterView !== 'quick') STATE.rosterView = 'table';
+  if(!['cards','quick','attendance'].includes(STATE.rosterView)) STATE.rosterView = 'table';
+  /* إطفاء الحضور لا يحذف بياناته، لكنه يعيد العرض للجدول حتى لا تبقى شاشة مخفية. */
+  if(STATE.rosterView === 'attendance' && !attEnabled()) STATE.rosterView = 'table';
+  if(!(Number.isInteger(STATE.attDayIndex) && STATE.attDayIndex >= 0)) STATE.attDayIndex = null;
   if(!(STATE.quickItem && typeof STATE.quickItem.k === 'string' && Number.isInteger(STATE.quickItem.gi))) STATE.quickItem = null;
   if(!STATE.sections[STATE.activeTab]){
     STATE.activeTab = SECTION_KEYS.length>0 ? SECTION_KEYS[0] : null;
   }
+  /* الشعب المحذوفة تُنظَّف من سجل الأيام، والباقية تُوفَّق أطوال سلاسلها. */
+  if(!STATE.attDays) STATE.attDays = {};
+  Object.keys(STATE.attDays).forEach(k=>{ if(!STATE.sections[k]) delete STATE.attDays[k]; });
+  SECTION_KEYS.forEach(k=> attSyncRows(k));
 }
 
 /* تبديل التبويب السفلي */
@@ -1677,6 +1723,12 @@ function studentCalc(row){
     missCount += countSym(arr,"❌");
     fullCount += countSym(arr,"✔️");
   }
+  /* المواظبة تدخل المجموع فقط إذا اختار المعلم ذلك — وإلا فهي سجل حالة بلا درجة،
+     ولا تؤثر في النسبة ولا في التقدير ولا في المتابعة. */
+  const att = attCounts() ? attScore(row) : { earned:0, max:0 };
+  final += att.earned;
+  maxGrade += att.max;
+
   const ratio = maxGrade>0 ? final/maxGrade : null;
   /* لا يُحكم بالنسبة قبل ثلاث خانات مرصودة: طالب عليه ❌ واحد نسبته ٠٪، وهذه
      خانة واحدة لا تعثّر. المُشغّلان الآخران (٣ عدم تسليم، ٥ تأخيرات) يضمنان
@@ -1701,7 +1753,7 @@ function studentCalc(row){
      متابعة = يسلّم لكن متأخرًا، فانخفاض درجته سببه التأخير لا الغياب عن المهمة. */
   let severity = "";
   if(flag === "⚠ نعم") severity = (missCount>=3 || lowDelivery) ? "urgent" : "warn";
-  return Object.assign(sums, {final,maxGrade,assessed,lateCount,missCount,fullCount,ratio,submittedRatio,lowDelivery,flag,severity});
+  return Object.assign(sums, {final,maxGrade,assessed,lateCount,missCount,fullCount,ratio,submittedRatio,lowDelivery,flag,severity,attEarned:att.earned,attMax:att.max});
 }
 
 const SEV_LABEL = {urgent:"🔴 عاجل", warn:"🟡 متابعة"};   // نص خام للتصدير إلى Excel
@@ -1903,6 +1955,10 @@ function renderSectionCards(key){
           `<button type="button" class="cg-cell" data-idx="${idx}" data-group="${k}" data-gi="${gi}" title="${escapeAttr(SYM_LABEL[v]||'')}" aria-label="${escapeAttr(SYM_LABEL[v]||'')}">${symIcon(v)}</button>`
         ).join('')}</div>
       </div>`).join('')}</div>` : '';
+    const ast = attEnabled() ? attStats(row) : null;
+    const attRow = (ast && ast.recorded>0 && !empty)
+      ? `<span class="s-cmp" style="color:var(--text-2);">المواظبة ${Math.round(ast.earnedRatio*100)}٪ — غياب ${ast.absent} · تأخر ${ast.late}${ast.excused?` · بعذر ${ast.excused}`:''}${attCounts()?` · ${fmt(c.attEarned)} من ${fmt(c.attMax)}`:''}</span>`
+      : '';
     const compare = (!empty && c.ratio!==null && secAvg!==null) ? (()=>{
       const diff = Math.round((c.ratio - secAvg)*100);
       if(diff > 0) return `<span class="s-cmp up">▲ أعلى من متوسط الشعبة بـ ${diff}%</span>`;
@@ -1917,6 +1973,7 @@ function renderSectionCards(key){
         <span class="s-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
       </div>
       <div class="stu-grid">${bars}</div>
+      ${attRow}
       ${compare}
       ${cells}
     </div>`;
@@ -2054,9 +2111,49 @@ function renderSettingsPanels(){
     ` : ``}
   </div>
 
+  ${renderAttendanceCard()}
+
   ${renderDatesCard()}
 
   ${renderGuideCard()}
+`;
+}
+
+/* ---- 🗓️ إعدادات الحضور والغياب ---- */
+function renderAttendanceCard(){
+  const a = attSettings();
+  const totalDays = Object.keys(STATE.attDays || {}).reduce((n,k)=> n + attDays(k).length, 0);
+  return `
+  <div class="card meta-card">
+    <h2>🗓️ الحضور والغياب</h2>
+    <label class="sw-row">
+      <span class="sw-body">
+        <b>تفعيل الحضور والغياب</b>
+        <i>يضيف وضع «الحضور» في تبويب الرصد. إن أطفأته اختفت الواجهة فقط — ${totalDays>0 ? `<b>سجلّك المحفوظ (${fmt(totalDays)} يومًا) يبقى كما هو</b> ويعود بتشغيل المفتاح` : 'ولا يُحذف أي سجل'}.</i>
+      </span>
+      <input type="checkbox" id="att-enabled" ${a.enabled?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+
+    ${a.enabled ? `
+    <label class="sw-row">
+      <span class="sw-body">
+        <b>تدخل درجة المواظبة في المجموع</b>
+        <i>مطفأً: يُسجَّل الحضور كحالة فقط بلا أي أثر على الدرجة أو التقدير أو المتابعة. مشتغلًا: تُحتسب درجة مواظبة وتُضاف للمجموع والدرجة القصوى.</i>
+      </span>
+      <input type="checkbox" id="att-affects" ${a.affectsGrade?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+
+    ${a.affectsGrade ? `
+    <div class="meta-field" style="margin-top:10px; max-width:220px;">
+      <label>درجة المواظبة الكاملة</label>
+      <input type="number" min="0" max="50" step="0.5" id="att-weight" value="${a.weight}">
+    </div>
+    <div class="hint">الحساب: <b>حاضر = درجة كاملة · متأخر = نصف · غائب = صفر · غائب بعذر = لا يُحتسب له ولا عليه</b>. النسبة تُضرب في الدرجة أعلاه، فطالب حضر ٩٠٪ من الأيام المسجّلة يأخذ ${fmt((Math.max(0,parseFloat(a.weight)||0)*0.9))} من ${fmt(a.weight)}.</div>
+    ` : `<div class="hint">الحضور الآن <b>سجل حالة فقط</b> — لا يظهر في المجموع ولا يغيّر تقدير الطالب.</div>`}
+    ` : ``}
+  </div>
 `;
 }
 
@@ -2173,6 +2270,7 @@ function renderGuideCard(){
         <li><b>المادة، الصف والشعبة، الفصل الدراسي، العام، معلم المادة، مدير المدرسة</b> ← تبويب <b>الرصد</b>، بطاقة «بيانات الشعبة» أعلى الصفحة (لكل شعبة بياناتها الخاصة). هذه بالضبط هي التي تظهر في <b>الجزء الأيسر من الكليشة</b> عند الطباعة.</li>
         <li><b>الدولة والوزارة واسم المدرسة وعنوان الكشف</b> (يمين الكليشة ووسطها) ← بطاقة «بيانات الكليشة» في هذا التبويب، وتُطبَّق على كل الشعب.</li>
         <li><b>بنود الرصد</b> — إضافة بند أو حذفه أو تغيير عدد خاناته ودرجته ← بطاقة «عناصر الرصد» أعلاه.</li>
+        <li><b>الحضور والغياب</b> ← بطاقة «الحضور والغياب» أعلاه. <b>اختياري بمفتاحين</b>: الأول يُظهره أو يخفيه (والإخفاء <b>لا يحذف سجلّك</b>، يعود كما هو بتشغيل المفتاح)، والثاني يقرّر هل تُحتسب درجة مواظبة تُضاف للمجموع أم يبقى الحضور <b>سجل حالة فقط</b> بلا أثر على الدرجة.</li>
         <li><b>مواعيد تسليم البنود</b> (اختيارية) ← بطاقة «مواعيد تسليم البنود» أعلاه، أو بالضغط على رقم الخانة في رأس جدول الرصد. تظهر في تقرير ولي الأمر وتقرير الإحالة: «الواجب ٣ — ١٥ محرم — لم يسلّم».</li>
         <li><b>التوقيع</b> الذي يُدرج تلقائيًا في التقارير ← بطاقة «التوقيع الإلكتروني».</li>
       </ul>
@@ -2234,6 +2332,90 @@ function renderSectionTools(key){
       <button id="btn-delete-selected" style="color:#b91c1c; border-color:#f3c6c6;">🗑️ حذف المحدد (${SELECTED_ROWS.size})</button>
     </div>
   </div>` : ``}`;
+}
+
+/* ===== الحضور والغياب =====
+   اختياري تمامًا: معلمون كثر لا يحتاجونه، وإخفاؤه لا يمسّ بياناته — المفتاح
+   يخفي الواجهة فقط، والسجل يبقى كما هو ويعود بالضغط على المفتاح مرة أخرى.
+   واختياري كذلك أن يدخل المجموع: إما درجة مواظبة تُحتسب، أو تسجيل حالة بلا درجة.
+
+   التخزين مضغوط بقصد: تاريخ اليوم يُخزَّن مرة واحدة للشعبة في attDays، ويحمل كل
+   طالب سلسلة حروف بطول تلك الأيام — حرف واحد لليوم بدل تاريخ كامل لكل طالب.
+   ثلاثون طالبًا وستون يومًا = ١٨٠٠ حرف للشعبة، لا ٣٦ كيلوبايت. والأهم أن طول
+   السلسلة نفسه هو عدد الأيام المرصودة، فيستطيع studentCalc(row) حساب المواظبة
+   من الصف وحده دون معرفة شعبته. */
+const ATT_PRESENT = 'ح', ATT_ABSENT = 'غ', ATT_LATE = 'ت', ATT_EXCUSED = 'ع', ATT_NONE = '-';
+const ATT_CODES = [ATT_PRESENT, ATT_LATE, ATT_EXCUSED, ATT_ABSENT];
+const ATT_LABEL = { 'ح':'حاضر', 'ت':'متأخر', 'ع':'غائب بعذر', 'غ':'غائب', '-':'لم يُسجَّل' };
+const ATT_COLOR = { 'ح':'var(--teal-d)', 'ت':'#B87514', 'ع':'#3D6FC4', 'غ':'#C0392B', '-':'var(--muted)' };
+const ATT_BG    = { 'ح':'var(--green)', 'ت':'var(--yellow)', 'ع':'#E7EEF9', 'غ':'var(--red)', '-':'var(--empty)' };
+
+function blankAttendance(){
+  return { enabled:false, affectsGrade:false, weight:5 };
+}
+function attSettings(){
+  if(!STATE.attendance) STATE.attendance = blankAttendance();
+  return STATE.attendance;
+}
+function attEnabled(){ return !!attSettings().enabled; }
+function attCounts(){ const a = attSettings(); return !!(a.enabled && a.affectsGrade); }
+function attDays(key){
+  if(!STATE.attDays) STATE.attDays = {};
+  if(!Array.isArray(STATE.attDays[key])) STATE.attDays[key] = [];
+  return STATE.attDays[key];
+}
+function attGet(row, i){
+  const s = typeof row.att === 'string' ? row.att : '';
+  return s[i] || ATT_NONE;
+}
+/* يضبط حالة يوم واحد، ويمدّ السلسلة بـ«-» إن كانت أقصر من سجل الأيام. */
+function attSet(row, i, code){
+  let s = typeof row.att === 'string' ? row.att : '';
+  while(s.length < i) s += ATT_NONE;
+  row.att = s.slice(0, i) + code + s.slice(i+1);
+}
+/* يوفّق سلاسل الطلاب مع سجل أيام الشعبة (بعد إضافة يوم أو حذفه). */
+function attSyncRows(key){
+  const n = attDays(key).length;
+  (STATE.sections[key] || []).forEach(row=>{
+    let s = typeof row.att === 'string' ? row.att : '';
+    if(s.length > n) s = s.slice(0, n);
+    while(s.length < n) s += ATT_NONE;
+    row.att = s;
+  });
+}
+function attRemoveDay(key, i){
+  const days = attDays(key);
+  if(i<0 || i>=days.length) return;
+  days.splice(i,1);
+  (STATE.sections[key] || []).forEach(row=>{
+    const s = typeof row.att === 'string' ? row.att : '';
+    row.att = s.slice(0,i) + s.slice(i+1);
+  });
+}
+/* إحصاء مواظبة طالب من صفّه وحده — «بعذر» لا يُحتسب له ولا عليه. */
+function attStats(row){
+  const s = typeof row.att === 'string' ? row.att : '';
+  let present=0, late=0, absent=0, excused=0, recorded=0;
+  for(const ch of s){
+    if(ch === ATT_PRESENT){ present++; recorded++; }
+    else if(ch === ATT_LATE){ late++; recorded++; }
+    else if(ch === ATT_ABSENT){ absent++; recorded++; }
+    else if(ch === ATT_EXCUSED){ excused++; }
+  }
+  const earnedRatio = recorded>0 ? (present + late*0.5)/recorded : null;
+  return { present, late, absent, excused, recorded, earnedRatio };
+}
+/* درجة المواظبة — تُستدعى فقط عند تفعيل «تدخل المجموع». */
+function attScore(row){
+  const w = Math.max(0, parseFloat(attSettings().weight) || 0);
+  const st = attStats(row);
+  if(w<=0 || st.recorded===0) return { earned:0, max:0 };
+  return { earned: Math.round(st.earnedRatio * w * 100)/100, max: w };
+}
+function attDayLabel(iso){
+  const h = hijriFromISO(iso);
+  return h || iso;
 }
 
 /* ===== الرصد السريع بالعمود =====
@@ -2335,11 +2517,131 @@ function renderQuickEntry(key){
   <div class="hint">💡 الأسرع: ارصد المتأخرين وغير المسلّمين فقط، ثم اضغط «الباقي سلّموا» لإنهاء البقية دفعة واحدة.</div>`}`;
 }
 
+/* نافذة إضافة يوم: التاريخ ميلادي من تقويم الجهاز، والعرض هجري. */
+function showAddDayDialog(key){
+  const holder = document.getElementById('dialog-holder');
+  const iso = todayISO();
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:360px;">
+        <h3>➕ تسجيل يوم حضور</h3>
+        <div class="meta-field" style="margin-bottom:6px;">
+          <label>التاريخ</label>
+          <input type="date" id="day-input" value="${iso}">
+        </div>
+        <div class="hint" id="day-hijri" style="margin-top:0; margin-bottom:14px;">${escapeAttr(hijriFromISO(iso))}</div>
+        <div class="warn-actions">
+          <button type="button" class="btn-cancel" id="day-cancel">إلغاء</button>
+          <button type="button" class="btn-ok" id="day-save">إضافة</button>
+        </div>
+      </div>
+    </div>`;
+  const input = document.getElementById('day-input');
+  const label = document.getElementById('day-hijri');
+  input.addEventListener('change', ()=>{ label.textContent = hijriFromISO(input.value) || 'تاريخ غير صالح'; });
+  document.getElementById('day-cancel').addEventListener('click', closeDialog);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('day-save').addEventListener('click', ()=>{
+    const val = input.value;
+    if(!val){ showToast('اختر تاريخًا أولًا'); return; }
+    const days = attDays(key);
+    if(days.includes(val)){
+      /* اليوم مسجّل — ننتقل إليه بدل تكراره. */
+      STATE.attDayIndex = days.indexOf(val);
+      closeDialog();
+      render();
+      showToast('هذا اليوم مسجّل — انتقلنا إليه');
+      return;
+    }
+    days.push(val);
+    days.sort();
+    attSyncRows(key);
+    STATE.attDayIndex = days.indexOf(val);
+    persistState();
+    closeDialog();
+    render();
+    showToast('تمت إضافة اليوم');
+  });
+}
+
+/* ===== شاشة رصد الحضور اليومي ===== */
+function todayISO(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function renderAttendanceEntry(key){
+  const days = attDays(key);
+  const rows = STATE.sections[key] || [];
+  const named = rows.filter(r=>(r.name||'').trim()!=='');
+  let di = (STATE.attDayIndex === null || STATE.attDayIndex === undefined) ? days.length-1 : STATE.attDayIndex;
+  if(di < 0 || di >= days.length) di = days.length-1;
+
+  if(days.length === 0){
+    return `
+    <div class="card" style="text-align:center; padding:26px 18px;">
+      <div style="font-size:30px; line-height:1; margin-bottom:12px;">🗓️</div>
+      <h2 style="justify-content:center; margin-bottom:8px;">لم تسجّل أي يوم بعد</h2>
+      <div class="hint" style="margin:0 auto 16px; max-width:320px; text-align:center;">ابدأ بإضافة يوم، فتظهر أسماء الطلاب وأمام كل اسم أربع حالات.</div>
+      <button type="button" class="primary" id="att-add-day" style="min-width:170px;">➕ تسجيل حضور اليوم</button>
+    </div>`;
+  }
+
+  const counts = { 'ح':0,'ت':0,'ع':0,'غ':0,'-':0 };
+  named.forEach(r=>{ counts[attGet(r, di)]++; });
+  const unset = counts['-'];
+
+  const list = rows.map((row, idx)=>{
+    if((row.name||'').trim()==='') return '';
+    const cur = attGet(row, di);
+    return `<div class="qe-row${cur===ATT_NONE?' unmarked':''}">
+      <span class="qe-num">${idx+1}</span>
+      <span class="qe-name">${escapeAttr(row.name)}</span>
+      <span class="qe-btns">
+        ${ATT_CODES.map(code=>`
+          <button type="button" class="qe-btn att-btn${cur===code?' on':''}" data-att-set="${idx}" data-att-code="${code}"
+            style="${cur===code?`background:${ATT_BG[code]}; border-color:${ATT_COLOR[code]}; color:${ATT_COLOR[code]};`:''}"
+            title="${escapeAttr(ATT_LABEL[code])}" aria-label="${escapeAttr(ATT_LABEL[code])}">${code}</button>`).join("")}
+      </span>
+    </div>`;
+  }).join("");
+
+  return `
+  <div class="qe-bar">
+    <button type="button" class="qe-nav" id="att-prev" ${di<=0?'disabled':''} title="اليوم السابق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
+    <div class="qe-title" style="cursor:default;">
+      <span class="qe-t1">${escapeAttr(attDayLabel(days[di]))}</span>
+      <span class="qe-t2">اليوم ${di+1} من ${days.length} · ${escapeAttr(days[di])}</span>
+    </div>
+    <button type="button" class="qe-nav" id="att-next" ${di>=days.length-1?'disabled':''} title="اليوم التالي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+    </button>
+  </div>
+
+  <div class="att-tally">
+    ${['ح','ت','ع','غ'].map(c=>`<span class="att-pill" style="background:${ATT_BG[c]}; color:${ATT_COLOR[c]};"><b>${counts[c]}</b> ${ATT_LABEL[c]}</span>`).join("")}
+    ${unset>0 ? `<span class="att-pill" style="background:var(--empty); color:var(--muted);"><b>${unset}</b> لم يُسجَّل</span>` : ``}
+  </div>
+
+  ${named.length===0 ? `<div class="card"><div class="empty-note">لا يوجد طلاب بأسماء في هذه الشعبة بعد.</div></div>` : `
+  <div class="card" style="padding:6px 8px;">${list}</div>
+
+  <div class="qe-actions">
+    ${unset>0 ? `<button type="button" class="primary" id="att-rest-present">✅ الباقي (${fmt(unset)}) حاضرون</button>` : ``}
+    <button type="button" id="att-add-day">➕ يوم جديد</button>
+    <button type="button" id="att-del-day" style="color:#b91c1c; border-color:#f3c6c6;">🗑️ حذف هذا اليوم</button>
+  </div>
+  <div class="hint">💡 سجّل الغائبين والمتأخرين فقط ثم اضغط «الباقي حاضرون». <b>غائب بعذر</b> لا يُحتسب له ولا عليه في درجة المواظبة.</div>`}`;
+}
+
 function renderSectionSheet(key, opts){
   const forPrint = !!(opts && opts.forPrint);
   const cardsMode = STATE.rosterView === 'cards';
   const quickMode = STATE.rosterView === 'quick';
-  const listMode  = cardsMode || quickMode;   // أي وضع غير الجدول
+  const attMode   = STATE.rosterView === 'attendance' && attEnabled();
+  const listMode  = cardsMode || quickMode || attMode;   // أي وضع غير الجدول
   const meta = STATE.meta[key];
   const lh = STATE.letterhead;
   const totalItemCount = CAT_KEYS.reduce((sum,k)=> sum + (STATE.config[k].count||0), 0) || 1;
@@ -2398,6 +2700,10 @@ function renderSectionSheet(key, opts){
       <button type="button" data-roster-view="quick" class="${quickMode?'on':''}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13H11l-1 9 8.5-11H12z"/></svg>سريع
       </button>
+      ${attEnabled() ? `
+      <button type="button" data-roster-view="attendance" class="${attMode?'on':''}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>الحضور
+      </button>` : ``}
     </div>
     <button type="button" class="fab-add" id="btn-add-row" title="إضافة طالب" aria-label="إضافة طالب">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -2406,6 +2712,7 @@ function renderSectionSheet(key, opts){
 
   ${cardsMode ? `<div class="roster-cards">${renderSectionCards(key)}</div>` : ``}
   ${quickMode ? `<div class="roster-quick">${renderQuickEntry(key)}</div>` : ``}
+  ${attMode ? `<div class="roster-quick">${renderAttendanceEntry(key)}</div>` : ``}
   `}
 
   <div class="card${listMode && !forPrint ? ' screen-hidden' : ''}">
@@ -3864,10 +4171,69 @@ function wireSectionEvents(key){
     });
   });
 
+  /* ===== الحضور اليومي ===== */
+  const attDayCount = ()=> attDays(key).length;
+  const curDayIndex = ()=>{
+    const n = attDayCount();
+    let i = (STATE.attDayIndex === null || STATE.attDayIndex === undefined) ? n-1 : STATE.attDayIndex;
+    if(i<0 || i>=n) i = n-1;
+    return i;
+  };
+  const attAddDay = document.getElementById('att-add-day');
+  if(attAddDay) attAddDay.addEventListener('click', ()=> showAddDayDialog(key));
+  const attPrev = document.getElementById('att-prev');
+  if(attPrev) attPrev.addEventListener('click', ()=>{
+    STATE.attDayIndex = Math.max(0, curDayIndex()-1); persistState(); render();
+  });
+  const attNext = document.getElementById('att-next');
+  if(attNext) attNext.addEventListener('click', ()=>{
+    STATE.attDayIndex = Math.min(attDayCount()-1, curDayIndex()+1); persistState(); render();
+  });
+  document.querySelectorAll('[data-att-set]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.getAttribute('data-att-set'));
+      const code = btn.getAttribute('data-att-code');
+      const row = STATE.sections[key][idx];
+      if(!row) return;
+      const i = curDayIndex();
+      if(i < 0) return;
+      /* الضغط على الحالة نفسها يلغيها. */
+      attSet(row, i, attGet(row, i) === code ? ATT_NONE : code);
+      persistState();
+      render();
+    });
+  });
+  const attRest = document.getElementById('att-rest-present');
+  if(attRest) attRest.addEventListener('click', ()=>{
+    const i = curDayIndex();
+    if(i < 0) return;
+    let n = 0;
+    STATE.sections[key].forEach(row=>{
+      if((row.name||'').trim()==='') return;
+      if(attGet(row, i) === ATT_NONE){ attSet(row, i, ATT_PRESENT); n++; }
+    });
+    persistState();
+    render();
+    showToast(`تم تسجيل ${fmt(n)} طالبًا حاضرين`);
+  });
+  const attDelDay = document.getElementById('att-del-day');
+  if(attDelDay) attDelDay.addEventListener('click', ()=>{
+    const i = curDayIndex();
+    const days = attDays(key);
+    if(i < 0 || !days[i]) return;
+    showConfirmDialog('حذف يوم', `سيُحذف سجل يوم ${attDayLabel(days[i])} لكل طلاب هذه الشعبة. هل تريد المتابعة؟`, ()=>{
+      attRemoveDay(key, i);
+      STATE.attDayIndex = null;
+      persistState();
+      render();
+      showToast('تم حذف اليوم');
+    });
+  });
+
   /* مبدّل جدول / بطاقات / سريع */
   document.querySelectorAll('[data-roster-view]').forEach(b=>{
     b.addEventListener('click', ()=>{
-      const v = ['cards','quick'].includes(b.dataset.rosterView) ? b.dataset.rosterView : 'table';
+      const v = ['cards','quick','attendance'].includes(b.dataset.rosterView) ? b.dataset.rosterView : 'table';
       if(STATE.rosterView === v) return;
       STATE.rosterView = v;
       EXPANDED_CARDS.clear();
@@ -3931,6 +4297,30 @@ function wireSettingsPanelEvents(){
       render();
     });
   }
+
+  const attEn = document.getElementById('att-enabled');
+  if(attEn) attEn.addEventListener('change', ()=>{
+    attSettings().enabled = attEn.checked;
+    /* الإطفاء يخفي الواجهة فقط — attDays وسلاسل الطلاب تبقى كما هي. */
+    if(!attEn.checked && STATE.rosterView === 'attendance') STATE.rosterView = 'table';
+    persistState();
+    render();
+    showToast(attEn.checked ? 'تم تفعيل الحضور والغياب' : 'أُخفي الحضور — سجلّك محفوظ ويعود بتشغيل المفتاح');
+  });
+  const attAff = document.getElementById('att-affects');
+  if(attAff) attAff.addEventListener('change', ()=>{
+    attSettings().affectsGrade = attAff.checked;
+    persistState();
+    render();
+    showToast(attAff.checked ? 'المواظبة تدخل المجموع الآن' : 'المواظبة صارت سجل حالة فقط');
+  });
+  const attW = document.getElementById('att-weight');
+  if(attW) attW.addEventListener('change', ()=>{
+    const v = parseFloat(attW.value);
+    attSettings().weight = isNaN(v) ? 5 : Math.max(0, Math.min(50, v));
+    persistState();
+    render();
+  });
 
   const btnToggleDates = document.getElementById('btn-toggle-dates');
   if(btnToggleDates){
@@ -5075,7 +5465,8 @@ function buildParentReportData(key, idx){
     assessedCount: ind.assessedCount,
     levelName: studentLevelName(c, row.name.trim()===""),
     cats, recommendation,
-    tasks: troubledTasks(row)
+    tasks: troubledTasks(row),
+    att: attEnabled() ? Object.assign(attStats(row), { counts: attCounts(), score: attCounts() ? attScore(row) : null }) : null
   };
 }
 
@@ -5157,6 +5548,19 @@ function parentReportHtml(d){
       </div>
 
       ${troubledTasksTableHtml(d.tasks || [])}
+
+      ${(d.att && d.att.recorded > 0) ? `
+      <div class="rf-section">
+        <h3>المواظبة</h3>
+        <div class="rf-grid">
+          <div class="rf-row"><span class="rf-label">الأيام المسجّلة:</span><span>${d.att.recorded + d.att.excused}</span></div>
+          <div class="rf-row"><span class="rf-label">أيام الحضور:</span><span>${d.att.present}</span></div>
+          <div class="rf-row"><span class="rf-label">أيام التأخر:</span><span>${d.att.late}</span></div>
+          <div class="rf-row"><span class="rf-label">أيام الغياب:</span><span>${d.att.absent}</span></div>
+          <div class="rf-row"><span class="rf-label">غياب بعذر:</span><span>${d.att.excused}</span></div>
+          <div class="rf-row full"><span class="rf-label">نسبة المواظبة:</span><span>${Math.round(d.att.earnedRatio*100)}%${d.att.score ? ` — درجة المواظبة ${fmt(d.att.score.earned)} من ${fmt(d.att.score.max)}` : ' (سجل فقط، لا تدخل الدرجة)'}</span></div>
+        </div>
+      </div>` : ''}
 
       <div class="rf-section">
         <h3>توصية المعلم</h3>
@@ -5297,12 +5701,18 @@ function exportXlsx(){
       for(let i=1;i<=c.count;i++) sub.push(String(i));
       sub.push("المجموع");
     }
+    if(attEnabled()) grp.push("أيام الحضور","التأخر","الغياب","بعذر", ...(attCounts() ? ["درجة المواظبة"] : []));
     grp.push("المجموع النهائي","الدرجة القصوى","المستوى","بحاجة متابعة");
     const rows = STATE.sections[key].map((row,idx)=>{
       const c = studentCalc(row);
       const cells = [idx+1, row.name];
       for(const k of CAT_KEYS){
         cells.push(...row[k], fmt2(c[k+'Sum']));
+      }
+      if(attEnabled()){
+        const a = attStats(row);
+        cells.push(a.present, a.late, a.absent, a.excused);
+        if(attCounts()) cells.push(fmt2(c.attEarned));
       }
       cells.push(fmt2(c.final), fmt2(c.maxGrade), studentLevelName(c, row.name.trim()===""), c.severity ? SEV_LABEL[c.severity] : "");
       return cells;
