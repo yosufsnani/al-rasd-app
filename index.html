@@ -6469,7 +6469,7 @@ function openNameMenu(anchorEl, key, idx){
   const bhBtn = menu.querySelector('[data-act="behaviour"]');
   if(bhBtn) bhBtn.addEventListener('click', (ev)=>{
     ev.stopPropagation();
-    closeSymMenu();
+    closePopupMenu();
     showBehaviourDialog(key, idx);
   });
   menu.querySelector('[data-act="referral"]').addEventListener('click', (ev)=>{
