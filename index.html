@@ -532,7 +532,7 @@ table.analysis-table th, table.analysis-table td{border:1px solid var(--border);
 table.analysis-table thead th{background:var(--gray-head); color:#fff;}
 table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 
-/* ===== Referral Archive (أرشيف الإحالات) ===== */
+/* ===== بطاقات الإحالة والملخّصات ===== */
 .ref-summary{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 0;}
 @media(min-width:560px){.ref-summary{grid-template-columns:repeat(4,1fr);}}
 .ref-summary-item{background:#f7f8fa; border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; display:flex; flex-direction:column; gap:2px;}
@@ -599,6 +599,45 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .cstat.cs-wait{background:var(--yellow); color:var(--yellow-t);}
 .cstat.cs-none{background:var(--orange); color:var(--orange-t);}
 .cstat.cs-never{background:var(--empty); color:var(--muted); font-weight:400;}
+
+/* ===== سجل الإجراءات ===== */
+/* تنظيم الجدول مأخوذ من ورقة «سجل تواصل» في ملف كشف المتابعة:
+   م | الشعبة | اسم الطالب | سبب المتابعة | التاريخ | وسيلة التواصل |
+   مع من | ملاحظات | الإجراء المتخذ | تم الحل؟ | تحويل إلى */
+.log-toolbar{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0 10px;}
+.log-chip{
+  border:1px solid var(--border); background:#fff; color:var(--text-2);
+  padding:6px 11px; border-radius:20px; font-size:11.5px; font-family:inherit;
+  cursor:pointer; white-space:nowrap;
+}
+.log-chip.on{background:var(--teal-soft); border-color:var(--teal); color:var(--teal-d); font-weight:500;}
+.log-chip .n{opacity:.65; font-size:10.5px; margin-inline-start:3px;}
+.log-print-btn{
+  margin-inline-start:auto; border:1px solid var(--teal); background:var(--teal); color:#fff;
+  padding:6px 12px; border-radius:20px; font-size:11.5px; font-family:inherit; cursor:pointer; white-space:nowrap;
+}
+table.log-table{width:100%; border-collapse:collapse; font-size:11.5px;}
+table.log-table th, table.log-table td{border:1px solid var(--border); padding:6px 5px; text-align:center; vertical-align:middle;}
+table.log-table thead th{background:var(--gray-head); color:#fff; font-size:11px; font-weight:500; white-space:nowrap;}
+table.log-table td.lg-seq{color:var(--muted); font-size:10.5px; width:26px;}
+table.log-table td.lg-name{text-align:right; font-weight:500; white-space:nowrap;}
+table.log-table td.lg-text{text-align:right; font-weight:300; color:var(--text-2); line-height:1.75; min-width:110px;}
+table.log-table td.lg-nowrap{white-space:nowrap; font-weight:300;}
+table.log-table tbody tr:nth-child(even) td{background:#FCFBF9;}
+.lg-type{display:inline-block; font-size:10px; font-weight:500; padding:2px 8px; border-radius:20px; white-space:nowrap;}
+.lg-type.t-ref{background:var(--yellow); color:var(--yellow-t);}
+.lg-type.t-ct{background:var(--teal-soft); color:var(--teal-d);}
+.lg-res{display:inline-block; font-size:10px; font-weight:500; padding:2px 8px; border-radius:20px; white-space:nowrap;}
+.lg-res.r-yes{background:var(--green); color:var(--green-t);}
+.lg-res.r-no{background:var(--red); color:var(--red-t);}
+.lg-res.r-going{background:var(--yellow); color:var(--yellow-t);}
+table.log-table select.lg-status{
+  width:100%; min-width:104px; padding:5px 6px; border:1px solid var(--border);
+  border-radius:8px; font-size:11px; font-family:inherit; background:#fff; color:var(--text);
+}
+.lg-tools{display:flex; gap:4px; justify-content:center;}
+.lg-tools button{border:1px solid var(--border); background:#fff; padding:4px 7px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;}
+.lg-tools .lg-del{color:#b91c1c; border-color:#f3c6c6;}
 /* ===== البحث عن طالب ===== */
 .search-box{
   display:flex; align-items:center; gap:8px; background:var(--card);
@@ -949,6 +988,24 @@ body.modal-lock{ overflow:hidden; }
   body.printing-doc #print-referral-holder .print-doc:first-child{
     break-before:auto !important; page-break-before:auto !important;
   }
+  /* سجل الإجراءات: جدول طويل يُقسَّم على الصفحات بترويسة مكرّرة، وبلا
+     أدوات الشاشة (القوائم المنسدلة وأزرار الحذف). */
+  body.printing-doc #print-referral-holder .log-table{font-size:9.5px;}
+  body.printing-doc #print-referral-holder .log-table th,
+  body.printing-doc #print-referral-holder .log-table td{border:1px solid #8a8a8a; color:#000; padding:4px 4px;}
+  body.printing-doc #print-referral-holder .log-table thead{display:table-header-group;}
+  body.printing-doc #print-referral-holder .log-table thead th{
+    background:#e6e6e6 !important; color:#000 !important;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  body.printing-doc #print-referral-holder .log-table tbody tr:nth-child(even) td{background:#f7f7f7 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body.printing-doc #print-referral-holder .log-table tr{break-inside:avoid; page-break-inside:avoid;}
+  body.printing-doc #print-referral-holder .lg-type,
+  body.printing-doc #print-referral-holder .lg-res{
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; border:1px solid #b5b5b5;
+  }
+  body.printing-doc #print-referral-holder .lg-tools,
+  body.printing-doc #print-referral-holder .log-toolbar{display:none !important;}
 }
 
 </style>
@@ -2420,7 +2477,7 @@ function renderGuideCard(){
         <li><b>الرصد</b>: ثلاثة أوضاع — <b>جدول</b> للمراجعة الشاملة، <b>بطاقات</b> لطالب طالب، و<b>سريع</b> لرصد بند واحد لكل الشعبة. وأدوات الشعبة في شريط مطوي فوقها.</li>
         <li><b>الرصد السريع</b> هو الأسرع داخل الحصة: اختر البند، ثم ارصد المتأخرين وغير المسلّمين فقط، واضغط «الباقي سلّموا» لإنهاء البقية دفعة واحدة. والضغط على الرمز نفسه مرة أخرى يلغيه.</li>
         <li><b>التحليل</b>: أرقام واتجاهات ورسوم بيانية فقط — لا أسماء طلاب.</li>
-        <li><b>المتابعة</b>: كل من يحتاج تدخّلًا بأسمائهم — يحتاج متابعة، الإنذار المبكر، الأكثر تأخرًا، لوحة التميز، سجل التواصل، وأرشيف الإحالات.</li>
+        <li><b>المتابعة</b>: كل من يحتاج تدخّلًا بأسمائهم — يحتاج متابعة، الإنذار المبكر، الأكثر تأخرًا، لوحة التميز، و«سجل الإجراءات» الذي يجمع الإحالات ومحاولات التواصل في جدول واحد قابل للطباعة.</li>
         <li><b>حسابي</b>: الكليشة والبنود والمواعيد والتوقيع والنسخ الاحتياطية.</li>
       </ul>
       <h3>الطباعة</h3>
@@ -3530,6 +3587,8 @@ function renderAnalysis(opts){
 /* ================= سجل التواصل مع أولياء الأمور ================= */
 const CONTACT_METHODS = ["اتصال هاتفي", "رسالة نصية", "واتساب", "لقاء في المدرسة", "عبر المرشد الطلابي"];
 const CONTACT_STATUSES = ["تم التواصل", "لم يُرد", "بانتظار الرد", "تم الحل"];
+/* أسباب المتابعة كما في ورقة «سجل تواصل» بملف كشف المتابعة */
+const CONTACT_REASONS = ["تأخير متكرر", "عدم تسليم متكرر", "تدني الدرجات", "أخرى"];
 function contactStatusClass(status){
   if(status==="تم الحل") return "cs-done";
   if(status==="تم التواصل") return "cs-ok";
@@ -3682,11 +3741,9 @@ function renderFollowUpView(){
     + renderEarlyWarnCard()
     + renderTopLateCard()
     + renderHonoursCard()
-    + renderContactLog()
-    + renderArchive();
+    + renderActionLog();
 }
 
-/* ================= RENDER: REFERRAL ARCHIVE (أرشيف الإحالات) ================= */
 const REFERRAL_STATUSES = ["قيد المتابعة", "تم التواصل", "أُغلقت"];
 function referralStatusClass(status){
   if(status==="تم التواصل") return "rs-contacted";
@@ -3712,119 +3769,254 @@ function saveReferralToArchive(data){
   persistState();
   return entry;
 }
-function renderArchive(){
-  const list = STATE.referrals || [];
-  const totalN = list.length;
-  const counts = { "قيد المتابعة":0, "تم التواصل":0, "أُغلقت":0 };
-  list.forEach(e=>{ if(counts[e.status]!==undefined) counts[e.status]++; });
+/* ================= سجل الإجراءات =================
+   جدول واحد يجمع الإحالات ومحاولات التواصل، بترتيب أعمدة ورقة «سجل تواصل»
+   في ملف كشف المتابعة:
+     م | الشعبة | اسم الطالب | سبب المتابعة | تاريخ التواصل | وسيلة التواصل |
+     مع من | ملاحظات | الإجراء المتخذ | تم الحل؟ | تحويل إلى
+   الملف نفسه كان يُصدِّر «نموذج الإحالة» إلى هذه الأعمدة بالضبط، فلا معنى
+   لإبقاء الأرشيف والسجل جدولين منفصلين — هما سجل واحد باب دخوله مختلف. */
 
-  const cards = list.length===0 ? `<div class="hint">لا توجد إحالات محفوظة بعد. عند إنشاء تقرير إحالة لأي طالب، اضغط «💾 حفظ في الأرشيف» ليظهر هنا.</div>` :
-  list.map(e=>{
-    return `<div class="ref-card" data-ref-id="${e.id}">
-      <div class="ref-card-head">
-        <div>
-          <div class="ref-card-name">${escapeAttr(e.studentName)}</div>
-          <div class="ref-card-sub">${escapeAttr(e.section)} — ${escapeAttr(e.recipientLabel)}</div>
-        </div>
-        <span class="ref-status-badge ${referralStatusClass(e.status)}">${escapeAttr(e.status)}</span>
-      </div>
-      <div class="ref-card-row"><span>تاريخ الإحالة</span><span>${escapeAttr(e.savedAtHijri)} هـ</span></div>
-      <div class="ref-card-row"><span>سبب الإحالة</span><span>${escapeAttr(referralReasonsLabel(e))}</span></div>
-      ${e.includeStats ? `<div class="ref-card-row"><span>نسبة الإنجاز</span><span>${e.ratioPct!==null?e.ratioPct+'%':'—'} — تأخيرات: ${e.lateCount}</span></div>` : ``}
-      ${e.note ? `<div class="ref-card-note">${escapeAttr(e.note)}</div>` : ``}
-      <div class="ref-card-actions">
-        <select class="ref-status-select" data-ref-status="${e.id}">
-          ${REFERRAL_STATUSES.map(s=>`<option value="${s}" ${e.status===s?'selected':''}>${s}</option>`).join("")}
-        </select>
-        <button type="button" class="ref-reprint" data-ref-reprint="${e.id}">🖨️ إعادة الطباعة</button>
-        <button type="button" class="ref-delete" data-ref-delete="${e.id}">🗑️ حذف</button>
-      </div>
-    </div>`;
-  }).join("");
+const LOG_YES = "نعم", LOG_NO = "لا", LOG_GOING = "متابعة مستمرة";
+let LOG_FILTER = 'all';   /* 'all' | 'ref' | 'ct' | 'open' — حالة عرض لا تُحفظ */
 
-  return `
-  <div class="card">
-    <h2>🗂️ أرشيف الإحالات</h2>
-    <div class="ref-summary">
-      <div class="ref-summary-item"><span class="v">${totalN}</span><span>إجمالي الإحالات</span></div>
-      <div class="ref-summary-item rs-pending"><span class="v">${counts["قيد المتابعة"]}</span><span>قيد المتابعة</span></div>
-      <div class="ref-summary-item rs-contacted"><span class="v">${counts["تم التواصل"]}</span><span>تم التواصل</span></div>
-      <div class="ref-summary-item rs-closed"><span class="v">${counts["أُغلقت"]}</span><span>أُغلقت</span></div>
-    </div>
-    <div class="hint">هذا الأرشيف سجل توثيقي لكل تقرير إحالة تم حفظه — يبقى محفوظًا هنا حتى لو تغيّر رصد الطالب لاحقًا. غيّر الحالة من القائمة المنسدلة لمتابعة كل حالة.</div>
-  </div>
-  <div class="ref-list">${cards}</div>`;
+/* «تم الحل؟» عمود مشتق لا مُدخَل: يُقرأ من حالة السجل نفسه حتى لا تُفقد
+   الحالات التفصيلية المحفوظة أصلًا (قيد المتابعة/لم يُرد/…) ولا تحتاج ترحيلًا. */
+function contactResolved(status){
+  if(status==="تم الحل") return LOG_YES;
+  if(status==="لم يُرد") return LOG_NO;
+  return LOG_GOING;
+}
+function referralResolved(status){
+  if(status==="أُغلقت") return LOG_YES;
+  if(status==="تم التواصل") return LOG_GOING;
+  return LOG_NO;
+}
+function resolvedClass(v){
+  if(v===LOG_YES) return 'r-yes';
+  if(v===LOG_NO) return 'r-no';
+  return 'r-going';
 }
 
-/* ---- 📞 سجل التواصل مع أولياء الأمور ---- */
-function renderContactLog(){
-  const list = (STATE.contacts || []).slice();
-  return `
-  <div class="card">
-    <h2>📞 سجل التواصل مع أولياء الأمور</h2>
-    ${list.length===0
-      ? `<div class="hint">لا توجد محاولات تواصل مسجّلة بعد. سجّل تواصلك من تبويب «التحليل» ← جدول «يحتاج متابعة» ← زر «☎️ تسجيل تواصل»، أو من قائمة الطالب في جدول الرصد.</div>`
-      : `<div class="hint" style="margin-bottom:10px;">${list.length} محاولة تواصل مسجّلة. هذا السجل يوثّق تعاملك مع الحالة، وهو ما يُطلب عادة عند رفع الحالة للإدارة.</div>
-      <div class="contact-log">
-        ${list.map(c=>`
-        <div class="ct-card" data-ct-id="${c.id}">
-          <div class="ct-top">
-            <span class="ct-nm">${escapeAttr(c.name)}</span>
-            <span class="ct-sec">${escapeAttr(c.key)}</span>
-            <span class="cstat ${contactStatusClass(c.status)}">${escapeAttr(c.status)}</span>
-            <button type="button" class="ct-del" data-ct-delete="${c.id}" title="حذف">🗑️</button>
-          </div>
-          <div class="ct-meta">
-            <b>التاريخ:</b> ${escapeAttr(c.dateHijri || c.savedAtHijri || '')} &nbsp;·&nbsp; <b>الوسيلة:</b> ${escapeAttr(c.method)}<br>
-            <b>مع:</b> ${escapeAttr(c.person || 'ولي الأمر')}${c.note ? `<br><b>ما دار في التواصل:</b> ${escapeAttr(c.note)}` : ''}
-          </div>
-        </div>`).join("")}
-      </div>`}
-  </div>`;
+/* سبب المتابعة لسجلّ تواصل قديم لم يُخزَّن معه سبب: يُشتق من رصد الطالب الحالي. */
+function contactReasonFor(key, name){
+  const arr = STATE.sections[key] || [];
+  const n = (name||'').trim();
+  const row = arr.find(r=> (r.name||'').trim()===n);
+  if(!row) return '—';
+  const c = studentCalc(row);
+  const parts = [];
+  if(c.missCount>=3) parts.push('عدم تسليم متكرر');
+  if(c.lateCount>=5) parts.push('تأخير متكرر');
+  if(c.assessed>=3 && c.ratio!==null && c.ratio<0.6) parts.push('تدني الدرجات');
+  return parts.length ? parts.join('، ') : '—';
 }
-function wireArchiveEvents(){
-  const list = document.querySelector('.ref-list');
-  if(!list) return;
-  list.querySelectorAll('.ref-status-select').forEach(sel=>{
-    sel.addEventListener('change', (e)=>{
-      const id = sel.dataset.refStatus;
-      const entry = STATE.referrals.find(r=>r.id===id);
-      if(entry){
-        entry.status = sel.value;
-        persistState();
-        render();
-      }
+
+function actionLogRows(){
+  const rows = [];
+  (STATE.referrals || []).forEach(e=>{
+    rows.push({
+      id:e.id, kind:'ref', typeLabel:'إحالة',
+      section:e.section||'', name:e.studentName||'',
+      reason: referralReasonsLabel(e),
+      dateHijri: e.savedAtHijri||'', savedAt: e.savedAt||'',
+      method:'نموذج إحالة',
+      person: e.recipientLabel||'—',
+      note: e.note||'',
+      action: 'تحرير نموذج إحالة وتسليمه إلى ' + (e.recipientLabel||'الجهة المختصة'),
+      status: e.status, statuses: REFERRAL_STATUSES,
+      resolved: referralResolved(e.status),
+      referTo: e.recipientLabel||'—',
+      canReprint: true
     });
   });
-  list.querySelectorAll('.ref-reprint').forEach(btn=>{
+  (STATE.contacts || []).forEach(c=>{
+    rows.push({
+      id:c.id, kind:'ct', typeLabel:'تواصل',
+      section:c.key||'', name:c.name||'',
+      reason: c.reason || contactReasonFor(c.key, c.name),
+      dateHijri: c.dateHijri || c.savedAtHijri || '', savedAt: c.savedAt||'',
+      method: c.method||'—',
+      person: c.person||'ولي الأمر',
+      note: c.note||'',
+      action: c.action||'—',
+      status: c.status, statuses: CONTACT_STATUSES,
+      resolved: contactResolved(c.status),
+      referTo: '—',
+      canReprint: false
+    });
+  });
+  rows.sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''));
+  return rows;
+}
+
+function filterLogRows(rows, filter){
+  if(filter==='ref' || filter==='ct') return rows.filter(r=> r.kind===filter);
+  if(filter==='open') return rows.filter(r=> r.resolved!==LOG_YES);
+  return rows;
+}
+
+const LOG_COLS = ["م","الشعبة","اسم الطالب","سبب المتابعة","تاريخ التواصل","وسيلة التواصل","مع من","ملاحظات","الإجراء المتخذ","تم الحل؟","تحويل إلى"];
+
+function actionLogTableHtml(rows, opts){
+  const forPrint = !!(opts && opts.forPrint);
+  return `
+  <table class="log-table">
+    <thead><tr>
+      ${LOG_COLS.map(c=>`<th>${c}</th>`).join("")}
+      ${forPrint ? `` : `<th>الحالة</th><th></th>`}
+    </tr></thead>
+    <tbody>
+      ${rows.map((r,i)=>`
+      <tr data-log-id="${escapeAttr(r.id)}" data-log-kind="${r.kind}">
+        <td class="lg-seq">${i+1}</td>
+        <td class="lg-nowrap">${escapeAttr(r.section)}</td>
+        <td class="lg-name">${escapeAttr(r.name)}<br><span class="lg-type t-${r.kind}">${r.typeLabel}</span></td>
+        <td class="lg-text">${escapeAttr(r.reason)}</td>
+        <td class="lg-nowrap">${escapeAttr(r.dateHijri)}${r.dateHijri?' هـ':''}</td>
+        <td class="lg-nowrap">${escapeAttr(r.method)}</td>
+        <td class="lg-nowrap">${escapeAttr(r.person)}</td>
+        <td class="lg-text">${escapeAttr(r.note) || '—'}</td>
+        <td class="lg-text">${escapeAttr(r.action)}</td>
+        <td><span class="lg-res ${resolvedClass(r.resolved)}">${r.resolved}</span></td>
+        <td class="lg-nowrap">${escapeAttr(r.referTo)}</td>
+        ${forPrint ? `` : `
+        <td><select class="lg-status" data-log-status="${escapeAttr(r.id)}">
+          ${r.statuses.map(st=>`<option value="${escapeAttr(st)}"${r.status===st?' selected':''}>${escapeAttr(st)}</option>`).join("")}
+        </select></td>
+        <td><div class="lg-tools">
+          ${r.canReprint?`<button type="button" class="lg-print" data-log-reprint="${escapeAttr(r.id)}" title="إعادة طباعة نموذج الإحالة">🖨️</button>`:``}
+          <button type="button" class="lg-del" data-log-delete="${escapeAttr(r.id)}" title="حذف">🗑️</button>
+        </div></td>`}
+      </tr>`).join("")}
+    </tbody>
+  </table>`;
+}
+
+function renderActionLog(){
+  const all  = actionLogRows();
+  const rows = filterLogRows(all, LOG_FILTER);
+  const nRef = all.filter(r=>r.kind==='ref').length;
+  const nCt  = all.filter(r=>r.kind==='ct').length;
+  const nOpen= all.filter(r=>r.resolved!==LOG_YES).length;
+
+  const chip = (id,label,n)=>`<button type="button" class="log-chip${LOG_FILTER===id?' on':''}" data-log-filter="${id}">${label}<span class="n">${n}</span></button>`;
+
+  const body = all.length===0
+    ? `<div class="hint">لا توجد إجراءات مسجّلة بعد. يمتلئ هذا السجل تلقائيًا حين تحفظ تقرير إحالة (📋 إحالة ← 💾 حفظ في السجل) أو تسجّل محاولة تواصل (☎️ تسجيل تواصل).</div>`
+    : `<div class="log-toolbar">
+        ${chip('all','الكل',all.length)}
+        ${chip('ref','إحالات',nRef)}
+        ${chip('ct','تواصل',nCt)}
+        ${chip('open','لم تُحل بعد',nOpen)}
+        <button type="button" class="log-print-btn" id="log-print">🖨️ طباعة السجل</button>
+      </div>
+      ${rows.length===0
+        ? `<div class="empty-note">لا توجد سجلات ضمن هذا التصنيف</div>`
+        : `<div class="table-wrap">${actionLogTableHtml(rows,{})}</div>`}
+      <div class="hint" style="margin-top:10px;">هذا السجل هو ما يُطلب منك عادة عند رفع الحالة للإدارة: يوثّق ماذا فعلت، ومتى، ومع من، وهل انتهت الحالة. غيّر «الحالة» من القائمة المنسدلة ليتحدّث عمود «تم الحل؟».</div>`;
+
+  return `
+  <div class="card">
+    <h2>🗂️ سجل الإجراءات</h2>
+    <div class="ref-summary">
+      <div class="ref-summary-item"><span class="v">${all.length}</span><span>إجمالي السجلات</span></div>
+      <div class="ref-summary-item rs-pending"><span class="v">${nRef}</span><span>إحالة</span></div>
+      <div class="ref-summary-item rs-contacted"><span class="v">${nCt}</span><span>محاولة تواصل</span></div>
+      <div class="ref-summary-item" style="background:var(--red);"><span class="v" style="color:var(--red-t);">${nOpen}</span><span style="color:var(--red-t);">لم تُحل بعد</span></div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+/* طباعة السجل كاملًا: ترويسة المدرسة ثم الجدول نفسه بلا أدوات الشاشة.
+   عرضي (landscape) لأن الأعمدة أحد عشر — ورقة طولية تعصرها إلى ما لا يُقرأ. */
+function printActionLog(){
+  const holder = document.getElementById('print-referral-holder');
+  if(!holder) return;
+  const rows = filterLogRows(actionLogRows(), LOG_FILTER);
+  if(rows.length===0){ showAlertDialog('لا توجد سجلات للطباعة ضمن هذا التصنيف'); return; }
+
+  const lh = STATE.letterhead;
+  const logoSrc = document.querySelector('header.app-top img')?.src || '';
+  const scopeLabel = LOG_FILTER==='ref' ? 'الإحالات فقط'
+                   : LOG_FILTER==='ct'  ? 'محاولات التواصل فقط'
+                   : LOG_FILTER==='open'? 'الحالات التي لم تُحل بعد'
+                   : 'كل الإجراءات';
+  const openN = rows.filter(r=> r.resolved!==LOG_YES).length;
+
+  const header = `
+  <div dir="rtl" style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:16px; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">
+    <div style="text-align:right; font-size:12px; line-height:1.9; flex:1; color:#111;">
+      <div>${escapeAttr(lh.line1)}</div>
+      <div>${escapeAttr(lh.line2)}</div>
+      <div style="font-weight:700;">${escapeAttr(lh.school)}</div>
+    </div>
+    ${logoSrc?`<img alt="شعار وزارة التعليم" src="${logoSrc}" style="height:46px; width:auto; max-width:120px; object-fit:contain; flex-shrink:0;">`:''}
+    <div style="text-align:left; font-size:12px; line-height:1.9; flex:1; color:#111;">
+      <div>التاريخ: ${escapeAttr(getHijriDateStr())} هـ</div>
+    </div>
+  </div>
+  <h1 style="text-align:center; font-size:17px; margin:0 0 6px; color:#111; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">سجل إجراءات متابعة الطلاب</h1>
+  <div style="text-align:center; font-size:11.5px; color:#444; margin:0 0 14px; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">
+    ${escapeAttr(scopeLabel)} — عدد السجلات: ${rows.length} · حالات لم تُحل بعد: ${openN}
+  </div>`;
+
+  const signature = `
+  <div style="display:flex; justify-content:space-between; margin-top:26px; font-size:12px; color:#111; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; break-inside:avoid; page-break-inside:avoid;">
+    <div style="text-align:center; flex:1;">معلّم المادة<span style="display:block; margin-top:26px; border-top:1px solid #333; padding-top:4px; max-width:200px; margin-inline:auto;">${STATE.signature ? `<img src="${STATE.signature}" alt="توقيع المعلم" style="height:32px; max-width:110px; object-fit:contain; vertical-align:middle;">` : '&nbsp;'}</span></div>
+    <div style="text-align:center; flex:1;">المرشد الطلابي<span style="display:block; margin-top:26px; border-top:1px solid #333; padding-top:4px; max-width:200px; margin-inline:auto;">&nbsp;</span></div>
+    <div style="text-align:center; flex:1;">قائد المدرسة<span style="display:block; margin-top:26px; border-top:1px solid #333; padding-top:4px; max-width:200px; margin-inline:auto;">&nbsp;</span></div>
+  </div>`;
+
+  holder.innerHTML = `<div class="print-doc" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">${header}${actionLogTableHtml(rows,{forPrint:true})}${signature}</div>`;
+  printHolder(holder, 'landscape');
+}
+
+function wireActionLogEvents(){
+  document.querySelectorAll('[data-log-filter]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const id = btn.dataset.refReprint;
-      const entry = STATE.referrals.find(r=>r.id===id);
+      LOG_FILTER = btn.getAttribute('data-log-filter');
+      render();
+    });
+  });
+
+  const printBtn = document.getElementById('log-print');
+  if(printBtn) printBtn.addEventListener('click', ()=> printActionLog());
+
+  /* الحالة تُكتب في مصدرها الأصلي — إحالة أو تواصل — لا في نسخة مدمجة. */
+  document.querySelectorAll('[data-log-status]').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const id = sel.getAttribute('data-log-status');
+      const kind = sel.closest('tr')?.getAttribute('data-log-kind');
+      const store = kind==='ref' ? STATE.referrals : STATE.contacts;
+      const entry = (store||[]).find(x=> x.id===id);
+      if(!entry) return;
+      entry.status = sel.value;
+      persistState();
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-log-reprint]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-log-reprint');
+      const entry = (STATE.referrals||[]).find(r=> r.id===id);
       if(entry) printReferralReport(entry);
     });
   });
-  list.querySelectorAll('.ref-delete').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = btn.dataset.refDelete;
-      showConfirmDialog('حذف من الأرشيف', 'سيتم حذف هذه الإحالة من الأرشيف نهائيًا. هل تريد المتابعة؟', ()=>{
-        STATE.referrals = STATE.referrals.filter(r=>r.id!==id);
-        persistState();
-        render();
-        showToast('تم حذف الإحالة من الأرشيف');
-      });
-    });
-  });
-}
 
-function wireContactLogEvents(){
-  document.querySelectorAll('[data-ct-delete]').forEach(btn=>{
+  document.querySelectorAll('[data-log-delete]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const id = btn.getAttribute('data-ct-delete');
-      showConfirmDialog('حذف من سجل التواصل', 'سيتم حذف محاولة التواصل هذه نهائيًا. هل تريد المتابعة؟', ()=>{
-        STATE.contacts = (STATE.contacts||[]).filter(c=>c.id!==id);
+      const id = btn.getAttribute('data-log-delete');
+      const kind = btn.closest('tr')?.getAttribute('data-log-kind');
+      const what = kind==='ref' ? 'هذه الإحالة' : 'محاولة التواصل هذه';
+      showConfirmDialog('حذف من سجل الإجراءات', `سيتم حذف ${what} من السجل نهائيًا. هل تريد المتابعة؟`, ()=>{
+        if(kind==='ref') STATE.referrals = (STATE.referrals||[]).filter(r=> r.id!==id);
+        else STATE.contacts = (STATE.contacts||[]).filter(c=> c.id!==id);
         persistState();
         render();
-        showToast('تم حذف محاولة التواصل');
+        showToast('تم الحذف من سجل الإجراءات');
       });
     });
   });
@@ -4144,8 +4336,7 @@ function render(){
     wireAnalysisEvents();
   } else if(view === 'archive'){
     main.innerHTML = renderFollowUpView();
-    wireArchiveEvents();
-    wireContactLogEvents();
+    wireActionLogEvents();
     wireFollowUpEvents();
   } else if(view === 'account'){
     main.innerHTML = renderAccount();
@@ -6089,7 +6280,7 @@ function openReferralReportDialog(key, idx){
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" id="dlg-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
-          <button type="button" id="dlg-save-archive" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">💾 حفظ في الأرشيف</button>
+          <button type="button" id="dlg-save-archive" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">💾 حفظ في السجل</button>
           <button type="button" id="dlg-ok" style="flex:1; width:auto; background:var(--teal);">🖨️ طباعة التقرير</button>
         </div>
       </div>
@@ -6137,7 +6328,7 @@ function openReferralReportDialog(key, idx){
     const data = collectReferralData();
     saveReferralToArchive(data);
     closeDialog();
-    showToast('تم حفظ الإحالة في الأرشيف');
+    showToast('تم حفظ الإحالة في سجل الإجراءات');
   });
   document.getElementById('dlg-ok').addEventListener('click', ()=>{
     const data = collectReferralData();
@@ -6586,12 +6777,24 @@ function showContactDialog(key, idx){
   const row = STATE.sections[key] && STATE.sections[key][idx];
   if(!row) return;
   if(row.name.trim()===""){ showAlertDialog('يجب إدخال اسم الطالب أولًا'); return; }
+  /* السبب مُقترح من الرصد نفسه، والمعلّم يغيّره إن شاء. */
+  const cc = studentCalc(row);
+  const presetReason = cc.missCount>=3 ? "عدم تسليم متكرر"
+                     : cc.lateCount>=5 ? "تأخير متكرر"
+                     : (cc.assessed>=3 && cc.ratio!==null && cc.ratio<0.6) ? "تدني الدرجات"
+                     : CONTACT_REASONS[0];
   const holder = document.getElementById('dialog-holder');
   holder.innerHTML = `
     <div class="warn-overlay" id="dlg-overlay">
       <div class="warn-modal" style="max-width:460px;">
         <h3>☎️ تسجيل تواصل مع ولي الأمر</h3>
         <p style="margin:0 0 12px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+        <div class="meta-field" style="margin-bottom:10px;">
+          <label>سبب المتابعة</label>
+          <select id="ct-reason" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; background:#fafbfc;">
+            ${CONTACT_REASONS.map(m=>`<option value="${escapeAttr(m)}"${m===presetReason?' selected':''}>${escapeAttr(m)}</option>`).join("")}
+          </select>
+        </div>
         <div class="meta-field" style="margin-bottom:10px;">
           <label>وسيلة التواصل</label>
           <select id="ct-method" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; background:#fafbfc;">
@@ -6608,9 +6811,13 @@ function showContactDialog(key, idx){
           <label>مع من تم التواصل</label>
           <input id="ct-person" value="ولي الأمر" placeholder="مثال: والد الطالب">
         </div>
-        <div class="meta-field" style="margin-bottom:14px;">
+        <div class="meta-field" style="margin-bottom:10px;">
           <label>ما دار في التواصل (اختياري)</label>
           <textarea id="ct-note" rows="3" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;" placeholder="أُبلغ ولي الأمر بتكرار عدم التسليم ووعد بالمتابعة"></textarea>
+        </div>
+        <div class="meta-field" style="margin-bottom:14px;">
+          <label>الإجراء المتخذ (اختياري)</label>
+          <input id="ct-action" placeholder="مثال: مُنح مهلة أسبوع لتسليم المتأخر">
         </div>
         <div class="warn-actions">
           <button type="button" class="btn-cancel" id="ct-cancel">إلغاء</button>
@@ -6628,11 +6835,13 @@ function showContactDialog(key, idx){
       status: document.getElementById('ct-status').value,
       person: document.getElementById('ct-person').value.trim() || 'ولي الأمر',
       note: document.getElementById('ct-note').value.trim(),
+      reason: document.getElementById('ct-reason').value,
+      action: document.getElementById('ct-action').value.trim() || '—',
       dateHijri: getHijriDateStr()
     });
     close();
     render();
-    showToast('تم تسجيل التواصل — تجده في تبويب الإحالات ضمن «سجل التواصل»');
+    showToast('تم تسجيل التواصل — تجده في تبويب المتابعة ضمن «سجل الإجراءات»');
   });
 }
 
@@ -6762,8 +6971,8 @@ function setPrintPage(orientation){
     : '@page{ size:A4 landscape; margin:6mm; }';
 }
 
-function printHolder(holder){
-  setPrintPage('portrait');
+function printHolder(holder, orientation){
+  setPrintPage(orientation === 'landscape' ? 'landscape' : 'portrait');
   document.body.classList.add('printing-doc');
   const cleanup = ()=>{
     document.body.classList.remove('printing-doc');
@@ -6852,7 +7061,7 @@ function printAnalysisReport(){
 
 // طباعة تقرير إحالة واحد لكل طالب "يحتاج متابعة" ضمن نفس أمر الطباعة (كل
 // تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. ملاحظة: هذه
-// الدفعة لا تُحفظ في أرشيف الإحالات، بخلاف مسار "📋 إحالة" الفردي.
+// الدفعة لا تُحفظ في سجل الإجراءات، بخلاف مسار "📋 إحالة" الفردي.
 function printAllFollowUpReferrals(){
   const followUps = needsFollowUpList();
   if(followUps.length===0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }
@@ -6860,7 +7069,7 @@ function printAllFollowUpReferrals(){
   holder.innerHTML = followUps
     .map(f => referralSheetHtml(buildDefaultReferralData(f.key, f.idx)))
     .join('');
-  showToast(`تم تجهيز ${followUps.length} تقرير — لن تُحفظ هذه الدفعة في أرشيف الإحالات`);
+  showToast(`تم تجهيز ${followUps.length} تقرير — لن تُحفظ هذه الدفعة في سجل الإجراءات`);
   printHolder(holder);
 }
 
