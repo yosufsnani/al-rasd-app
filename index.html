@@ -638,6 +638,55 @@ table.log-table select.lg-status{
 .lg-tools{display:flex; gap:4px; justify-content:center;}
 .lg-tools button{border:1px solid var(--border); background:#fff; padding:4px 7px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;}
 .lg-tools .lg-del{color:#b91c1c; border-color:#f3c6c6;}
+
+/* ===== السجل السلوكي ===== */
+.bh-group{margin-bottom:12px;}
+.bh-group > h4{font-size:11.5px; font-weight:500; color:var(--muted); margin:0 0 6px;}
+.bh-chips{display:flex; flex-wrap:wrap; gap:6px;}
+.bh-chip{
+  border:1px solid var(--border); background:#fff; color:var(--text);
+  padding:7px 11px; border-radius:20px; font-size:12px; font-family:inherit;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; text-align:right;
+}
+.bh-chip:active{transform:scale(.97);}
+.bh-chip .bh-dot{width:8px; height:8px; border-radius:50%; flex:0 0 auto;}
+.bh-chip.lv-minor  .bh-dot{background:#D9A03C;}
+.bh-chip.lv-mid    .bh-dot{background:#D9822B;}
+.bh-chip.lv-severe .bh-dot{background:#C0392B;}
+.bh-chip.lv-good   .bh-dot{background:var(--teal);}
+.bh-chip.lv-good{background:var(--teal-soft); border-color:#BFE3D8; color:var(--teal-d);}
+.bh-chip .bh-today{font-size:10px; color:var(--muted);}
+.bh-meter{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 0 12px; font-size:11.5px;}
+.bh-pill{display:inline-block; font-size:10.5px; font-weight:500; padding:3px 9px; border-radius:20px; white-space:nowrap;}
+.bh-pill.lv-minor{background:var(--yellow); color:var(--yellow-t);}
+.bh-pill.lv-mid{background:var(--orange); color:var(--orange-t);}
+.bh-pill.lv-severe{background:var(--red); color:var(--red-t);}
+.bh-pill.lv-good{background:var(--green); color:var(--green-t);}
+.bh-pill.lv-none{background:var(--empty); color:var(--muted); font-weight:400;}
+.bh-log{display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; margin-top:4px;}
+.bh-rec{
+  display:flex; align-items:flex-start; gap:8px; padding:8px 10px;
+  border:1px solid var(--border); border-radius:10px; background:var(--bg); font-size:12px;
+  border-right-width:3px;
+}
+.bh-rec.lv-minor{border-right-color:#D9A03C;}
+.bh-rec.lv-mid{border-right-color:#D9822B;}
+.bh-rec.lv-severe{border-right-color:#C0392B;}
+.bh-rec.lv-good{border-right-color:var(--teal);}
+.bh-rec .bh-rec-body{flex:1; min-width:0;}
+.bh-rec .bh-rec-lbl{font-weight:500; color:var(--text);}
+.bh-rec .bh-rec-meta{font-size:10.5px; color:var(--muted); margin-top:2px;}
+.bh-rec .bh-rec-note{font-size:11.5px; color:var(--text-2); margin-top:4px; line-height:1.7;}
+.bh-rec .bh-rec-del{border:none; background:none; cursor:pointer; font-size:13px; padding:0 2px; flex:0 0 auto;}
+.bh-item-row{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+.bh-item-row:last-child{border-bottom:none;}
+.bh-item-row .bh-item-lbl{flex:1; min-width:0;}
+.bh-item-row select{padding:5px 7px; border:1px solid var(--border); border-radius:8px; font-size:11.5px; font-family:inherit; background:#fff;}
+.bh-item-row .bh-item-del{border:1px solid #f3c6c6; background:#fff; color:#b91c1c; border-radius:8px; padding:4px 8px; font-size:11px; cursor:pointer; font-family:inherit;}
+.bh-add-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.bh-add-row input{flex:2 1 150px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:12.5px; font-family:inherit;}
+.bh-add-row select{flex:1 1 110px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:12.5px; font-family:inherit; background:#fff;}
+.bh-add-row button{flex:0 0 auto; border:1px solid var(--teal); background:var(--teal); color:#fff; border-radius:8px; padding:8px 14px; font-size:12.5px; cursor:pointer; font-family:inherit;}
 /* ===== البحث عن طالب ===== */
 .search-box{
   display:flex; align-items:center; gap:8px; background:var(--card);
@@ -774,18 +823,18 @@ tr.row-found td{background:#FFF6D8 !important; transition:background .4s;}
 #print-all-holder{display:none;}
 .referral-sheet{font-family:inherit; color:#000;}
 .referral-sheet h2.rf-title{text-align:center; font-size:16px; margin:10px 0 16px;}
-.referral-sheet .rf-section{margin-bottom:14px;}
-.referral-sheet .rf-section h3{font-size:13px; margin:0 0 8px; border-bottom:1.5px solid #333; padding-bottom:4px;}
-.referral-sheet .rf-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px 18px; font-size:12.5px;}
+.referral-sheet .rf-section{margin-bottom:10px; break-inside:avoid; page-break-inside:avoid;}
+.referral-sheet .rf-section h3{font-size:13px; margin:0 0 6px; border-bottom:1.5px solid #333; padding-bottom:3px;}
+.referral-sheet .rf-grid{display:grid; grid-template-columns:1fr 1fr; gap:3px 18px; font-size:12.5px;}
 .referral-sheet .rf-grid .full{grid-column:1/-1;}
-.referral-sheet .rf-row{display:flex; gap:6px; padding:3px 0;}
+.referral-sheet .rf-row{display:flex; gap:6px; padding:2px 0;}
 .referral-sheet .rf-label{font-weight:700; white-space:nowrap;}
 .referral-sheet .rf-reasons label{display:flex; align-items:center; gap:8px; font-size:12.5px; padding:3px 0;}
 .referral-sheet .rf-box{display:inline-block; width:14px; height:14px; border:1.5px solid #000; text-align:center; line-height:13px; font-size:11px; margin-inline-end:2px;}
-.referral-sheet .rf-note{border:1px solid #999; border-radius:6px; padding:10px; font-size:12.5px; min-height:70px; white-space:pre-wrap; line-height:1.9;}
-.referral-sheet .rf-sign{display:flex; justify-content:space-between; margin-top:36px; font-size:12.5px;}
+.referral-sheet .rf-note{border:1px solid #999; border-radius:6px; padding:9px 10px; font-size:12.5px; min-height:46px; white-space:pre-wrap; line-height:1.85;}
+.referral-sheet .rf-sign{display:flex; justify-content:space-between; margin-top:20px; font-size:12.5px; break-inside:avoid; page-break-inside:avoid;}
 .referral-sheet .rf-sign div{text-align:center; flex:1;}
-.referral-sheet .rf-sign .ln{display:block; margin-top:28px; border-top:1px solid #333; padding-top:4px;}
+.referral-sheet .rf-sign .ln{display:block; margin-top:22px; border-top:1px solid #333; padding-top:4px;}
 
 .sym-menu{
   position:absolute; z-index:200; background:#fff; border:1px solid var(--border); border-radius:10px;
@@ -978,7 +1027,7 @@ body.modal-lock{ overflow:hidden; }
   html,body{margin:0 !important; padding:0 !important;}
   body.printing-doc #print-referral-holder{
     display:block !important; position:static !important; left:auto !important; top:auto !important;
-    width:100% !important; padding:8mm !important; background:#fff;
+    width:100% !important; padding:0 !important; background:#fff;
   }
   body.printing-doc #print-referral-holder .referral-sheet,
   body.printing-doc #print-referral-holder .print-doc{
@@ -1397,7 +1446,7 @@ let STATE = {
    وهو ما يحدث فعلًا عند استعادة نسخة احتياطية تالفة، فيموت الاستيراد بلا رسالة. */
 function freshState(){
   const seedKeys = Object.keys(SEED);
-  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, picker:{ fair:true, round:[] }, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [] };
+  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, picker:{ fair:true, round:[] }, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [], behaviour: blankBehaviour(), behaviours: {} };
   for(const k of seedKeys){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -1423,6 +1472,15 @@ function normalizeLoadedState(obj){
     if(typeof obj.toolsOpen !== 'boolean') obj.toolsOpen = false;
     if(typeof obj.datesOpen !== 'boolean') obj.datesOpen = false;
     if(!Array.isArray(obj.contacts)) obj.contacts = [];
+    /* السلوك: كالحضور — الإطفاء يخفي الواجهة ولا يحذف سجلًا. */
+    const bset = (obj.behaviour && typeof obj.behaviour === 'object') ? obj.behaviour : {};
+    obj.behaviour = {
+      enabled: !!bset.enabled,
+      items: (Array.isArray(bset.items) && bset.items.length>0) ? bset.items : blankBehaviourItems(),
+      inReferral: bset.inReferral !== false,
+      inParent: bset.inParent !== false
+    };
+    if(!obj.behaviours || typeof obj.behaviours !== 'object') obj.behaviours = {};
     /* الحضور: الإخفاء لا يحذف — نحافظ على attDays وسلاسل الطلاب مهما كانت حالة المفتاح. */
     const a = (obj.attendance && typeof obj.attendance === 'object') ? obj.attendance : {};
     obj.attendance = {
@@ -2297,6 +2355,7 @@ function renderSettingsPanels(){
   </div>
 
   ${renderAttendanceCard()}
+  ${renderBehaviourCard()}
 
   ${renderDatesCard()}
 
@@ -2337,6 +2396,73 @@ function renderAttendanceCard(){
     </div>
     <div class="hint">الحساب: <b>حاضر = درجة كاملة · متأخر = نصف · غائب = صفر · غائب بعذر = لا يُحتسب له ولا عليه</b>. النسبة تُضرب في الدرجة أعلاه، فطالب حضر ٩٠٪ من الأيام المسجّلة يأخذ ${fmt((Math.max(0,parseFloat(a.weight)||0)*0.9))} من ${fmt(a.weight)}.</div>
     ` : `<div class="hint">الحضور الآن <b>سجل حالة فقط</b> — لا يظهر في المجموع ولا يغيّر تقدير الطالب.</div>`}
+    ` : ``}
+  </div>
+`;
+}
+
+/* ---- 🧭 إعدادات السجل السلوكي ---- */
+function renderBehaviourCard(){
+  const b = bhSettings();
+  const totalRecs = Object.keys(STATE.behaviours || {}).reduce((n,k)=> n + bhList(k).length, 0);
+  const groups = bhGroups();
+  return `
+  <div class="card meta-card">
+    <h2>🧭 السجل السلوكي</h2>
+    <label class="sw-row">
+      <span class="sw-body">
+        <b>تفعيل السجل السلوكي</b>
+        <i>يضيف «سلوك» في قائمة الطالب لتسجيل ملاحظة مؤرّخة بضغطة واحدة. الإطفاء يخفي الواجهة فقط — ${totalRecs>0 ? `<b>سجلّك المحفوظ (${fmt(totalRecs)} ملاحظة) يبقى كما هو</b>` : 'ولا يُحذف أي سجل'}.</i>
+      </span>
+      <input type="checkbox" id="bh-enabled" ${b.enabled?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+
+    ${b.enabled ? `
+    <div class="hint" style="margin-top:8px;">السلوك <b>لا يدخل الدرجة ولا التقدير</b> — تقييمه من اختصاص لجنة المواظبة والسلوك لا معلّم المادة، وإدخاله في المجموع يُفسد نسبة الإنجاز التي تقوم عليها الإحالة. لكنه <b>يرفع الطالب إلى «يحتاج متابعة»</b> بسبب مستقل: مخالفة جسيمة واحدة، أو ثلاث متوسطة، أو ست بسيطة.</div>
+
+    <label class="sw-row" style="margin-top:10px;">
+      <span class="sw-body">
+        <b>إدراجه في تقرير الإحالة للمرشد</b>
+        <i>يظهر الملخّص والوقائع المؤرّخة. يبقى مربّع اختيار في نافذة الإحالة لتغييره في حالة بعينها.</i>
+      </span>
+      <input type="checkbox" id="bh-in-referral" ${b.inReferral?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+    <label class="sw-row">
+      <span class="sw-body">
+        <b>إدراجه في تقرير ولي الأمر</b>
+        <i>يُطبع الملخّص وآخر خمس وقائع <b>مع الإيجابيات</b>. يسألك التطبيق قبل الطباعة كلّما كان للطالب سجل.</i>
+      </span>
+      <input type="checkbox" id="bh-in-parent" ${b.inParent?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+
+    <h3 style="font-size:12.5px; font-weight:500; margin:16px 0 4px; color:var(--text);">بنود السلوك</h3>
+    <div class="hint" style="margin-bottom:8px;">احذف ما لا يناسب مادتك وأضف ما ينقصك — ما يحتاجه معلّم الرياضة غير ما يحتاجه معلّم العلوم. حذف بند <b>لا يمحو</b> ما سُجِّل به سابقًا.</div>
+    ${groups.map(g=>`
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--muted); margin-bottom:2px;">${escapeAttr(g.name)}</div>
+        ${g.items.map(it=>`
+        <div class="bh-item-row">
+          <span class="bh-item-lbl">${escapeAttr(it.label)}</span>
+          <select data-bh-level="${escapeAttr(it.id)}" ${it.level===BH_GOOD?'disabled':''}>
+            ${[BH_MINOR,BH_MID,BH_SEVERE].map(lv=>`<option value="${lv}"${it.level===lv?' selected':''}>${BH_LEVEL_LABEL[lv]}</option>`).join("")}
+            ${it.level===BH_GOOD?`<option value="good" selected>إيجابي</option>`:''}
+          </select>
+          <button type="button" class="bh-item-del" data-bh-del-item="${escapeAttr(it.id)}">حذف</button>
+        </div>`).join("")}
+      </div>`).join("")}
+    <div class="bh-add-row">
+      <input id="bh-new-label" placeholder="اسم سلوك جديد">
+      <select id="bh-new-level">
+        <option value="minor">بسيطة</option>
+        <option value="mid">متوسطة</option>
+        <option value="severe">جسيمة</option>
+        <option value="good">إيجابي</option>
+      </select>
+      <button type="button" id="bh-add-item">إضافة</button>
+    </div>
     ` : ``}
   </div>
 `;
@@ -2455,6 +2581,7 @@ function renderGuideCard(){
         <li><b>المادة، الصف والشعبة، الفصل الدراسي، العام، معلم المادة، مدير المدرسة</b> ← تبويب <b>الرصد</b>، بطاقة «بيانات الشعبة» أعلى الصفحة (لكل شعبة بياناتها الخاصة). هذه بالضبط هي التي تظهر في <b>الجزء الأيسر من الكليشة</b> عند الطباعة.</li>
         <li><b>الدولة والوزارة واسم المدرسة وعنوان الكشف</b> (يمين الكليشة ووسطها) ← بطاقة «بيانات الكليشة» في هذا التبويب، وتُطبَّق على كل الشعب.</li>
         <li><b>بنود الرصد</b> — إضافة بند أو حذفه أو تغيير عدد خاناته ودرجته ← بطاقة «عناصر الرصد» أعلاه.</li>
+        <li><b>السجل السلوكي</b> ← بطاقة «السجل السلوكي» أعلاه. ملاحظات مؤرّخة عن سلوك الطالب (نوم، مشاغبة، مقاطعة… ومعها الإيجابيات). <b>لا تدخل الدرجة</b>، لكنها ترفع الطالب إلى «يحتاج متابعة» بسبب مستقل، وتُطبع اختياريًا مع تقرير ولي الأمر أو الإحالة. بنودها قابلة للتعديل حذفًا وإضافةً.</li>
         <li><b>الحضور والغياب</b> ← بطاقة «الحضور والغياب» أعلاه. <b>اختياري بمفتاحين</b>: الأول يُظهره أو يخفيه (والإخفاء <b>لا يحذف سجلّك</b>، يعود كما هو بتشغيل المفتاح)، والثاني يقرّر هل تُحتسب درجة مواظبة تُضاف للمجموع أم يبقى الحضور <b>سجل حالة فقط</b> بلا أثر على الدرجة.</li>
         <li><b>مواعيد تسليم البنود</b> (اختيارية) ← بطاقة «مواعيد تسليم البنود» أعلاه، أو بالضغط على رقم الخانة في رأس جدول الرصد. تظهر في تقرير ولي الأمر وتقرير الإحالة: «الواجب ٣ — ١٥ محرم — لم يسلّم».</li>
         <li><b>التوقيع</b> الذي يُدرج تلقائيًا في التقارير ← بطاقة «التوقيع الإلكتروني».</li>
@@ -3193,16 +3320,23 @@ function needsFollowUpList(){
     STATE.sections[key].forEach((row, idx)=>{
       if(row.name.trim()==="") return;
       const c = studentCalc(row);
-      if(c.flag!=="⚠ نعم") return;
+      const bh = bhEnabled() ? bhStats(key, row.name) : null;
+      const bhFlag = !!(bh && bh.level);
+      /* السلوك مدخل مستقل: طالب منضبط الدرجات كثير المخالفات يحتاج متابعة
+         وإن لم يرفع رصده أي علم. */
+      if(c.flag!=="⚠ نعم" && !bhFlag) return;
       const lowRatio = c.maxGrade>0 ? (c.final/c.maxGrade < 0.6) : false;
       const frequentLate = c.lateCount>=5;
       const reasons = [];
-      if(c.missCount>=3) reasons.push("تكرار عدم التسليم");
-      if(frequentLate) reasons.push("تكرار التأخر");
+      if(bhFlag) reasons.push("تكرار المخالفات السلوكية");
+      if(c.flag==="⚠ نعم" && c.missCount>=3) reasons.push("تكرار عدم التسليم");
+      if(c.flag==="⚠ نعم" && frequentLate) reasons.push("تكرار التأخر");
       /* لا نكرّر «انخفاض الإنجاز» على من سلّم كل شيء متأخرًا: انخفاضه ناتج عن
          التأخير نفسه، وذكره سببًا مستقلًا يوحي بمشكلتين وهي واحدة. */
-      if(lowRatio && !(frequentLate && !c.lowDelivery)) reasons.push("انخفاض الإنجاز");
-      list.push({key, idx, name:row.name, ratioPct: c.ratio!==null ? Math.round(c.ratio*100) : null, lateCount:c.lateCount, missCount:c.missCount, severity:c.severity, reason: reasons.join(" و ") || "—"});
+      if(c.flag==="⚠ نعم" && lowRatio && !(frequentLate && !c.lowDelivery)) reasons.push("انخفاض الإنجاز");
+      list.push({key, idx, name:row.name, ratioPct: c.ratio!==null ? Math.round(c.ratio*100) : null, lateCount:c.lateCount, missCount:c.missCount,
+        severity: combinedSeverity(key, row), bhPoints: bh ? bh.points : 0, bhTotal: bh ? bh.total : 0,
+        reason: reasons.join(" و ") || "—"});
     });
   }
   list.sort((a,b)=>{
@@ -3584,11 +3718,159 @@ function renderAnalysis(opts){
   return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + levelCard + periodCard + comparisonTable;
 }
 
+
+/* ================= السجل السلوكي =================
+   ملاحظات مؤرّخة عن سلوك الطالب داخل الصف. مبدآن يحكمان التصميم:
+
+   ١) لا تدخل الدرجة. تقييم السلوك في المدرسة من اختصاص لجنة المواظبة
+      والسلوك لا معلّم المادة، وإدخاله في المجموع يفسد «نسبة الإنجاز» التي
+      تقوم عليها الإحالة والإنذار المبكر — فيصير كثير الكلام «متدنّي
+      التحصيل» وهو متقن للمادة. من أراد احتسابه يضيف بندًا في بنود الرصد،
+      فهي تدعم الأوزان أصلًا.
+
+   ٢) يسجّل الإيجابي كما يسجّل السلبي. سجلٌّ لا يحوي إلا المخالفات يتحوّل
+      إلى ملف إدانة، ويقرؤه وليّ الأمر صفحةً سوداء فيدافع بدل أن يتعاون.
+
+   التخزين بالاسم لا برقم الصف: الجدول يُرتَّب أبجديًا فتتبدّل الفهارس،
+   وهو ما جعل سجل التواصل يطابق بالاسم أيضًا. الربط بالفهرس كان سينقل
+   مخالفات طالب إلى آخر بمجرّد إضافة اسم جديد. */
+
+const BH_MINOR = 'minor', BH_MID = 'mid', BH_SEVERE = 'severe', BH_GOOD = 'good';
+const BH_LEVEL_LABEL = { minor:'بسيطة', mid:'متوسطة', severe:'جسيمة', good:'إيجابي' };
+/* الأوزان تجعل قاعدة تصعيد واحدة تكفي: ٦ نقاط = مخالفة جسيمة واحدة،
+   أو ثلاث متوسطات، أو ست بسيطات. */
+const BH_POINTS = { minor:1, mid:2, severe:6, good:0 };
+const BH_WARN_POINTS = 3, BH_URGENT_POINTS = 6;
+
+function blankBehaviourItems(){
+  return [
+    { id:'b_sleep',   label:'نوم أو شرود',                group:'الانضباط الصفّي', level:BH_MINOR },
+    { id:'b_chat',    label:'حديث جانبي متكرر',            group:'الانضباط الصفّي', level:BH_MINOR },
+    { id:'b_interr',  label:'مقاطعة الدرس',                group:'الانضباط الصفّي', level:BH_MINOR },
+    { id:'b_noise',   label:'مشاغبة وإزعاج',               group:'الانضباط الصفّي', level:BH_MID   },
+    { id:'b_phone',   label:'استخدام الجوال في الحصة',      group:'الانضباط الصفّي', level:BH_MID   },
+    { id:'b_late',    label:'تأخّر عن دخول الحصة',          group:'الانضباط الصفّي', level:BH_MINOR },
+    { id:'b_out',     label:'الخروج من الصف بلا إذن',       group:'الانضباط الصفّي', level:BH_MID   },
+    { id:'b_tools',   label:'عدم إحضار الكتاب أو الأدوات',  group:'الاستعداد',       level:BH_MINOR },
+    { id:'b_nopart',  label:'عدم المشاركة نهائيًا',         group:'الاستعداد',       level:BH_MINOR },
+    { id:'b_verbal',  label:'إساءة لفظية لزميل',            group:'التعامل',         level:BH_MID   },
+    { id:'b_fight',   label:'عراك أو اشتباك',              group:'التعامل',         level:BH_SEVERE},
+    { id:'b_disresp', label:'عدم احترام المعلم',           group:'التعامل',         level:BH_SEVERE},
+    { id:'b_damage',  label:'إتلاف ممتلكات',               group:'التعامل',         level:BH_SEVERE},
+    { id:'b_cheat',   label:'محاولة غش',                   group:'الأمانة',         level:BH_SEVERE},
+    { id:'b_copy',    label:'نقل واجب زميل',               group:'الأمانة',         level:BH_MID   },
+    { id:'g_part',    label:'مشاركة متميزة',               group:'الإيجابيات',      level:BH_GOOD  },
+    { id:'g_help',    label:'تعاون ومساعدة زميل',           group:'الإيجابيات',      level:BH_GOOD  },
+    { id:'g_calm',    label:'التزام وهدوء ملحوظ',          group:'الإيجابيات',      level:BH_GOOD  },
+    { id:'g_better',  label:'تحسّن واضح في السلوك',         group:'الإيجابيات',      level:BH_GOOD  },
+    { id:'g_init',    label:'مبادرة أو سؤال جيّد',          group:'الإيجابيات',      level:BH_GOOD  }
+  ];
+}
+function blankBehaviour(){
+  return { enabled:false, items: blankBehaviourItems(), inReferral:true, inParent:true };
+}
+function bhSettings(){
+  if(!STATE.behaviour || typeof STATE.behaviour !== 'object') STATE.behaviour = blankBehaviour();
+  if(!Array.isArray(STATE.behaviour.items) || STATE.behaviour.items.length===0){
+    STATE.behaviour.items = blankBehaviourItems();
+  }
+  return STATE.behaviour;
+}
+function bhEnabled(){ return !!bhSettings().enabled; }
+function bhItems(){ return bhSettings().items; }
+function bhItem(id){ return bhItems().find(it=> it.id===id) || null; }
+function bhGroups(){
+  const out = [];
+  bhItems().forEach(it=>{
+    let g = out.find(x=> x.name===it.group);
+    if(!g){ g = { name:it.group, items:[] }; out.push(g); }
+    g.items.push(it);
+  });
+  return out;
+}
+function bhList(key){
+  if(!STATE.behaviours || typeof STATE.behaviours !== 'object') STATE.behaviours = {};
+  if(!Array.isArray(STATE.behaviours[key])) STATE.behaviours[key] = [];
+  return STATE.behaviours[key];
+}
+function bhRecordsFor(key, name){
+  const n = (name||'').trim();
+  if(n==='') return [];
+  return bhList(key)
+    .filter(r=> (r.name||'').trim()===n)
+    .slice()
+    .sort((a,b)=> (b.at||'').localeCompare(a.at||''));
+}
+function bhAdd(key, name, itemId, note){
+  const it = bhItem(itemId);
+  if(!it) return null;
+  const now = new Date();
+  const rec = {
+    id: 'bh_' + now.getTime() + '_' + Math.random().toString(36).slice(2,8),
+    name: (name||'').trim(),
+    itemId: it.id,
+    at: now.toISOString(),
+    dateHijri: getHijriDateStr(),
+    note: (note||'').trim()
+  };
+  bhList(key).unshift(rec);
+  persistState();
+  return rec;
+}
+/* التسمية والدرجة تُقرآن من البند الحيّ ما دام موجودًا. حفظ نسخة منهما مع
+   كل واقعة كان يكلّف ~١٤٠ بايت زائدة للواقعة الواحدة في حمولة المزامنة،
+   فصارت النسخة تُختم لحظة حذف البند وحدها: عندها فقط تفقد الواقعة مرجعها،
+   وحينها لا يجوز أن تتحوّل إلى سطر مجهول. */
+function bhResolve(rec){
+  const it = bhItem(rec.itemId);
+  if(it) return { label: it.label, level: it.level };
+  return { label: rec.label || 'بند محذوف', level: rec.level || BH_MINOR };
+}
+/* يُستدعى قبل حذف بند: يختم تسميته ودرجته في كل واقعة تشير إليه. */
+function bhStampItem(itemId){
+  const it = bhItem(itemId);
+  if(!it) return;
+  Object.keys(STATE.behaviours || {}).forEach(k=>{
+    bhList(k).forEach(r=>{
+      if(r.itemId===itemId){ r.label = it.label; r.level = it.level; }
+    });
+  });
+}
+function bhDelete(key, id){
+  STATE.behaviours[key] = bhList(key).filter(r=> r.id!==id);
+  persistState();
+}
+function bhStats(key, name){
+  const recs = bhRecordsFor(key, name);
+  const out = { records:recs, total:recs.length, minor:0, mid:0, severe:0, good:0, points:0, level:'', lastHijri:'' };
+  recs.forEach(r=>{
+    const lv = bhResolve(r).level;
+    if(lv===BH_GOOD) out.good++;
+    else if(lv===BH_SEVERE) out.severe++;
+    else if(lv===BH_MID) out.mid++;
+    else out.minor++;
+    out.points += (BH_POINTS[lv] || 0);
+  });
+  if(out.points >= BH_URGENT_POINTS) out.level = 'urgent';
+  else if(out.points >= BH_WARN_POINTS) out.level = 'warn';
+  if(recs.length>0) out.lastHijri = recs[0].dateHijri || '';
+  return out;
+}
+/* خطورة الطالب مجتمعةً: الأسوأ بين تعثّره الدراسي وسلوكه، لا مجموعهما —
+   فالسلوك سبب مستقل للمتابعة لا إضافة إلى الدرجة. */
+function bhSeverityRank(sv){ return sv==='urgent' ? 2 : sv==='warn' ? 1 : 0; }
+function combinedSeverity(key, row){
+  const acad = studentCalc(row).severity || '';
+  if(!bhEnabled()) return acad;
+  const bh = bhStats(key, row.name).level;
+  return bhSeverityRank(bh) > bhSeverityRank(acad) ? bh : acad;
+}
+
 /* ================= سجل التواصل مع أولياء الأمور ================= */
 const CONTACT_METHODS = ["اتصال هاتفي", "رسالة نصية", "واتساب", "لقاء في المدرسة", "عبر المرشد الطلابي"];
 const CONTACT_STATUSES = ["تم التواصل", "لم يُرد", "بانتظار الرد", "تم الحل"];
 /* أسباب المتابعة كما في ورقة «سجل تواصل» بملف كشف المتابعة */
-const CONTACT_REASONS = ["تأخير متكرر", "عدم تسليم متكرر", "تدني الدرجات", "أخرى"];
+const CONTACT_REASONS = ["تأخير متكرر", "عدم تسليم متكرر", "تدني الدرجات", "مخالفات سلوكية متكررة", "أخرى"];
 function contactStatusClass(status){
   if(status==="تم الحل") return "cs-done";
   if(status==="تم التواصل") return "cs-ok";
@@ -3630,7 +3912,7 @@ function renderFollowUpCard(opts){
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
     <table class="followup-table">
-      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th><th>حالة التواصل</th><th></th></tr></thead>
+      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th>${bhEnabled()?`<th>السلوك</th>`:``}<th>حالة التواصل</th><th></th></tr></thead>
       <tbody>
         ${followUps.map(f=>{
           const ct = lastContactFor(f.key, f.name);
@@ -3642,6 +3924,7 @@ function renderFollowUpCard(opts){
           <td>${f.ratioPct!==null?f.ratioPct+'%':'—'}</td>
           <td>${f.lateCount}</td>
           <td>${f.missCount}</td>
+          ${bhEnabled()?`<td>${f.bhTotal>0 ? f.bhTotal : '—'}</td>`:``}
           <td>${ct
             ? `<span class="cstat ${contactStatusClass(ct.status)}">${escapeAttr(ct.status)}</span><br><span style="font-size:10px; color:var(--muted);">${escapeAttr(ct.savedAtHijri||'')}</span>`
             : `<span class="cstat cs-never">لم يتم التواصل</span>`}</td>
@@ -3651,6 +3934,7 @@ function renderFollowUpCard(opts){
               <button type="button" class="fu-open-btn fu-parent-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">👪 تقرير ولي أمر</button>
               <button type="button" class="fu-open-btn fu-share-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📲 مشاركة</button>
               <button type="button" class="fu-open-btn fu-contact-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">☎️ تسجيل تواصل</button>
+              ${bhEnabled()?`<button type="button" class="fu-open-btn fu-behaviour-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">🧭 سلوك</button>`:``}
             </div>
           </td>
         </tr>`;}).join("")}
@@ -3969,7 +4253,7 @@ function printActionLog(){
     <div style="text-align:center; flex:1;">قائد المدرسة<span style="display:block; margin-top:26px; border-top:1px solid #333; padding-top:4px; max-width:200px; margin-inline:auto;">&nbsp;</span></div>
   </div>`;
 
-  holder.innerHTML = `<div class="print-doc" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">${header}${actionLogTableHtml(rows,{forPrint:true})}${signature}</div>`;
+  holder.innerHTML = `<div class="print-doc" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; padding:3mm 4mm;">${header}${actionLogTableHtml(rows,{forPrint:true})}${signature}</div>`;
   printHolder(holder, 'landscape');
 }
 
@@ -4047,7 +4331,7 @@ function sectionFollowUpCount(key){
   const out = {total:0, urgent:0, warn:0};
   STATE.sections[key].forEach(row=>{
     if(row.name.trim()==="") return;
-    const sev = studentCalc(row).severity;
+    const sev = combinedSeverity(key, row);
     if(!sev) return;
     out.total++;
     out[sev==='urgent' ? 'urgent' : 'warn']++;
@@ -4418,7 +4702,8 @@ function wireFollowUpEvents(){
     btn.addEventListener('click', ()=>{
       const key = btn.dataset.key;
       const idx = parseInt(btn.dataset.idx);
-      if(btn.classList.contains('fu-share-btn')) shareParentMessage(key, idx);
+      if(btn.classList.contains('fu-behaviour-btn')) showBehaviourDialog(key, idx);
+      else if(btn.classList.contains('fu-share-btn')) shareParentMessage(key, idx);
       else if(btn.classList.contains('fu-parent-btn')) printParentReport(key, idx);
       else if(btn.classList.contains('fu-contact-btn')) showContactDialog(key, idx);
       else openReferralReportDialog(key, idx);
@@ -5019,6 +5304,57 @@ function wireSettingsPanelEvents(){
     attSettings().weight = isNaN(v) ? 5 : Math.max(0, Math.min(50, v));
     persistState();
     render();
+  });
+
+  const bhEn = document.getElementById('bh-enabled');
+  if(bhEn) bhEn.addEventListener('change', ()=>{
+    bhSettings().enabled = bhEn.checked;
+    persistState();
+    render();
+    showToast(bhEn.checked ? 'تم تفعيل السجل السلوكي' : 'أُخفي السجل السلوكي — ملاحظاتك محفوظة وتعود بتشغيل المفتاح');
+  });
+  const bhRef = document.getElementById('bh-in-referral');
+  if(bhRef) bhRef.addEventListener('change', ()=>{ bhSettings().inReferral = bhRef.checked; persistState(); });
+  const bhPar = document.getElementById('bh-in-parent');
+  if(bhPar) bhPar.addEventListener('change', ()=>{ bhSettings().inParent = bhPar.checked; persistState(); });
+
+  document.querySelectorAll('[data-bh-level]').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const it = bhItem(sel.getAttribute('data-bh-level'));
+      if(!it) return;
+      it.level = sel.value;
+      persistState();
+      render();
+    });
+  });
+  document.querySelectorAll('[data-bh-del-item]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-bh-del-item');
+      const it = bhItem(id);
+      if(!it) return;
+      showConfirmDialog('حذف بند سلوكي', `سيُحذف «${it.label}» من قائمة البنود. الملاحظات المسجّلة به سابقًا تبقى في سجلات الطلاب كما هي.`, ()=>{
+        bhStampItem(id);
+        bhSettings().items = bhItems().filter(x=> x.id!==id);
+        if(bhItems().length===0) bhSettings().items = blankBehaviourItems();
+        persistState();
+        render();
+        showToast('تم حذف البند');
+      });
+    });
+  });
+  const bhAdd = document.getElementById('bh-add-item');
+  if(bhAdd) bhAdd.addEventListener('click', ()=>{
+    const label = (document.getElementById('bh-new-label').value || '').trim();
+    if(label===''){ showAlertDialog('اكتب اسم السلوك أولًا'); return; }
+    const level = document.getElementById('bh-new-level').value;
+    bhItems().push({
+      id: 'bx_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      label, level,
+      group: level===BH_GOOD ? 'الإيجابيات' : 'بنود أضفتها'
+    });
+    persistState();
+    render();
+    showToast('تمت إضافة البند');
   });
 
   const btnToggleDates = document.getElementById('btn-toggle-dates');
@@ -6099,6 +6435,7 @@ function openNameMenu(anchorEl, key, idx){
     <button type="button" class="sym-opt" data-act="move"><span>🔀</span><span>نقل إلى شعبة أخرى</span></button>
     <button type="button" class="sym-opt" data-act="nopick"><span>${STATE.sections[key][idx] && STATE.sections[key][idx].noPick ? '🎲' : '🚫'}</span><span>${STATE.sections[key][idx] && STATE.sections[key][idx].noPick ? 'إعادته لقرعة المشاركة' : 'استبعاده من قرعة المشاركة'}</span></button>
     <button type="button" class="sym-opt" data-act="note"><span>📝</span><span>ملاحظة عن الطالب</span></button>
+    ${bhEnabled() ? `<button type="button" class="sym-opt" data-act="behaviour"><span>🧭</span><span>سلوك</span></button>` : ``}
     <button type="button" class="sym-opt" data-act="referral"><span>📋</span><span>تقرير إحالة</span></button>
     <button type="button" class="sym-opt" data-act="parent"><span>👪</span><span>تقرير لولي الأمر</span></button>
     <button type="button" class="sym-opt" data-act="share"><span>📲</span><span>مشاركة الحالة (واتساب)</span></button>
@@ -6128,6 +6465,12 @@ function openNameMenu(anchorEl, key, idx){
     ev.stopPropagation();
     closePopupMenu();
     showStudentNoteDialog(key, idx);
+  });
+  const bhBtn = menu.querySelector('[data-act="behaviour"]');
+  if(bhBtn) bhBtn.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    closeSymMenu();
+    showBehaviourDialog(key, idx);
   });
   menu.querySelector('[data-act="referral"]').addEventListener('click', (ev)=>{
     ev.stopPropagation();
@@ -6225,10 +6568,13 @@ function referralDefaultNote(recipientLabel, bothReasons, lowAchievement, freque
   return `يُحال الطالب إلى ${recipientLabel} للاطلاع والمتابعة.`;
 }
 
-function openReferralReportDialog(key, idx){
+function openReferralReportDialog(key, idx, openOpts){
   const row = STATE.sections[key][idx];
   if(!row) return;
   if(row.name.trim()===""){ showAlertDialog('يجب إدخال اسم الطالب أولًا قبل إنشاء تقرير الإحالة'); return; }
+  const bhSt = bhEnabled() ? bhStats(key, row.name) : null;
+  /* التصعيد من نافذة السلوك يصل وقد عُبّئ سببه، وكذلك من بلغ حدّ التصعيد وحده. */
+  const bhPreset = !!(bhSt && (bhSt.level || (openOpts && openOpts.fromBehaviour)));
   const meta = STATE.meta[key];
   const ind = computeReferralIndicators(row);
   const lowAchievement = ind.ratioPct!==null && ind.ratioPct<60;
@@ -6236,6 +6582,9 @@ function openReferralReportDialog(key, idx){
   const bothReasons = lowAchievement && frequentLate;
   const RECIPIENTS = { counselor: 'المرشد الطلابي', deputy: 'وكيل شؤون الطلاب' };
   let defaultNote = referralDefaultNote(RECIPIENTS.counselor, bothReasons, lowAchievement, frequentLate);
+  if(bhPreset && bhSt){
+    defaultNote = `تكرّرت المخالفات السلوكية للطالب داخل الصف (${bhSt.total} ملاحظة مسجّلة بتواريخها، آخرها ${bhSt.lastHijri} هـ)، ويُحال إلى ${RECIPIENTS.counselor} للاطلاع والمتابعة.`;
+  }
 
   const holder = document.getElementById('dialog-holder');
   holder.innerHTML = `
@@ -6262,6 +6611,7 @@ function openReferralReportDialog(key, idx){
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="ref-reason-low" ${(lowAchievement && !bothReasons)?'checked':''}> انخفاض مستوى الإنجاز</label>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="ref-reason-late" ${(frequentLate && !bothReasons)?'checked':''}> تكرار التأخر في تسليم المهام</label>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="ref-reason-both" ${bothReasons?'checked':''}> كلاهما</label>
+            ${bhEnabled() ? `<label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="ref-reason-behaviour" ${bhPreset?'checked':''}> تكرار المخالفات السلوكية</label>` : ``}
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="ref-reason-other"> أخرى</label>
             <input id="ref-reason-other-text" type="text" placeholder="اكتب سبب الإحالة الآخر هنا" style="display:none; width:100%; margin-top:4px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; background:#fafbfc;">
           </div>
@@ -6277,6 +6627,7 @@ function openReferralReportDialog(key, idx){
         </div>
         <div class="meta-field" style="margin-bottom:14px;">
           <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:400;"><input type="checkbox" id="ref-include-stats" checked> تضمين مؤشرات الرصد الإحصائية في التقرير</label>
+          ${(bhSt && bhSt.total>0) ? `<label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:400; margin-top:6px;"><input type="checkbox" id="ref-include-behaviour" ${bhSettings().inReferral?'checked':''}> تضمين السجل السلوكي (${bhSt.total} ملاحظة مؤرّخة)</label>` : ``}
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" id="dlg-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
@@ -6318,6 +6669,9 @@ function openReferralReportDialog(key, idx){
     reasonOther: otherCheck.checked,
     reasonOtherText: otherCheck.checked ? otherText.value.trim() : '',
     includeStats: document.getElementById('ref-include-stats').checked,
+    reasonBehaviour: !!(document.getElementById('ref-reason-behaviour') || {}).checked,
+    includeBehaviour: !!(document.getElementById('ref-include-behaviour') || {}).checked,
+    behaviourKey: key,
     assessedCount: ind.assessedCount,
     lateCount: ind.lateCount,
     ratioPct: ind.ratioPct,
@@ -6337,13 +6691,68 @@ function openReferralReportDialog(key, idx){
   });
 }
 
+
+/* قسم السجل السلوكي في التقارير المطبوعة.
+   limit: عدد الوقائع المعروضة (تقرير ولي الأمر يكتفي بالأحدث)، و«الإيجابيات»
+   تُضمّ دائمًا حتى لا يصل البيت تقريرٌ كلّه إدانة. */
+function behaviourReportSection(key, name, opts){
+  if(!bhEnabled()) return '';
+  const o = opts || {};
+  const st = bhStats(key, name);
+  if(st.total===0) return '';
+  const limit = o.limit || 0;
+  let recs = st.records;
+  if(limit > 0){
+    const good = recs.filter(r=> bhResolve(r).level===BH_GOOD);
+    const bad  = recs.filter(r=> bhResolve(r).level!==BH_GOOD).slice(0, limit);
+    recs = bad.concat(good).sort((a,b)=> (b.at||'').localeCompare(a.at||''));
+  }
+  const hidden = st.total - recs.length;
+  const summary = [
+    st.severe ? `${st.severe} جسيمة` : '',
+    st.mid    ? `${st.mid} متوسطة`   : '',
+    st.minor  ? `${st.minor} بسيطة`  : '',
+    st.good   ? `${st.good} ملاحظة إيجابية` : ''
+  ].filter(Boolean).join(' · ') || '—';
+
+  return `
+      <div class="rf-section">
+        <h3>${escapeAttr(o.title || 'السجل السلوكي')}</h3>
+        <div class="rf-grid" style="margin-bottom:6px;">
+          <div class="rf-row"><span class="rf-label">عدد الملاحظات:</span><span>${st.total}</span></div>
+          <div class="rf-row"><span class="rf-label">آخر ملاحظة:</span><span>${escapeAttr(st.lastHijri)} هـ</span></div>
+          <div class="rf-row full"><span class="rf-label">التصنيف:</span><span>${escapeAttr(summary)}</span></div>
+        </div>
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+          <thead>
+            <tr>
+              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">التاريخ</th>
+              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">الملاحظة</th>
+              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">الدرجة</th>
+              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">بيان</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recs.map(r=>{ const rr = bhResolve(r); return `<tr>
+              <td style="border:1px solid #cbd5e1; padding:5px; text-align:center; white-space:nowrap;">${escapeAttr(r.dateHijri||'')}</td>
+              <td style="border:1px solid #cbd5e1; padding:5px; text-align:right;">${escapeAttr(rr.label)}</td>
+              <td style="border:1px solid #cbd5e1; padding:5px; text-align:center;">${escapeAttr(BH_LEVEL_LABEL[rr.level]||'')}</td>
+              <td style="border:1px solid #cbd5e1; padding:5px; text-align:right;">${escapeAttr(r.note||'—')}</td>
+            </tr>`; }).join("")}
+          </tbody>
+        </table>
+        ${hidden>0 ? `<div style="font-size:10.5px; color:#666; margin-top:4px;">وهناك ${hidden} ملاحظة أقدم لم تُدرج اختصارًا.</div>` : ''}
+        <div style="font-size:10.5px; color:#666; margin-top:4px;">السجل السلوكي توثيق للمتابعة ولا يدخل في درجة المادة.</div>
+      </div>`;
+}
+
 function referralSheetHtml(data){
   const lh = STATE.letterhead;
   const box = (checked)=> checked ? '☑' : '☐';
   const logoSrc = document.querySelector('header.app-top img')?.src || '';
   return `
     <div class="referral-sheet" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; color:#111;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:22px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:11px; margin-bottom:14px;">
         <div style="text-align:right; font-size:12px; line-height:1.9; flex:1;">
           <div>${escapeAttr(lh.line1)}</div>
           <div>${escapeAttr(lh.line2)}</div>
@@ -6356,7 +6765,7 @@ function referralSheetHtml(data){
         </div>
       </div>
 
-      <h2 class="rf-title" style="text-align:center; font-size:18px; font-weight:700; margin:0 0 24px;">تقرير إحالة طالب إلى ${escapeAttr(data.recipientLabel)}</h2>
+      <h2 class="rf-title" style="text-align:center; font-size:18px; font-weight:700; margin:0 0 16px;">تقرير إحالة طالب إلى ${escapeAttr(data.recipientLabel)}</h2>
 
       <div class="rf-section">
         <h3>بيانات الطالب</h3>
@@ -6376,6 +6785,7 @@ function referralSheetHtml(data){
           <label><span class="rf-box">${box(data.reasonLow)}</span> انخفاض مستوى الإنجاز</label>
           <label><span class="rf-box">${box(data.reasonLate)}</span> تكرار التأخر في تسليم المهام</label>
           <label><span class="rf-box">${box(data.reasonBoth)}</span> كلاهما</label>
+          ${data.reasonBehaviour ? `<label><span class="rf-box">☑</span> تكرار المخالفات السلوكية</label>` : ''}
           <label><span class="rf-box">${box(data.reasonOther)}</span> أخرى${data.reasonOther && data.reasonOtherText ? ': '+escapeAttr(data.reasonOtherText) : ''}</label>
         </div>
       </div>
@@ -6392,6 +6802,8 @@ function referralSheetHtml(data){
       </div>` : ''}
 
       ${troubledTasksTableHtml(data.tasks || [])}
+
+      ${data.includeBehaviour ? behaviourReportSection(data.behaviourKey || data.section, data.studentName, {}) : ''}
 
       <div class="rf-section">
         <h3>ملاحظة المعلم</h3>
@@ -6417,7 +6829,11 @@ function buildDefaultReferralData(key, idx){
   const own = studentNote(row);
   /* ملاحظة المعلم تسبق الصياغة الجاهزة لأنها الأخصّ بالحالة. */
   const note = (own ? own + '\n' : '') + referralDefaultNote(recipientLabel, bothReasons, lowAchievement, frequentLate);
+  const bhSt = bhEnabled() ? bhStats(key, row.name) : null;
   return {
+    reasonBehaviour: !!(bhSt && bhSt.level),
+    includeBehaviour: !!(bhSt && bhSt.total>0 && bhSettings().inReferral),
+    behaviourKey: key,
     studentName: row.name, section:key, subject:meta.subject, teacher:meta.teacher,
     recipientLabel, term:meta.term,
     reasonLow: lowAchievement, reasonLate: frequentLate, reasonBoth: bothReasons, reasonOther:false, reasonOtherText:'',
@@ -6527,7 +6943,9 @@ function buildParentReportData(key, idx){
     levelName: studentLevelName(c, row.name.trim()===""),
     cats, recommendation,
     tasks: troubledTasks(row),
-    att: attEnabled() ? Object.assign(attStats(row), { counts: attCounts(), score: attCounts() ? attScore(row) : null }) : null
+    att: attEnabled() ? Object.assign(attStats(row), { counts: attCounts(), score: attCounts() ? attScore(row) : null }) : null,
+    behaviourKey: key,
+    includeBehaviour: false
   };
 }
 
@@ -6543,21 +6961,21 @@ function parentReportHtml(d){
   }
   return `
     <div class="referral-sheet" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; color:#111;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:22px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:11px; margin-bottom:14px;">
         <div style="text-align:right; font-size:12px; line-height:1.9; flex:1;">
           <div>${escapeAttr(lh.line1)}</div>
           <div>${escapeAttr(lh.line2)}</div>
           <div style="font-weight:700;">${escapeAttr(lh.school)}</div>
         </div>
         ${logoSrc ? `<img alt="شعار وزارة التعليم" src="${logoSrc}" style="height:46px; width:auto; max-width:120px; object-fit:contain; flex-shrink:0;">` : ''}
-        <div style="text-align:left; font-size:12px; line-height:1.9; flex:1;">
+        <div style="text-align:left; font-size:12px; line-height:1.85; flex:1;">
           <div>الفصل الدراسي: ${escapeAttr(d.term)||"...................."}</div>
           <div>التاريخ: ${escapeAttr(getHijriDateStr())} هـ</div>
         </div>
       </div>
 
       <h2 class="rf-title" style="text-align:center; font-size:18px; font-weight:700; margin:0 0 6px;">تقرير مستوى طالب لولي الأمر</h2>
-      <p style="text-align:center; font-size:12px; color:#444; margin:0 0 22px;">مادة ${escapeAttr(d.subject)||'..........'} — ${escapeAttr(d.section)}</p>
+      <p style="text-align:center; font-size:12px; color:#444; margin:0 0 14px;">مادة ${escapeAttr(d.subject)||'..........'} — ${escapeAttr(d.section)}</p>
 
       <div class="rf-section">
         <h3>بيانات الطالب</h3>
@@ -6622,6 +7040,8 @@ function parentReportHtml(d){
           <div class="rf-row full"><span class="rf-label">نسبة المواظبة:</span><span>${Math.round(d.att.earnedRatio*100)}%${d.att.score ? ` — درجة المواظبة ${fmt(d.att.score.earned)} من ${fmt(d.att.score.max)}` : ' (سجل فقط، لا تدخل الدرجة)'}</span></div>
         </div>
       </div>` : ''}
+
+      ${d.includeBehaviour ? behaviourReportSection(d.behaviourKey || d.section, d.studentName, { limit:5, title:'ملاحظات سلوكية' }) : ''}
 
       <div class="rf-section">
         <h3>توصية المعلم</h3>
@@ -6728,9 +7148,136 @@ function printParentReport(key, idx){
   const row = STATE.sections[key] && STATE.sections[key][idx];
   if(!row) return;
   if(row.name.trim()===""){ showAlertDialog('يجب إدخال اسم الطالب أولًا قبل إنشاء التقرير'); return; }
-  const holder = document.getElementById('print-referral-holder');
-  holder.innerHTML = parentReportHtml(buildParentReportData(key, idx));
-  printHolder(holder);
+
+  const emit = (withBehaviour)=>{
+    const holder = document.getElementById('print-referral-holder');
+    const data = buildParentReportData(key, idx);
+    data.includeBehaviour = !!withBehaviour;
+    holder.innerHTML = parentReportHtml(data);
+    printHolder(holder);
+  };
+
+  /* السؤال يظهر فقط لمن له سجل سلوكي — بقية الطلاب تبقى الطباعة عندهم بضغطة. */
+  const st = bhEnabled() ? bhStats(key, row.name) : null;
+  if(!st || st.total===0){ emit(false); return; }
+
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:430px;">
+        <h3>👪 تقرير ولي الأمر</h3>
+        <p style="margin:0 0 10px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+        <div class="bh-meter">${bhSummaryPills(st)}</div>
+        <div class="hint" style="margin-bottom:14px;">للطالب <b>${st.total}</b> ملاحظة سلوكية مؤرّخة. إن أدرجتها طُبع الملخّص وآخر خمس وقائع <b>مع كل الإيجابيات</b>.</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="pr-cancel" style="flex:1 1 100%; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
+          <button type="button" id="pr-without" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">بدون السلوك</button>
+          <button type="button" id="pr-with" style="flex:1; width:auto; background:var(--teal);">🖨️ مع السجل السلوكي</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('pr-cancel').addEventListener('click', closeDialog);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('pr-without').addEventListener('click', ()=>{ closeDialog(); emit(false); });
+  document.getElementById('pr-with').addEventListener('click', ()=>{ closeDialog(); emit(true); });
+}
+
+
+/* ================= نافذة السجل السلوكي للطالب ================= */
+function bhSummaryPills(st){
+  if(st.total===0) return `<span class="bh-pill lv-none">لا توجد ملاحظات</span>`;
+  const out = [];
+  if(st.severe) out.push(`<span class="bh-pill lv-severe">${st.severe} جسيمة</span>`);
+  if(st.mid)    out.push(`<span class="bh-pill lv-mid">${st.mid} متوسطة</span>`);
+  if(st.minor)  out.push(`<span class="bh-pill lv-minor">${st.minor} بسيطة</span>`);
+  if(st.good)   out.push(`<span class="bh-pill lv-good">${st.good} إيجابي</span>`);
+  return out.join(' ');
+}
+
+function showBehaviourDialog(key, idx){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  if((row.name||'').trim()===''){ showAlertDialog('يجب إدخال اسم الطالب أولًا'); return; }
+  if(!bhEnabled()){ showAlertDialog('السجل السلوكي غير مفعّل — فعّله من «حسابي ← السجل السلوكي»'); return; }
+
+  const draw = ()=>{
+    const st = bhStats(key, row.name);
+    const today = new Date().toISOString().slice(0,10);
+    const holder = document.getElementById('dialog-holder');
+    holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:520px;">
+        <h3>🧭 السجل السلوكي</h3>
+        <p style="margin:0 0 10px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+
+        <div class="bh-meter">
+          ${bhSummaryPills(st)}
+          ${st.level==='urgent' ? `<span class="bh-pill lv-severe">بلغ حدّ التصعيد</span>` : st.level==='warn' ? `<span class="bh-pill lv-mid">يقترب من حدّ التصعيد</span>` : ``}
+        </div>
+
+        ${bhGroups().map(g=>`
+        <div class="bh-group">
+          <h4>${escapeAttr(g.name)}</h4>
+          <div class="bh-chips">
+            ${g.items.map(it=>{
+              const n = st.records.filter(r=> r.itemId===it.id && (r.at||'').slice(0,10)===today).length;
+              return `<button type="button" class="bh-chip lv-${it.level}" data-bh-add="${escapeAttr(it.id)}">
+                <span class="bh-dot"></span>${escapeAttr(it.label)}${n>0?`<span class="bh-today">اليوم ×${n}</span>`:''}
+              </button>`;
+            }).join("")}
+          </div>
+        </div>`).join("")}
+
+        <div class="meta-field" style="margin-bottom:12px;">
+          <label>ملاحظة تُرفق بالتسجيل التالي (اختياري)</label>
+          <input id="bh-note" placeholder="مثال: تكرّر بعد التنبيه مرتين">
+          <div class="hint" style="margin-top:6px;">⚠️ لا تكتب اسم طالب آخر هنا — التقرير يصل إلى وليّ أمر يقرأ اسم ابن غيره. قل «اشتبك مع زميل» بدل تسميته.</div>
+        </div>
+
+        ${st.total===0 ? `<div class="hint">لم تُسجَّل ملاحظات بعد. اضغط أي سلوك أعلاه ليُسجَّل بتاريخ اليوم.</div>` : `
+        <h3 style="font-size:12.5px; font-weight:500; margin:4px 0 2px; color:var(--text);">الوقائع المسجّلة (${st.total})</h3>
+        <div class="bh-log">
+          ${st.records.map(r=>{ const rr = bhResolve(r); return `
+          <div class="bh-rec lv-${escapeAttr(rr.level)}">
+            <div class="bh-rec-body">
+              <div class="bh-rec-lbl">${escapeAttr(rr.label)}</div>
+              <div class="bh-rec-meta">${escapeAttr(r.dateHijri||'')}${r.dateHijri?' هـ':''} · ${escapeAttr(BH_LEVEL_LABEL[rr.level]||'')}</div>
+              ${r.note ? `<div class="bh-rec-note">${escapeAttr(r.note)}</div>` : ''}
+            </div>
+            <button type="button" class="bh-rec-del" data-bh-del="${escapeAttr(r.id)}" title="حذف">🗑️</button>
+          </div>`; }).join("")}
+        </div>`}
+
+        <div class="warn-actions" style="margin-top:14px;">
+          <button type="button" class="btn-cancel" id="bh-close">إغلاق</button>
+          ${st.level ? `<button type="button" class="btn-ok" id="bh-escalate" style="background:${st.level==='urgent'?'#C0392B':'var(--teal)'};">⚡ تصعيد إلى إحالة</button>` : ``}
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById('bh-close').addEventListener('click', closeDialog);
+    document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+    holder.querySelectorAll('[data-bh-add]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const note = (document.getElementById('bh-note').value || '').trim();
+        const rec = bhAdd(key, row.name, btn.getAttribute('data-bh-add'), note);
+        if(rec) showToast(`سُجّل «${bhResolve(rec).label}» بتاريخ ${rec.dateHijri} هـ`);
+        draw();
+      });
+    });
+    holder.querySelectorAll('[data-bh-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        bhDelete(key, btn.getAttribute('data-bh-del'));
+        draw();
+      });
+    });
+    const esc = document.getElementById('bh-escalate');
+    if(esc) esc.addEventListener('click', ()=>{
+      closeDialog();
+      openReferralReportDialog(key, idx, { fromBehaviour:true });
+    });
+  };
+  draw();
 }
 
 /* ================= نافذة تسجيل تواصل ولي أمر ================= */
