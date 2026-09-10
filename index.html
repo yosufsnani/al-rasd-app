@@ -1507,7 +1507,10 @@ function rowUntouched(row, key, obj){
 function cleanLegacySeed(obj){
   let names = 0, metas = 0;
   Object.keys(obj.sections || {}).forEach(key=>{
-    (obj.sections[key] || []).forEach(row=>{
+    const arr = obj.sections[key];
+    if(!Array.isArray(arr)) return;   /* قيمة تالفة لا تُسقِط التحميل كلّه */
+    arr.forEach(row=>{
+      if(!row || typeof row !== 'object') return;
       const n = (row.name||'').trim();
       if(n==='' || LEGACY_SEED_NAMES.indexOf(n) < 0) return;
       if(!rowUntouched(row, key, obj)) return;
@@ -1530,8 +1533,18 @@ function cleanLegacySeed(obj){
   return { names, metas };
 }
 
+/* «موجود» لا تعني «صالح»: نصٌّ في مكان الكائن قيمةٌ صادقة، وكان يمرّ الشرط
+   القديم (obj.sections && obj.meta) ثم ينفجر أول من يقرؤه. */
+function looksLikeState(obj){
+  if(!obj || typeof obj !== 'object') return false;
+  if(!obj.sections || typeof obj.sections !== 'object' || Array.isArray(obj.sections)) return false;
+  if(!obj.meta || typeof obj.meta !== 'object' || Array.isArray(obj.meta)) return false;
+  const keys = Object.keys(obj.sections);
+  return keys.every(k=> Array.isArray(obj.sections[k]));
+}
+
 function normalizeLoadedState(obj){
-  if(obj && obj.sections && obj.meta){
+  if(looksLikeState(obj)){
     if(!obj.letterhead) obj.letterhead = blankLetterhead();
     if(typeof obj.letterheadOpen !== 'boolean') obj.letterheadOpen = true;
     if(typeof obj.signature !== 'string') obj.signature = '';
@@ -1662,6 +1675,11 @@ async function loadState(){
 
     REMOTE_STAMP = remoteStamp;
     PENDING_PUSH = false;
+    /* حسابٌ فيه صفٌّ لكن قيمته لا تُقرأ: لا يجوز أن نفتح التطبيق فارغًا
+       والحفظ مُفعَّل، فأول تعديل يكتب الفراغ فوق ما لم نستطع قراءته. */
+    if(data && data.value && !looksLikeState(data.value)){
+      return { ok:false, corrupt:true, raw:data.value, stamp:remoteStamp };
+    }
     return { ok:true, saveable:true, state: normalizeLoadedState(data ? data.value : null) };
 
   }catch(e){
@@ -7851,7 +7869,7 @@ function printAllFollowUpReferrals(){
    لا شيء يُرسم قبل ذلك — الشاشة يغطيها overlay تسجيل الدخول أصلًا. */
 /* شاشة «تعذّر التحميل» — تحلّ محل التطبيق بالكامل ولا تسمح بأي تحرير، لأن
    السماح بالتحرير فوق بيانات لم تُقرأ هو بالضبط ما كان يمحو رصد الفصل. */
-function renderLoadFailure(){
+function renderLoadFailure(res){
   const main = document.getElementById('main');
   const nav = document.getElementById('bottomnav');
   const actions = document.getElementById('header-actions');
@@ -7862,8 +7880,23 @@ function renderLoadFailure(){
   const h1 = document.querySelector('header.app-top h1');
   const p  = document.querySelector('header.app-top p');
   if(h1) h1.textContent = 'كشف المتابعة الإلكتروني';
-  if(p)  p.textContent  = 'تعذّر الاتصال';
-  main.innerHTML = `
+  const corrupt = !!(res && res.corrupt);
+  if(p)  p.textContent  = corrupt ? 'بيانات غير مقروءة' : 'تعذّر الاتصال';
+  main.innerHTML = corrupt ? `
+    <div class="card" style="text-align:center; padding:30px 20px;">
+      <div style="font-size:34px; line-height:1; margin-bottom:14px;">🧩</div>
+      <h2 style="justify-content:center; margin-bottom:10px;">بياناتك موجودة لكن بصيغة لا أفهمها</h2>
+      <div class="hint" style="margin:0 auto 18px; max-width:360px; text-align:center;">
+        في حسابك سجلٌّ محفوظ، لكن شكله ليس ما يتوقّعه التطبيق. <b>لم يُحذف شيء</b>،
+        والحفظ موقوف عمدًا حتى لا يُكتب فوق ما لم أستطع قراءته.<br><br>
+        نزّل نسخة خام أولًا وأرسلها لي، أو ابدأ كشفًا جديدًا إن شئت.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; max-width:300px; margin:0 auto;">
+        <button type="button" class="primary" id="btn-dump-raw">📦 تنزيل نسخة خام من بياناتي</button>
+        <button type="button" id="btn-retry-load" style="background:#eef2f7; color:var(--text);">🔄 إعادة المحاولة</button>
+        <button type="button" id="btn-start-fresh" style="background:#fdecea; color:#b3261e;">🆕 ابدأ كشفًا جديدًا (يستبدل المحفوظ)</button>
+      </div>
+    </div>` : `
     <div class="card" style="text-align:center; padding:30px 20px;">
       <div style="font-size:34px; line-height:1; margin-bottom:14px;">📡</div>
       <h2 style="justify-content:center; margin-bottom:10px;">تعذّر تحميل بياناتك</h2>
@@ -7873,19 +7906,43 @@ function renderLoadFailure(){
       </div>
       <button type="button" class="primary" id="btn-retry-load" style="min-width:170px;">🔄 إعادة المحاولة</button>
     </div>`;
+
+  const dump = document.getElementById('btn-dump-raw');
+  if(dump) dump.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(res.raw, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `نسخة_خام_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    showToast('نُزّلت النسخة الخام — احتفظ بها قبل أي خطوة أخرى');
+  });
+  const freshBtn = document.getElementById('btn-start-fresh');
+  if(freshBtn) freshBtn.addEventListener('click', ()=>{
+    showConfirmDialog('بدء كشف جديد',
+      'سيُكتب كشف فارغ فوق المحفوظ في حسابك. لا يمكن التراجع — نزّل النسخة الخام أولًا إن لم تفعل.', ()=>{
+        if(nav) nav.hidden = false;
+        if(actions) actions.hidden = false;
+        REMOTE_STAMP = res.stamp || null;
+        bootWithState({ ok:true, saveable:true, state: freshState() });
+        PENDING_PUSH = true;
+        pushRemote();
+        showToast('بدأنا كشفًا جديدًا');
+      });
+  });
   const btn = document.getElementById('btn-retry-load');
   btn.addEventListener('click', async ()=>{
     btn.disabled = true;
     btn.textContent = 'جارٍ المحاولة…';
-    const res = await loadState();
-    if(!res.ok){
+    const again = await loadState();
+    if(!again.ok){
       btn.disabled = false;
       btn.textContent = '🔄 إعادة المحاولة';
-      showToast('لا يزال الاتصال متعذرًا — حاول مرة أخرى بعد قليل');
+      showToast(again.corrupt ? 'ما زالت البيانات غير مقروءة' : 'لا يزال الاتصال متعذرًا — حاول مرة أخرى بعد قليل');
       return;
     }
     if(nav) nav.hidden = false;
-    bootWithState(res);
+    if(actions) actions.hidden = false;
+    bootWithState(again);
   });
 }
 
@@ -7914,7 +7971,7 @@ function bootWithState(res){
 window.rasdStartApp = async function(){
   const res = await loadState();
   if(!res.ok){
-    renderLoadFailure();
+    renderLoadFailure(res);
     return;
   }
   bootWithState(res);
