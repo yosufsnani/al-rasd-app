@@ -4459,6 +4459,19 @@ function greetingWord(){
   return 'مساء الخير';
 }
 
+
+/* اسم الشعبة كما كتبه المعلّم، بلا كلمة مضافة. إضافة «شعبة» أعطت «شعبة شعبة 1»
+   للاسم الافتراضي، و«شعبة الأول متوسط / أ» لما يأتي من كشف نور. */
+function sectionTitle(key){ return (key||'').trim(); }
+/* المربّع الصغير (٥٢ بكسل) لا يتّسع لاسم كامل: نأخذ آخر كلمة — «شعبة 1» ← «1»
+   و«الأول متوسط / أ» ← «أ». */
+function sectionBadgeText(key){
+  const t = (key||'').trim();
+  if(!t) return '؟';
+  const last = t.split(/[\s\/،-]+/).filter(Boolean).pop() || t;
+  return last.length <= 4 ? last : last.slice(0,3);
+}
+
 function sectionFollowUpCount(key){
   const out = {total:0, urgent:0, warn:0};
   STATE.sections[key].forEach(row=>{
@@ -4659,9 +4672,9 @@ function renderHome(){
         ? `<span class="pill-badge" style="background:var(--red); color:var(--red-t);">${fmt(fu.urgent)} حالة عاجلة${fu.warn>0?` · ${fmt(fu.warn)} متابعة`:''}</span>`
         : `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">${fmt(fu.warn)} بحاجة متابعة</span>`;
     return `<button type="button" class="sec-card" data-open-section="${escapeAttr(key)}">
-      <span class="sec-key">${escapeAttr(key)}</span>
+      <span class="sec-key">${escapeAttr(sectionBadgeText(key))}</span>
       <span style="flex:1 1 auto; min-width:0;">
-        <span class="s-name">شعبة ${escapeAttr(key)}</span>
+        <span class="s-name">${escapeAttr(sectionTitle(key))}</span>
         <span class="s-sub">${[escapeAttr(meta.subject||''), `${fmt(count)} طالبًا`].filter(Boolean).join(' · ')}</span>
       </span>
       ${badge}
@@ -4794,7 +4807,7 @@ function updateAppChrome(){
     const key = STATE.activeTab;
     const meta = key ? STATE.meta[key] : null;
     const count = key && STATE.sections[key] ? STATE.sections[key].filter(r=>(r.name||'').trim()!=='').length : 0;
-    h1.textContent = key ? `شعبة ${key}` : 'الرصد';
+    h1.textContent = key ? sectionTitle(key) : 'الرصد';
     p.textContent = key ? [meta && meta.subject, `${count} طالبًا`].filter(Boolean).join(' · ') : '';
   } else {
     const [t, s] = titles[STATE.activeView] || titles.home;
