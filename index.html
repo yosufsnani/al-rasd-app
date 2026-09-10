@@ -2649,8 +2649,8 @@ function renderGuideCard(){
 
       <h3>من أين أبدأ؟</h3>
       <ul>
-        <li><b>١ — شعبك:</b> «🏫 إضافة شعبة جديدة» من الرئيسية أو من أعلى تبويب الرصد.</li>
-        <li><b>٢ — طلابك:</b> «➕ إضافة طالب» لواحد، أو «إضافة عدة طلاب» للصق قائمة أسماء، أو رفع ملف إكسل، أو <b>📄 كشف نور PDF</b> كما ينزل من النظام.</li>
+        <li><b>١ — شعبك:</b> «🏫 إضافة شعبة جديدة» من الرئيسية أو من أعلى تبويب الرصد. وفيها ثلاثة مسارات: لصق الأسماء، أو ملف إكسل، أو <b>📄 كشف نور PDF</b> — وهذا الأخير يُنشئ الشعبة بطلابها دفعة واحدة و<b>يقترح اسمها من الكشف نفسه</b> («الأول متوسط / أ»).</li>
+        <li><b>٢ — طلاب إضافيون:</b> «➕ إضافة طالب» لواحد، أو «إضافة عدة طلاب» داخل الشعبة — وفيها المسارات الثلاثة نفسها.</li>
         <li><b>٣ — بنودك:</b> «عناصر الرصد» في هذا التبويب — أضف بندًا أو احذفه، وغيّر عدد خاناته ودرجته.</li>
         <li><b>٤ — بيانات الكشف:</b> «بيانات الشعبة» في تبويب الرصد (المادة والصف والفصل)، و«بيانات الكليشة» هنا (الوزارة والمدرسة).</li>
         <li><b>٥ — ارصد:</b> اضغط أي خانة في الجدول، أو استعمل <b>الرصد السريع</b> داخل الحصة.</li>
@@ -2721,7 +2721,7 @@ function renderGuideCard(){
         <li><b>🎲 قرعة المشاركة</b>: تسحب اسمًا وترصد إجابته في نفس النافذة. <b>عادلة افتراضيًا</b> — من قلّ نصيبه أوفر حظًا فلا يُنسى أحد ولا يُستهدف أحد — ويمكن جعلها عشوائية محضة. تستبعد تلقائيًا <b>الغائبين اليوم</b> ومن اختير في الجولة، و«تخطّي» لا يرصد ولا يحتسب.</li>
         <li><b>🚫 استبعاد من القرعة</b> من قائمة الطالب — يبقى في الكشف ويُرصد عاديًا، لكن لا يُسحب اسمه فجأة أمام الفصل.</li>
         <li><b>📝 ملاحظة عن الطالب</b> — خاصة بك، يظهر مؤشرها بجانب الاسم، و<b>تُمهَّد بها تقارير الإحالة الداخلية</b>. لا تُرسل لولي الأمر ولا تظهر في تقريره ولا رسالته.</li>
-        <li><b>📄 استيراد كشف نور</b>: تُستخرج الأسماء و<b>تُعرض للمراجعة قبل إضافتها</b>. راجع العدد والأسماء قبل التأكيد — لو ظهرت رموز غريبة أو نقص، ألغِ الاستيراد.</li>
+        <li><b>📄 استيراد كشف نور</b>: متاح عند إنشاء شعبة جديدة وداخل الشعبة معًا. تُستخرج الأسماء و<b>تُعرض للمراجعة قبل إضافتها</b> — راجع العدد والأسماء قبل التأكيد، ولو ظهرت رموز غريبة أو نقص فألغِ الاستيراد. ويعرض عليك تعبئة اسم المدرسة والمعلّم من ترويسة الكشف، دون أن يطمس ما كتبتَه بنفسك.</li>
         <li><b>↩︎ التراجع</b> يظهر بعد كل حذف أو تفريغ ويبقى ست ثوانٍ. بعدها لا رجعة.</li>
       </ul>
 
@@ -5783,7 +5783,8 @@ function showAddSectionDialog(){
         <div class="meta-field" style="margin-bottom:6px;"><label>أسماء الطلاب (اختياري)</label></div>
         <div class="import-tabs">
           <button type="button" class="active" id="tab-sec-paste">📋 لصق الأسماء</button>
-          <button type="button" id="tab-sec-excel">📊 ملف إكسل</button>
+          <button type="button" id="tab-sec-excel">📊 إكسل</button>
+          <button type="button" id="tab-sec-pdf">📄 نور PDF</button>
         </div>
         <div class="import-pane active" id="pane-sec-paste">
           <textarea id="dlg-section-names" rows="7" placeholder="أحمد محمد&#10;سعد علي&#10;..."></textarea>
@@ -5796,6 +5797,14 @@ function showAddSectionDialog(){
             <span id="dlg-sec-excel-filename"></span>
           </div>
         </div>
+        <div class="import-pane" id="pane-sec-pdf">
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر كشف أسماء الطلاب كما ينزل من <b>نظام نور</b> بصيغة PDF. تُنشأ الشعبة بأسمائها دفعة واحدة، و<b>يُقترح اسم الشعبة من الكشف نفسه</b>. ستُعرض الأسماء للمراجعة قبل الإضافة.</p>
+          <div class="file-pick-row">
+            <button type="button" id="dlg-sec-btn-pick-pdf">📄 اختيار ملف PDF</button>
+            <input type="file" id="dlg-sec-pdf-file" accept="application/pdf,.pdf" style="display:none">
+            <span id="dlg-sec-pdf-status"></span>
+          </div>
+        </div>
         <div class="hint" style="margin:10px 0 14px;">💡 يمكنك ترك الأسماء فارغة وإنشاء الشعبة بدون طلاب، ثم إضافتهم لاحقًا من داخل الشعبة.</div>
         <div style="display:flex; gap:8px;">
           <button type="button" id="dlg-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
@@ -5804,17 +5813,39 @@ function showAddSectionDialog(){
       </div>
     </div>`;
 
-  const tabPaste = document.getElementById('tab-sec-paste');
-  const tabExcel = document.getElementById('tab-sec-excel');
-  const panePaste = document.getElementById('pane-sec-paste');
-  const paneExcel = document.getElementById('pane-sec-excel');
-  tabPaste.addEventListener('click', ()=>{
-    tabPaste.classList.add('active'); tabExcel.classList.remove('active');
-    panePaste.classList.add('active'); paneExcel.classList.remove('active');
+  const secTabs  = { paste:'tab-sec-paste',  excel:'tab-sec-excel',  pdf:'tab-sec-pdf'  };
+  const secPanes = { paste:'pane-sec-paste', excel:'pane-sec-excel', pdf:'pane-sec-pdf' };
+  const showSecTab = (which)=>{
+    Object.keys(secTabs).forEach(t=>{
+      const tb = document.getElementById(secTabs[t]);
+      const pn = document.getElementById(secPanes[t]);
+      if(tb) tb.classList.toggle('active', t===which);
+      if(pn) pn.classList.toggle('active', t===which);
+    });
+    /* زر «إضافة» لا معنى له في تبويب نور: المعاينة هي التي تُنشئ الشعبة. */
+    const ok = document.getElementById('dlg-ok');
+    if(ok) ok.style.display = (which==='pdf') ? 'none' : '';
+  };
+  Object.keys(secTabs).forEach(t=>{
+    const tb = document.getElementById(secTabs[t]);
+    if(tb) tb.addEventListener('click', ()=> showSecTab(t));
   });
-  tabExcel.addEventListener('click', ()=>{
-    tabExcel.classList.add('active'); tabPaste.classList.remove('active');
-    paneExcel.classList.add('active'); panePaste.classList.remove('active');
+
+  const secPickPdf = document.getElementById('dlg-sec-btn-pick-pdf');
+  if(secPickPdf) secPickPdf.addEventListener('click', ()=> document.getElementById('dlg-sec-pdf-file').click());
+  const secPdfInput = document.getElementById('dlg-sec-pdf-file');
+  if(secPdfInput) secPdfInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const st = document.getElementById('dlg-sec-pdf-status');
+    const out = await readNoorPdfFile(file, (t)=>{ if(st) st.textContent = t; });
+    if(!out) return;
+    /* اسم الشعبة: ما كتبه المعلّم إن غيّر المقترَح، وإلا فاسمٌ من الكشف. */
+    const typed = (document.getElementById('dlg-section-name').value || '').trim();
+    const fromNoor = noorSuggestedSectionName(out.header);
+    const name = (typed && typed !== suggested) ? typed : (fromNoor || typed || suggested);
+    __pendingExcelAOA = null;
+    showImportPreviewDialog({ newSection: name }, out.rows, out.header, file.name);
   });
 
   document.getElementById('dlg-sec-btn-pick-excel').addEventListener('click', ()=>{
@@ -6082,7 +6113,65 @@ function parseNoorRowsFromCells(rows){
    إجبارية عمدًا: فكّ ترميز نور مستنتج من ملفاته لا معلَن في مواصفة PDF، فلو
    تغيّر مولّد التقارير يومًا وجب أن يرى المعلم الخلل قبل أن يدخل كشفه. */
 let __importPreview = null;
+
+/* ===== قراءة كشف نور: مسار واحد يخدم «إضافة عدة طلاب» و«إضافة شعبة جديدة» =====
+   المعاينة إلزامية في الحالتين: خريطة الحروف في ملفات نور مُستنتَجة من ملفات
+   حقيقية لا مُصرَّح بها في مواصفة PDF، فالعين البشرية هي آخر تحقّق. */
+async function readNoorPdfFile(file, setStatus){
+  setStatus = setStatus || function(){};
+  setStatus('جارٍ القراءة…');
+  try{
+    const buf = await file.arrayBuffer();
+    const cellRows = await extractPdfCells(buf);
+    if(cellRows.length === 0){
+      setStatus('');
+      showAlertDialog('لا يوجد نص في هذا الملف — يبدو أنه صورة ممسوحة. استخدم اللصق اليدوي.');
+      return null;
+    }
+    const decoded = decodeCellRows(cellRows);
+    let rows = parseNoorRowsFromCells(decoded);
+    /* احتياط: بعض القرّاء يعيدون الصف كخلية واحدة، فنجرّب التحليل بالسطور. */
+    const flat = [];
+    decoded.forEach(r=> r.forEach(c=> flat.push(c.text)));
+    if(rows.length === 0) rows = parseNoorRows(flat);
+    if(rows.length === 0){
+      setStatus('');
+      showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء من نور — جرّب اللصق اليدوي.');
+      return null;
+    }
+    setStatus('');
+    return { rows, header: parseNoorHeader(flat) };
+  }catch(err){
+    console.warn('تعذّر قراءة PDF', err);
+    setStatus('');
+    showAlertDialog('تعذّرت قراءة الملف: ' + (err && err.message ? err.message : 'خطأ غير معروف'));
+    return null;
+  }
+}
+
+/* اسم شعبة مقترح من ترويسة الكشف — «الأول متوسط / أ» خير من «شعبة 4». */
+function noorSuggestedSectionName(header){
+  const g = (header && header.grade || '').trim();
+  const c = (header && header.section || '').trim();
+  if(g && c) return `${g} / ${c}`;
+  if(c) return `شعبة ${c}`;
+  if(g) return g;
+  return '';
+}
+/* أسماء الشعب مفاتيح، فالتكرار يمنع الإضافة. نُفرِد الاسم بدل ردّ المعلّم
+   خائبًا بعد أن راجع ثلاثين اسمًا. */
+function uniqueSectionName(name){
+  let n = (name||'').trim();
+  if(!n) return n;
+  if(!STATE.sections[n]) return n;
+  let i = 2;
+  while(STATE.sections[`${n} (${i})`]) i++;
+  return `${n} (${i})`;
+}
+
 function showImportPreviewDialog(key, rows, header, source){
+  /* key إمّا اسم شعبة قائمة، أو {newSection:'اسم'} لشعبة تُنشأ الآن. */
+  const isNew = !!(key && typeof key === 'object' && key.newSection);
   __importPreview = { key, rows, header, source };
   const holder = document.getElementById('dialog-holder');
   const hdrBits = [header.school, header.grade, header.section ? 'فصل ' + header.section : ''].filter(Boolean).join(' · ');
@@ -6101,10 +6190,11 @@ function showImportPreviewDialog(key, rows, header, source){
           <input type="checkbox" id="imp-meta" checked>
           تعبئة بيانات الشعبة من الكشف (${escapeAttr([header.grade, header.section?'فصل '+header.section:''].filter(Boolean).join(' · '))})
         </label>` : ``}
+        ${isNew ? `` : `
         <label class="checkbox-row">
           <input type="checkbox" id="imp-fill" checked>
           استخدام الصفوف الفارغة الموجودة أولًا
-        </label>
+        </label>`}
         <div style="display:flex; gap:8px; margin-top:14px;">
           <button type="button" id="imp-cancel" style="flex:1; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
           <button type="button" id="imp-ok" style="flex:1; width:auto; background:var(--teal);">➕ إضافة ${fmt(rows.length)}</button>
@@ -6114,17 +6204,31 @@ function showImportPreviewDialog(key, rows, header, source){
   document.getElementById('imp-cancel').addEventListener('click', ()=>{ __importPreview = null; closeDialog(); });
   document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay'){ __importPreview = null; closeDialog(); } });
   document.getElementById('imp-ok').addEventListener('click', ()=>{
-    const fillEmpty = document.getElementById('imp-fill').checked;
+    const fillEl = document.getElementById('imp-fill');
+    const fillEmpty = fillEl ? fillEl.checked : true;
     const metaEl = document.getElementById('imp-meta');
-    if(metaEl && metaEl.checked){
-      const m = STATE.meta[key];
-      if(header.grade && !((m.subject||'').trim())) { /* الصف ليس مادة — لا نكتبه في المادة */ }
-      if(header.school && !((STATE.letterhead.school||'').trim())) STATE.letterhead.school = header.school;
-      if(header.teacher && !((m.teacher||'').trim())) m.teacher = header.teacher;
-    }
-    addStudentsToSection(key, rows.map(r=>r.name), fillEmpty);
+    const useMeta = !!(metaEl && metaEl.checked);
+    const names = rows.map(r=>r.name);
     __importPreview = null;
     closeDialog();
+
+    let target = key;
+    if(isNew){
+      const created = uniqueSectionName(key.newSection);
+      if(!addSection(created, names)) return;   /* addSection يشرح سبب الرفض */
+      target = created;
+    }else{
+      addStudentsToSection(key, names, fillEmpty);
+    }
+
+    if(useMeta){
+      const m = STATE.meta[target];
+      /* الصف ليس مادة — لا يُكتب في خانة المادة. */
+      if(m && header.teacher && !((m.teacher||'').trim())) m.teacher = header.teacher;
+      if(header.school && !((STATE.letterhead.school||'').trim())) STATE.letterhead.school = header.school;
+      persistState();
+      render();
+    }
   });
 }
 
@@ -6197,33 +6301,8 @@ function showImportStudentsDialog(key){
     if(!file) return;
     const status = document.getElementById('dlg-pdf-status');
     const setStatus = (t)=>{ if(status) status.textContent = t; };
-    setStatus('جارٍ القراءة…');
-    try{
-      const buf = await file.arrayBuffer();
-      const cellRows = await extractPdfCells(buf);
-      if(cellRows.length === 0){
-        setStatus('');
-        showAlertDialog('لا يوجد نص في هذا الملف — يبدو أنه صورة ممسوحة. استخدم اللصق اليدوي.');
-        return;
-      }
-      const decoded = decodeCellRows(cellRows);
-      let rows = parseNoorRowsFromCells(decoded);
-      /* احتياط: بعض القرّاء يعيدون الصف كخلية واحدة، فنجرّب التحليل بالسطور. */
-      const flat = [];
-      decoded.forEach(r=> r.forEach(c=> flat.push(c.text)));
-      if(rows.length === 0) rows = parseNoorRows(flat);
-      if(rows.length === 0){
-        setStatus('');
-        showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء من نور — جرّب اللصق اليدوي.');
-        return;
-      }
-      setStatus('');
-      showImportPreviewDialog(key, rows, parseNoorHeader(flat), file.name);
-    }catch(err){
-      console.warn('تعذّر قراءة PDF', err);
-      setStatus('');
-      showAlertDialog('تعذّرت قراءة الملف: ' + (err && err.message ? err.message : 'خطأ غير معروف'));
-    }
+    const out = await readNoorPdfFile(file, setStatus);
+    if(out) showImportPreviewDialog(key, out.rows, out.header, file.name);
   });
 
   document.getElementById('dlg-btn-pick-excel').addEventListener('click', ()=>{
