@@ -1067,6 +1067,17 @@ body.modal-lock{ overflow:hidden; }
   const SUPABASE_URL = 'https://rvbvdjcbdjioqvwbqwon.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_l7A4ugKx_Mv40R2HJf7dNA_uyxTNY9M';
   window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  /* نستمع من هذه اللحظة بالذات — لا من سكربت لاحق. رابط استعادة كلمة المرور
+     يُعالَج داخل مكتبة Supabase خلال أجزاء من الثانية من إنشاء الاتصال (وتُنظَّف
+     معلوماته من شريط العنوان فور معالجتها)، فلو استمعّت شاشة الدخول لاحقًا في
+     سكربت آخر بعد تحليل بقية الصفحة، يكون الحدث قد مرّ ولم يلتقطه أحد — وهذا
+     بالضبط ما كان يحدث: الرابط يعمل والجلسة تُفتح، لكن لا أحد يسأل عن كلمة
+     مرور جديدة، فيسقط التطبيق إلى شاشة الدخول العادية. */
+  window.__rasdRecoveryPending = false;
+  window.supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') window.__rasdRecoveryPending = true;
+  });
 })();
 </script>
 </head>
@@ -1330,6 +1341,7 @@ body.modal-lock{ overflow:hidden; }
          كلمة مرور جديدة أولًا — وإلا دخل المعلّم ونسي أن يغيّرها فعاد
          مقفولًا عند انتهاء الجلسة. */
       if (event === 'PASSWORD_RECOVERY') {
+        window.__rasdRecoveryPending = true;
         RECOVERY_MODE = true;
         overlay.style.display = '';
         mode = 'reset'; clearError(); updateModeUI(); setBusy(false);
@@ -1340,7 +1352,9 @@ body.modal-lock{ overflow:hidden; }
       if (event === 'SIGNED_OUT') { setTimeout(() => { started = false; window.location.reload(); }, 0); }
     });
     window.rasdAuth = { signOut: async () => { await sb.auth.signOut(); } };
-    /* العنوان يحمل type=recovery حتى قبل أن يُطلق المستمع حدثه. */
+    /* المصدر الأول والموثوق: العلم الذي التقطه المستمع المبكر عند إنشاء
+       الاتصال. العنوان نفسه احتياط إضافي فقط — قد يكون قد نُظِّف بالفعل. */
+    if (window.__rasdRecoveryPending) RECOVERY_MODE = true;
     const hash = String(window.location.hash || '');
     if (/type=recovery/.test(hash)) RECOVERY_MODE = true;
     sb.auth.getSession().then(({ data }) => {
