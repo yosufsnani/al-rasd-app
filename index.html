@@ -1121,7 +1121,11 @@ body.modal-lock{ overflow:hidden; }
     <div id="rasdAuthError" class="rasd-auth-error" style="display:none;"></div>
     <input id="rasdAuthEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email">
     <input id="rasdAuthPassword" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+    <input id="rasdAuthPassword2" type="password" placeholder="أعد كتابة كلمة المرور الجديدة" autocomplete="new-password" style="display:none;">
     <button id="rasdAuthSubmit" class="rasd-auth-btn" type="button">تسجيل الدخول</button>
+    <div class="rasd-auth-switch" id="rasdAuthForgotRow">
+      <button id="rasdAuthForgot" type="button">نسيت كلمة المرور؟</button>
+    </div>
     <div class="rasd-auth-switch">
       <span id="rasdAuthModeText">ليس لديك حساب؟</span>
       <button id="rasdAuthToggle" type="button">إنشاء حساب جديد</button>
@@ -1170,6 +1174,9 @@ body.modal-lock{ overflow:hidden; }
   const submitBtn = document.getElementById('rasdAuthSubmit');
   const toggleBtn = document.getElementById('rasdAuthToggle');
   const modeText = document.getElementById('rasdAuthModeText');
+  const pass2El = document.getElementById('rasdAuthPassword2');
+  const forgotBtn = document.getElementById('rasdAuthForgot');
+  const forgotRow = document.getElementById('rasdAuthForgotRow');
   const errorEl = document.getElementById('rasdAuthError');
   const loadingEl = document.getElementById('rasdAuthLoading');
 
@@ -1177,18 +1184,38 @@ body.modal-lock{ overflow:hidden; }
   function clearError(){ errorEl.style.display = 'none'; }
   function setBusy(v){ if (loadingEl) loadingEl.style.display = v ? 'block' : 'none'; submitBtn.disabled = v; }
 
+  /* الأوضاع: signin | signup | forgot (طلب رابط) | reset (تعيين كلمة جديدة) */
   function updateModeUI(){
-    if (mode === 'signin') {
+    const isReset  = mode === 'reset';
+    const isForgot = mode === 'forgot';
+    passEl.style.display  = (isForgot) ? 'none' : '';
+    pass2El.style.display = (isReset)  ? '' : 'none';
+    emailEl.style.display = (isReset)  ? 'none' : '';
+    forgotRow.style.display = (mode === 'signin') ? '' : 'none';
+    toggleBtn.parentElement.style.display = (isForgot || isReset) ? 'none' : '';
+
+    if (isReset) {
+      submitBtn.textContent = 'حفظ كلمة المرور الجديدة';
+      passEl.placeholder = 'كلمة المرور الجديدة';
+      passEl.setAttribute('autocomplete', 'new-password');
+    } else if (isForgot) {
+      submitBtn.textContent = 'أرسل رابط الاستعادة';
+    } else if (mode === 'signin') {
       submitBtn.textContent = 'تسجيل الدخول';
       modeText.textContent = 'ليس لديك حساب؟';
       toggleBtn.textContent = 'إنشاء حساب جديد';
+      passEl.placeholder = 'كلمة المرور';
+      passEl.setAttribute('autocomplete', 'current-password');
     } else {
       submitBtn.textContent = 'إنشاء حساب';
       modeText.textContent = 'عندك حساب؟';
       toggleBtn.textContent = 'تسجيل الدخول';
+      passEl.placeholder = 'كلمة المرور';
+      passEl.setAttribute('autocomplete', 'new-password');
     }
   }
   toggleBtn.addEventListener('click', () => { mode = mode === 'signin' ? 'signup' : 'signin'; clearError(); updateModeUI(); });
+  forgotBtn.addEventListener('click', () => { mode = 'forgot'; clearError(); updateModeUI(); emailEl.focus(); });
 
   window.addEventListener('error', (e) => { showError('خطأ غير متوقع: ' + (e && e.message ? e.message : String(e))); setBusy(false); });
   window.addEventListener('unhandledrejection', (e) => { const m = e && e.reason && e.reason.message ? e.reason.message : String(e.reason); showError('خطأ غير متوقع: ' + m); setBusy(false); });
@@ -1205,6 +1232,52 @@ body.modal-lock{ overflow:hidden; }
     if (!sb) { showError('تعذر تحميل مكتبة الاتصال بالخادم. حدّث الصفحة وحاول مرة أخرى.'); return; }
     const email = emailEl.value.trim();
     const password = passEl.value;
+
+    /* طلب رابط الاستعادة: البريد وحده يكفي. */
+    if (mode === 'forgot') {
+      if (!email) { showError('اكتب بريدك الإلكتروني أولًا.'); return; }
+      setBusy(true);
+      try {
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { error } = await withTimeout(sb.auth.resetPasswordForEmail(email, { redirectTo }), 15000, 'إرسال رابط الاستعادة');
+        if (error) throw error;
+      } catch (error) {
+        setBusy(false);
+        const m = (error && error.message) || '';
+        if (/rate|too many/i.test(m)) { showError('أُرسلت رسائل كثيرة خلال وقت قصير. انتظر قليلًا ثم أعد المحاولة.'); return; }
+        showError(m || 'تعذّر إرسال رابط الاستعادة.');
+        return;
+      }
+      setBusy(false);
+      /* لا نكشف هل البريد مسجّل أم لا — رسالة واحدة في الحالتين. */
+      showError('إن كان هذا البريد مسجّلًا فستصلك رسالة فيها رابط لتعيين كلمة مرور جديدة. تفقّد صندوق الوارد و«الرسائل غير المرغوبة».');
+      mode = 'signin'; updateModeUI();
+      return;
+    }
+
+    /* تعيين كلمة مرور جديدة بعد فتح رابط الاستعادة. */
+    if (mode === 'reset') {
+      if (!password || password.length < 6) { showError('كلمة المرور لازم تكون ٦ أحرف على الأقل.'); return; }
+      if (password !== pass2El.value) { showError('كلمتا المرور غير متطابقتين.'); return; }
+      setBusy(true);
+      try {
+        const { error } = await withTimeout(sb.auth.updateUser({ password }), 15000, 'تحديث كلمة المرور');
+        if (error) throw error;
+      } catch (error) {
+        setBusy(false);
+        const m = (error && error.message) || '';
+        if (/expired|invalid/i.test(m)) { showError('انتهت صلاحية رابط الاستعادة. اطلب رابطًا جديدًا.'); mode = 'signin'; updateModeUI(); return; }
+        showError(m || 'تعذّر تحديث كلمة المرور.');
+        return;
+      }
+      setBusy(false);
+      passEl.value = ''; pass2El.value = '';
+      mode = 'signin'; updateModeUI();
+      /* الجلسة قائمة أصلًا من رابط الاستعادة، فندخل مباشرة. */
+      hideOverlayAndStart();
+      return;
+    }
+
     if (!email || !password) { showError('عبّي البريد الإلكتروني وكلمة المرور.'); return; }
     if (password.length < 6) { showError('كلمة المرور لازم تكون ٦ أحرف على الأقل.'); return; }
     setBusy(true);
@@ -1232,11 +1305,14 @@ body.modal-lock{ overflow:hidden; }
     }
   }
   submitBtn.addEventListener('click', handleSubmit);
-  passEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSubmit(); });
+  passEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { if (mode === 'reset') pass2El.focus(); else handleSubmit(); } });
+  pass2El.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSubmit(); });
   emailEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') passEl.focus(); });
 
   let started = false;
+  let RECOVERY_MODE = false;
   async function hideOverlayAndStart(){
+    RECOVERY_MODE = false;
     overlay.style.display = 'none';
     if (started) return;
     started = true;
@@ -1250,11 +1326,29 @@ body.modal-lock{ overflow:hidden; }
   } else {
     sb.auth.onAuthStateChange((event, session) => {
       // تأجيل أي استدعاء لاحق لـ Supabase خارج هذا المستمع مباشرة، لتفادي تعليق داخلي معروف بالمكتبة
-      if (event === 'SIGNED_IN' && session) { setTimeout(() => hideOverlayAndStart(), 0); }
+      /* رابط الاستعادة يفتح جلسة مؤقتة: لا ندخل بها التطبيق، بل نطلب
+         كلمة مرور جديدة أولًا — وإلا دخل المعلّم ونسي أن يغيّرها فعاد
+         مقفولًا عند انتهاء الجلسة. */
+      if (event === 'PASSWORD_RECOVERY') {
+        RECOVERY_MODE = true;
+        overlay.style.display = '';
+        mode = 'reset'; clearError(); updateModeUI(); setBusy(false);
+        showError('اكتب كلمة مرور جديدة لحسابك، ثم احفظها.');
+        return;
+      }
+      if (event === 'SIGNED_IN' && session && !RECOVERY_MODE) { setTimeout(() => hideOverlayAndStart(), 0); }
       if (event === 'SIGNED_OUT') { setTimeout(() => { started = false; window.location.reload(); }, 0); }
     });
     window.rasdAuth = { signOut: async () => { await sb.auth.signOut(); } };
+    /* العنوان يحمل type=recovery حتى قبل أن يُطلق المستمع حدثه. */
+    const hash = String(window.location.hash || '');
+    if (/type=recovery/.test(hash)) RECOVERY_MODE = true;
     sb.auth.getSession().then(({ data }) => {
+      if (RECOVERY_MODE) {
+        mode = 'reset'; clearError(); updateModeUI(); setBusy(false);
+        showError('اكتب كلمة مرور جديدة لحسابك، ثم احفظها.');
+        return;
+      }
       if (data && data.session) hideOverlayAndStart();
       else setBusy(false);
     }).catch((err) => {
@@ -2756,6 +2850,7 @@ function renderGuideCard(){
       <h3>حسابك وبياناتك</h3>
       <ul>
         <li>رصدك <b>يُحفظ تلقائيًا</b> في حسابك السحابي، وتفتحه من أي جهاز بنفس البريد وكلمة المرور. لا يوجد زر «حفظ».</li>
+        <li><b>نسيت كلمة المرور؟</b> من شاشة الدخول اضغط «نسيت كلمة المرور؟» واكتب بريدك، فيصلك رابط تُعيّن به كلمة جديدة. <b>بياناتك لا تتأثر</b> — الحساب هو نفسه. وإن لم تجد الرسالة فتفقّد «الرسائل غير المرغوبة».</li>
         <li>عند انقطاع الشبكة يبقى العمل محفوظًا على جهازك ويُرفع وحده عند عودتها.</li>
         <li>لو عدّلت من جهازين في وقت واحد، يسألك التطبيق أيّ نسخة تُبقي — ويعرض عليك تنزيل نسخة احتياطية أولًا.</li>
         <li><b>📦 نسخة احتياطية</b> و<b>📂 استعادة نسخة</b> (ملف JSON) خيار إضافي على جهازك.</li>
