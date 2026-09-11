@@ -2826,7 +2826,7 @@ function renderGuideCard(){
 
       <h3>ماذا أفعل بمن تعثّر؟ (تبويب المتابعة)</h3>
       <ul>
-        <li><b>📋 إحالة</b> — نموذج يُحوَّل إلى <b>المرشد الطلابي</b> أو <b>وكيل شؤون الطلاب</b>، ويُعبّأ من رصد الطالب نفسه. اطبعه، أو «💾 حفظ في السجل» ليبقى موثّقًا. ومن أعلى القائمة تطبع <b>كل الإحالات دفعة واحدة</b>.</li>
+        <li><b>📋 إحالة</b> — نموذج يُحوَّل إلى <b>المرشد الطلابي</b> أو <b>وكيل شؤون الطلاب</b>، ويُعبّأ من رصد الطالب نفسه. اطبعه، أو «💾 حفظ في السجل» ليبقى موثّقًا. ومن أعلى القائمة «🖨️ طباعة كل تقارير الإحالة» تُجهّز تقريرًا لكل من يحتاج متابعة دفعة واحدة، وتسألك أولًا: حفظ في السجل، أم طباعة فقط، أم إلغاء.</li>
         <li><b>👪 تقرير ولي الأمر</b> — كشف مستوى كامل بالدرجات والبنود والمهام المتأخرة وتوصية جاهزة. مثل الإحالة، له «💾 حفظ في السجل» يوثّق أنك طبعته وسلّمته، بلا حاجة للطباعة الفعلية.</li>
         <li><b>📲 مشاركة الحالة</b> — نصّ جاهز لولي الأمر عبر واتساب، قابل للتعديل قبل الإرسال.</li>
         <li><b>☎️ تسجيل تواصل</b> — وثّق كل اتصال: السبب، الوسيلة، مع من، ما دار، والإجراء المتخذ.</li>
@@ -8035,18 +8035,46 @@ function printAnalysisReport(){
 }
 
 // طباعة تقرير إحالة واحد لكل طالب "يحتاج متابعة" ضمن نفس أمر الطباعة (كل
-// تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. كل تقرير يُحفظ في
-// سجل الإجراءات أيضًا — بنفس ما يحفظه مسار "📋 إحالة" الفردي حين لا يُعدَّل
-// شيء فيه — فلا يعود الفرق الوحيد بين الدفعة والفردي هو التوثيق.
+// تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. الحفظ في سجل
+// الإجراءات هنا خيار صريح لا تلقائي — كأول محاولة جعلته يحفظ الجميع بلا
+// سؤال، لكن معلّمًا يعيد طباعة الدفعة نفسها (نسخة ثانية ضاعت مثلًا) لا يريد
+// إحالات مكرّرة في السجل في كل مرة. فصارت الخيارات الثلاثة مطابقة تمامًا
+// لما يعرضه مسار "📋 إحالة" الفردي: إلغاء، حفظ بلا طباعة، طباعة بلا حفظ —
+// والمعلّم يختار حسب موقفه، لا القالب يفرض عليه أحدهما.
 function printAllFollowUpReferrals(){
   const followUps = needsFollowUpList();
   if(followUps.length===0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }
-  const holder = document.getElementById('print-referral-holder');
   const reports = followUps.map(f => buildDefaultReferralData(f.key, f.idx));
-  reports.forEach(data => saveReferralToArchive(data));
-  holder.innerHTML = reports.map(data => referralSheetHtml(data)).join('');
-  showToast(`تم تجهيز ${followUps.length} تقرير، وحُفظت جميعها في سجل الإجراءات`);
-  printHolder(holder);
+
+  const doPrint = ()=>{
+    const holder = document.getElementById('print-referral-holder');
+    holder.innerHTML = reports.map(data => referralSheetHtml(data)).join('');
+    printHolder(holder);
+  };
+  const doSave = ()=>{
+    reports.forEach(data => saveReferralToArchive(data));
+    showToast(`حُفظت ${reports.length} إحالة في سجل الإجراءات`);
+  };
+
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:430px;">
+        <h3>🖨️ طباعة كل تقارير الإحالة</h3>
+        <p style="margin:0 0 14px; font-size:12.5px; color:var(--muted); line-height:1.9;">
+          سيُجهَّز تقرير إحالة مستقل لكل من الـ<b>${fmt(reports.length)}</b> طالبًا الذين يحتاجون متابعة الآن.
+        </p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="paf-cancel" style="flex:1 1 100%; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
+          <button type="button" id="paf-save" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">💾 حفظ في السجل</button>
+          <button type="button" id="paf-print" style="flex:1; width:auto; background:var(--teal);">🖨️ طباعة التقارير</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('paf-cancel').addEventListener('click', closeDialog);
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('paf-save').addEventListener('click', ()=>{ closeDialog(); doSave(); });
+  document.getElementById('paf-print').addEventListener('click', ()=>{ closeDialog(); doPrint(); });
 }
 
 
