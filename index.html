@@ -4143,6 +4143,24 @@ function lastContactFor(key, name){
   if(list.length===0) return null;
   return list.slice().sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''))[0];
 }
+/* آخر ما اتُّخذ مع الطالب من سجل الإجراءات كاملًا — إحالة أو تواصل معًا،
+   لا التواصل وحده كما كان: معلّم يحيل طالبًا للمرشد ثم يُحفظ التقرير كان
+   يرى «لم يتم التواصل» رغم أن إحالة موثّقة موجودة فعلًا. actionLogRows()
+   تُرتِّب الاثنين معًا وتُسقِط كلًّا منهما على نفس المقياس الثلاثي
+   (نعم/لا/متابعة مستمرة)، فنكتفي بأول نتيجة تخصّ هذا الطالب في هذه الشعبة. */
+function lastActionFor(key, name){
+  const n = (name||'').trim();
+  if(n==='') return null;
+  return actionLogRows().find(r=> r.section===key && (r.name||'').trim()===n) || null;
+}
+/* لون شارة «آخر إجراء» من نتيجة الحسم الموحّدة (LOG_YES/LOG_NO/LOG_GOING)
+   لا من نص الحالة نفسه — فحالات الإحالة (قيد المتابعة/أُغلقت) والتواصل
+   (لم يُرد/بانتظار الرد) مختلفة النصوص لكنها تتفق على معنى الحسم. */
+function cstatClassFromResolved(resolved){
+  if(resolved===LOG_YES) return 'cs-done';
+  if(resolved===LOG_NO) return 'cs-none';
+  return 'cs-wait';
+}
 function saveContact(data){
   const entry = Object.assign({}, data, {
     id: 'ct_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
@@ -4171,10 +4189,10 @@ function renderFollowUpCard(opts){
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
     <table class="followup-table">
-      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th>${bhEnabled()?`<th>السلوك</th>`:``}<th>حالة التواصل</th><th></th></tr></thead>
+      <thead><tr><th>الطالب</th><th>الشعبة</th><th>الخطورة</th><th>السبب</th><th>الإنجاز</th><th>التأخيرات</th><th>عدم التسليم</th>${bhEnabled()?`<th>السلوك</th>`:``}<th>آخر إجراء</th><th></th></tr></thead>
       <tbody>
         ${followUps.map(f=>{
-          const ct = lastContactFor(f.key, f.name);
+          const act = lastActionFor(f.key, f.name);
           return `<tr class="sev-${f.severity}">
           <td class="fu-name">${escapeAttr(f.name)}</td>
           <td>${escapeAttr(f.key)}</td>
@@ -4184,9 +4202,9 @@ function renderFollowUpCard(opts){
           <td>${f.lateCount}</td>
           <td>${f.missCount}</td>
           ${bhEnabled()?`<td>${f.bhTotal>0 ? f.bhTotal : '—'}</td>`:``}
-          <td>${ct
-            ? `<span class="cstat ${contactStatusClass(ct.status)}">${escapeAttr(ct.status)}</span><br><span style="font-size:10px; color:var(--muted);">${escapeAttr(ct.savedAtHijri||'')}</span>`
-            : `<span class="cstat cs-never">لم يتم التواصل</span>`}</td>
+          <td>${act
+            ? `<span class="cstat ${cstatClassFromResolved(act.resolved)}">${escapeAttr(act.status)}</span><br><span style="font-size:10px; color:var(--muted);">${escapeAttr(act.typeLabel)} · ${escapeAttr(act.dateHijri||'')}</span>`
+            : `<span class="cstat cs-never">لا إجراء بعد</span>`}</td>
           <td>
             <div class="fu-actions">
               <button type="button" class="fu-open-btn" data-key="${escapeAttr(f.key)}" data-idx="${f.idx}">📋 إحالة</button>
@@ -4268,14 +4286,14 @@ function renderHonoursCard(){
 function renderFollowUpView(){
   const followUps = needsFollowUpList();
   const urgent = followUps.filter(f=>f.severity==='urgent').length;
-  const contacted = followUps.filter(f=>lastContactFor(f.key, f.name)).length;
+  const contacted = followUps.filter(f=>lastActionFor(f.key, f.name)).length;
   const summary = `
   <div class="card">
     <h2>📌 حالة المتابعة</h2>
     <div class="ref-summary">
       <div class="ref-summary-item" style="background:var(--red);"><span class="v" style="color:var(--red-t);">${urgent}</span><span style="color:var(--red-t);">حالة عاجلة</span></div>
       <div class="ref-summary-item rs-pending"><span class="v">${followUps.length}</span><span>يحتاج متابعة</span></div>
-      <div class="ref-summary-item rs-contacted"><span class="v">${contacted}</span><span>تم التواصل بشأنهم</span></div>
+      <div class="ref-summary-item rs-contacted"><span class="v">${contacted}</span><span>اتُّخذ إجراء بشأنهم</span></div>
       <div class="ref-summary-item rs-closed"><span class="v">${STATE.referrals.length}</span><span>إحالة محفوظة</span></div>
     </div>
   </div>`;
