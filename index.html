@@ -1574,7 +1574,7 @@ let STATE = {
    وهو ما يحدث فعلًا عند استعادة نسخة احتياطية تالفة، فيموت الاستيراد بلا رسالة. */
 function freshState(){
   const seedKeys = Object.keys(SEED);
-  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, picker:{ fair:true, round:[] }, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [], behaviour: blankBehaviour(), behaviours: {}, seedCleaned: true };
+  const s = { activeView:'home', activeTab: seedKeys[0] || null, rosterView:'table', quickItem:null, picker:{ fair:true, round:[] }, attDayIndex:null, attendance:blankAttendance(), attDays:{}, sections:{}, meta:{}, letterhead: blankLetterhead(), letterheadOpen: false, signature:'', signatureOpen: false, sectionMetaOpen: true, config: blankConfig(), configOrder: blankConfigOrder(), configOpen: false, guideOpen: false, toolsOpen: false, datesOpen: false, sectionOrder: seedKeys.slice(), referrals: [], contacts: [], behaviour: blankBehaviour(), behaviours: {}, seedCleaned: true, bhItemsOpen: false, panelsCollapsedOnce: true };
   for(const k of seedKeys){
     s.sections[k] = SEED[k].map(row => ({
       name: row.name || "",
@@ -1665,17 +1665,31 @@ function looksLikeState(obj){
 function normalizeLoadedState(obj){
   if(looksLikeState(obj)){
     if(!obj.letterhead) obj.letterhead = blankLetterhead();
-    if(typeof obj.letterheadOpen !== 'boolean') obj.letterheadOpen = true;
+    /* كانت تُفتح افتراضيًا (true) لحسابات قديمة لا تملك هذا الحقل بعد —
+       قرار معقول يوم كان تبويب حسابي صغيرًا. صار الآن يحوي الحضورَ والسلوكَ
+       أيضًا، وثلاث لوحات مفتوحة قسرًا مع بنود السلوك (عشرون بندًا) تُغرق
+       الصفحة. الحسابان الجديد والقديم يتّفقان الآن على مطويّ افتراضيًا،
+       وحسابات فيها هذه اللوحات مفتوحة فعلًا من التخزين القديم تُطوى مرة واحدة
+       أدناه (panelsCollapsedOnce) — لا في كل تحميل، حتى لا نلغي فتحًا اختاره
+       المعلّم بنفسه لاحقًا. */
+    if(typeof obj.letterheadOpen !== 'boolean') obj.letterheadOpen = false;
     if(typeof obj.signature !== 'string') obj.signature = '';
-    if(typeof obj.signatureOpen !== 'boolean') obj.signatureOpen = true;
+    if(typeof obj.signatureOpen !== 'boolean') obj.signatureOpen = false;
     if(typeof obj.sectionMetaOpen !== 'boolean') obj.sectionMetaOpen = true;
     const nc = normalizeConfig(obj.config, obj.configOrder);
     obj.config = nc.config;
     obj.configOrder = nc.order;
-    if(typeof obj.configOpen !== 'boolean') obj.configOpen = true;
+    if(typeof obj.configOpen !== 'boolean') obj.configOpen = false;
     if(typeof obj.guideOpen !== 'boolean') obj.guideOpen = false;
     if(typeof obj.toolsOpen !== 'boolean') obj.toolsOpen = false;
     if(typeof obj.datesOpen !== 'boolean') obj.datesOpen = false;
+    if(typeof obj.bhItemsOpen !== 'boolean') obj.bhItemsOpen = false;
+    if(obj.panelsCollapsedOnce !== true){
+      obj.letterheadOpen = false;
+      obj.signatureOpen = false;
+      obj.configOpen = false;
+      obj.panelsCollapsedOnce = true;
+    }
     if(!Array.isArray(obj.contacts)) obj.contacts = [];
     /* السلوك: كالحضور — الإطفاء يخفي الواجهة ولا يحذف سجلًا. */
     const bset = (obj.behaviour && typeof obj.behaviour === 'object') ? obj.behaviour : {};
@@ -2650,7 +2664,11 @@ function renderBehaviourCard(){
       <span class="sw-track"><span class="sw-knob"></span></span>
     </label>
 
-    <h3 style="font-size:12.5px; font-weight:500; margin:16px 0 4px; color:var(--text);">بنود السلوك</h3>
+    <h3 style="display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; font-weight:500; margin:16px 0 4px; color:var(--text);">
+      <span>بنود السلوك (${fmt(bhItems().length)})</span>
+      <button type="button" id="btn-toggle-bh-items" class="icon-btn" style="background:#eef2f7; color:var(--navy); border-color:var(--border); padding:5px 10px; font-size:11.5px;">${STATE.bhItemsOpen ? "🔼 إخفاء" : "🔽 إظهار وتعديل"}</button>
+    </h3>
+    ${STATE.bhItemsOpen ? `
     <div class="hint" style="margin-bottom:8px;">احذف ما لا يناسب مادتك وأضف ما ينقصك — ما يحتاجه معلّم الرياضة غير ما يحتاجه معلّم العلوم. حذف بند <b>لا يمحو</b> ما سُجِّل به سابقًا.</div>
     ${groups.map(g=>`
       <div style="margin-bottom:10px;">
@@ -2675,6 +2693,7 @@ function renderBehaviourCard(){
       </select>
       <button type="button" id="bh-add-item">إضافة</button>
     </div>
+    ` : ``}
     ` : ``}
   </div>
 `;
@@ -5632,6 +5651,12 @@ function wireSettingsPanelEvents(){
   if(bhRef) bhRef.addEventListener('change', ()=>{ bhSettings().inReferral = bhRef.checked; persistState(); });
   const bhPar = document.getElementById('bh-in-parent');
   if(bhPar) bhPar.addEventListener('change', ()=>{ bhSettings().inParent = bhPar.checked; persistState(); });
+  const btnToggleBhItems = document.getElementById('btn-toggle-bh-items');
+  if(btnToggleBhItems) btnToggleBhItems.addEventListener('click', ()=>{
+    STATE.bhItemsOpen = !STATE.bhItemsOpen;
+    persistState();
+    render();
+  });
 
   document.querySelectorAll('[data-bh-level]').forEach(sel=>{
     sel.addEventListener('change', ()=>{
