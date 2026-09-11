@@ -409,10 +409,22 @@ td.cell .sym svg{width:16px; height:16px;}
 .dates-group:last-of-type{margin-bottom:0;}
 .dg-head{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:500; color:var(--text); margin-bottom:7px;}
 .dg-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(148px,1fr)); gap:8px;}
-.dg-cell{display:flex; flex-direction:column; gap:3px; border:1px solid var(--border); border-radius:10px; padding:7px 9px; background:var(--bg);}
-.dg-cell > span{font-size:10.5px; font-weight:500; color:var(--muted);}
+.dg-cell{position:relative; border:1px solid var(--border); border-radius:10px; padding:7px 9px; background:var(--bg);}
+.dg-cell.has{border-color:var(--teal-soft); background:var(--card);}
+.dg-lab{display:flex; flex-direction:column; gap:3px; cursor:pointer;}
+.dg-lab > span{font-size:10.5px; font-weight:500; color:var(--muted);}
 .dg-cell input{width:100%; border:none; background:none; font-family:inherit; font-size:12px; color:var(--text); padding:0;}
 .dg-cell i{font-style:normal; font-size:10px; color:var(--teal-d);}
+/* مسح موعد خانة بعينها. حقل التاريخ الأصلي لا يعطي وسيلة مسحٍ يعتمد عليها
+   على أندرويد، فكان «مسح كل المواعيد» هو المخرج الوحيد لمن أخطأ في موعد
+   واحد. يظهر الزر على الخانات المؤرّخة وحدها. */
+.dg-clear{
+  position:absolute; top:3px; inset-inline-start:3px;
+  width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center;
+  padding:0; border:none; border-radius:7px; background:transparent;
+  color:var(--muted); font-size:14px; line-height:1; cursor:pointer;
+}
+.dg-clear:hover,.dg-clear:active{background:var(--red); color:var(--red-t);}
 
 /* رقم الخانة في رأس الجدول يفتح موعدها */
 th.due-th{cursor:pointer; position:relative;}
@@ -2831,6 +2843,17 @@ function itemDueDate(k, gi){
   if(!c || !Array.isArray(c.dates)) return '';
   return c.dates[gi] || '';
 }
+/* الكتابة الوحيدة لموعد خانة: تُنشئ مصفوفة dates إن لم تكن، وتحفظ وتُعيد الرسم.
+   يستعملها حقل التاريخ في صفحة المواعيد، وزرّ ✕ عليها، ونافذة رأس الجدول. */
+function setItemDueDate(k, gi, val){
+  const c = STATE.config[k];
+  if(!c || !(gi >= 0) || gi >= c.count) return false;
+  if(!Array.isArray(c.dates)) c.dates = Array(c.count).fill('');
+  c.dates[gi] = val || '';
+  persistState();
+  render();
+  return true;
+}
 function itemLabelWithDate(k, gi){
   const name = `${STATE.config[k].name} ${gi+1}`;
   const h = hijriFromISO(itemDueDate(k, gi));
@@ -2845,17 +2868,23 @@ function renderDatesPage(){
   const filled = datedItemCount();
   return `
   <div class="card meta-card">
-    <div class="hint" style="margin-top:0; margin-bottom:10px;">اختياري بالكامل: البند بلا تاريخ يعمل كما هو. الفائدة أن تقرير ولي الأمر وتقرير الإحالة يذكران <b>«الواجب ٣ — ١٥ محرم — لم يسلّم»</b> بدل رقم مجرّد. اختر التاريخ ميلاديًا من تقويم جهازك، ويُعرض في التقارير هجريًا. حُدِّد ${fmt(filled)} من ${fmt(total)} موعدًا.</div>
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">اختياري بالكامل: البند بلا تاريخ يعمل كما هو. الفائدة أن تقرير ولي الأمر وتقرير الإحالة يذكران <b>«الواجب ٣ — ١٥ محرم — لم يسلّم»</b> بدل رقم مجرّد. اختر التاريخ ميلاديًا من تقويم جهازك، ويُعرض في التقارير هجريًا. ولمسح موعد واحد اضغط <b>✕</b> في زاوية خانته. حُدِّد ${fmt(filled)} من ${fmt(total)} موعدًا.</div>
     ${CAT_KEYS.map(k=>`
       <div class="dates-group">
         <div class="dg-head"><span class="cfg-dot" style="background:${catColor(k)};"></span>${escapeAttr(STATE.config[k].name)}</div>
         <div class="dg-grid">
-          ${Array.from({length: STATE.config[k].count}, (_,gi)=>`
-            <label class="dg-cell">
-              <span>${gi+1}</span>
-              <input type="date" data-due-key="${k}" data-due-gi="${gi}" value="${escapeAttr(itemDueDate(k,gi))}">
-              <i>${escapeAttr(hijriFromISO(itemDueDate(k,gi)) || '—')}</i>
-            </label>`).join("")}
+          ${Array.from({length: STATE.config[k].count}, (_,gi)=>{
+            const due = itemDueDate(k,gi);
+            return `
+            <div class="dg-cell${due ? ' has' : ''}">
+              <label class="dg-lab">
+                <span>${gi+1}</span>
+                <input type="date" data-due-key="${k}" data-due-gi="${gi}" value="${escapeAttr(due)}">
+                <i>${escapeAttr(hijriFromISO(due) || '—')}</i>
+              </label>
+              ${due ? `<button type="button" class="dg-clear" data-due-clear="${k}" data-due-clear-gi="${gi}" title="مسح موعد ${escapeAttr(STATE.config[k].name)} ${gi+1}" aria-label="مسح موعد ${escapeAttr(STATE.config[k].name)} ${gi+1}">✕</button>` : ``}
+            </div>`;
+          }).join("")}
         </div>
       </div>`).join("")}
     <div class="toolbar" style="margin-top:10px; margin-bottom:0;">
@@ -2890,11 +2919,8 @@ function showDueDateDialog(k, gi){
   input.addEventListener('change', ()=>{ label.textContent = hijriFromISO(input.value) || 'بلا موعد محدد'; });
   document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
   const apply = (val)=>{
-    if(!Array.isArray(STATE.config[k].dates)) STATE.config[k].dates = Array(STATE.config[k].count).fill('');
-    STATE.config[k].dates[gi] = val;
-    persistState();
     closeDialog();
-    render();
+    setItemDueDate(k, gi, val);
     showToast(val ? 'تم حفظ الموعد' : 'تم مسح الموعد');
   };
   document.getElementById('due-save').addEventListener('click', ()=> apply(input.value || ''));
@@ -5784,13 +5810,18 @@ function wireSettingsPanelEvents(){
 
   document.querySelectorAll('[data-due-key]').forEach(inp=>{
     inp.addEventListener('change', ()=>{
-      const k = inp.getAttribute('data-due-key');
-      const gi = parseInt(inp.getAttribute('data-due-gi'));
-      if(!STATE.config[k]) return;
-      if(!Array.isArray(STATE.config[k].dates)) STATE.config[k].dates = Array(STATE.config[k].count).fill('');
-      STATE.config[k].dates[gi] = inp.value || '';
-      persistState();
-      render();
+      setItemDueDate(inp.getAttribute('data-due-key'), parseInt(inp.getAttribute('data-due-gi')), inp.value || '');
+    });
+  });
+  /* ✕ على الخانة المؤرّخة: مسحٌ فوري بلا تأكيد — الموعد وحده يُمسح، والرصد
+     لا يتأثر، وإعادته ضغطةٌ واحدة. */
+  document.querySelectorAll('[data-due-clear]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const k = btn.getAttribute('data-due-clear');
+      const gi = parseInt(btn.getAttribute('data-due-clear-gi'));
+      if(!setItemDueDate(k, gi, '')) return;
+      showToast(`تم مسح موعد ${STATE.config[k].name} ${gi+1}`);
     });
   });
   const btnClearDates = document.getElementById('btn-clear-dates');
