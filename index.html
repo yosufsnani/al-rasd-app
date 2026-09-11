@@ -2816,7 +2816,7 @@ function renderGuideCard(){
       <h3>ماذا أفعل بمن تعثّر؟ (تبويب المتابعة)</h3>
       <ul>
         <li><b>📋 إحالة</b> — نموذج يُحوَّل إلى <b>المرشد الطلابي</b> أو <b>وكيل شؤون الطلاب</b>، ويُعبّأ من رصد الطالب نفسه. اطبعه، أو «💾 حفظ في السجل» ليبقى موثّقًا. ومن أعلى القائمة تطبع <b>كل الإحالات دفعة واحدة</b>.</li>
-        <li><b>👪 تقرير ولي الأمر</b> — كشف مستوى كامل بالدرجات والبنود والمهام المتأخرة وتوصية جاهزة.</li>
+        <li><b>👪 تقرير ولي الأمر</b> — كشف مستوى كامل بالدرجات والبنود والمهام المتأخرة وتوصية جاهزة. مثل الإحالة، له «💾 حفظ في السجل» يوثّق أنك طبعته وسلّمته، بلا حاجة للطباعة الفعلية.</li>
         <li><b>📲 مشاركة الحالة</b> — نصّ جاهز لولي الأمر عبر واتساب، قابل للتعديل قبل الإرسال.</li>
         <li><b>☎️ تسجيل تواصل</b> — وثّق كل اتصال: السبب، الوسيلة، مع من، ما دار، والإجراء المتخذ.</li>
         <li><b>🗂️ سجل الإجراءات</b> — الإحالات ومحاولات التواصل في <b>جدول واحد</b> بترتيب أعمدة كشف المتابعة: الشعبة، الطالب، السبب، التاريخ، الوسيلة، مع من، ملاحظات، الإجراء المتخذ، <b>تم الحل؟</b>، تحويل إلى. صفِّه بالرقائق (إحالات / تواصل / لم تُحل بعد)، و<b>🖨️ طباعة السجل</b> تطبع المعروض بترويسة المدرسة وسطر توقيعات. هذا ما يُطلب منك عادة عند رفع الحالة للإدارة.</li>
@@ -4352,6 +4352,7 @@ function contactReasonFor(key, name){
   if(c.missCount>=3) parts.push('عدم تسليم متكرر');
   if(c.lateCount>=5) parts.push('تأخير متكرر');
   if(c.assessed>=3 && c.ratio!==null && c.ratio<0.6) parts.push('تدني الدرجات');
+  if(bhEnabled() && bhStats(key, n).level) parts.push('تكرار المخالفات السلوكية');
   return parts.length ? parts.join('، ') : '—';
 }
 
@@ -7508,6 +7509,28 @@ function showShareFallbackDialog(text){
   });
 }
 
+/* «حفظ في السجل» هنا يعني تسجيل أن التقرير طُبع/سُلِّم — إجراء توثيقي في
+   سجل الإجراءات، بنفس آلية سجل التواصل (kind:'ct')، لا حقلًا جديدًا. هذا
+   يعطيه كل ما يملكه سجل التواصل مجانًا: التصفية، الطباعة، وتعديل الحالة —
+   بلا أي تعديل على actionLogRows. */
+function saveParentReportToLog(key, idx, includedBehaviour){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return null;
+  const action = includedBehaviour
+    ? 'طُبع تقرير مستوى للطالب مع السجل السلوكي'
+    : 'طُبع تقرير مستوى للطالب';
+  return saveContact({
+    key, name: row.name,
+    method: 'تقرير ولي الأمر',
+    status: 'تم التواصل',
+    person: 'ولي الأمر',
+    reason: contactReasonFor(key, row.name),
+    action,
+    note: '',
+    dateHijri: getHijriDateStr()
+  });
+}
+
 function printParentReport(key, idx){
   const row = STATE.sections[key] && STATE.sections[key][idx];
   if(!row) return;
@@ -7521,9 +7544,8 @@ function printParentReport(key, idx){
     printHolder(holder);
   };
 
-  /* السؤال يظهر فقط لمن له سجل سلوكي — بقية الطلاب تبقى الطباعة عندهم بضغطة. */
   const st = bhEnabled() ? bhStats(key, row.name) : null;
-  if(!st || st.total===0){ emit(false); return; }
+  const hasBh = !!(st && st.total>0);
 
   const holder = document.getElementById('dialog-holder');
   holder.innerHTML = `
@@ -7531,19 +7553,32 @@ function printParentReport(key, idx){
       <div class="warn-modal" style="max-width:430px;">
         <h3>👪 تقرير ولي الأمر</h3>
         <p style="margin:0 0 10px; font-size:12.5px; color:var(--muted);">${escapeAttr(row.name)} — ${escapeAttr(key)}</p>
+        ${hasBh ? `
         <div class="bh-meter">${bhSummaryPills(st)}</div>
-        <div class="hint" style="margin-bottom:14px;">للطالب <b>${st.total}</b> ملاحظة سلوكية مؤرّخة. إن أدرجتها طُبع الملخّص وآخر خمس وقائع <b>مع كل الإيجابيات</b>.</div>
+        <label class="checkbox-row" style="margin-bottom:14px;">
+          <input type="checkbox" id="pr-include-bh" checked>
+          تضمين السجل السلوكي (${st.total} ملاحظة) — الملخّص وآخر خمس وقائع مع كل الإيجابيات
+        </label>` : ``}
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" id="pr-cancel" style="flex:1 1 100%; width:auto; background:#eef2f7; color:var(--text);">إلغاء</button>
-          <button type="button" id="pr-without" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">بدون السلوك</button>
-          <button type="button" id="pr-with" style="flex:1; width:auto; background:var(--teal);">🖨️ مع السجل السلوكي</button>
+          <button type="button" id="pr-save" style="flex:1; width:auto; background:#eef2f7; color:var(--navy); border:1px solid var(--border);">💾 حفظ في السجل</button>
+          <button type="button" id="pr-print" style="flex:1; width:auto; background:var(--teal);">🖨️ طباعة التقرير</button>
         </div>
       </div>
     </div>`;
+  const includeBh = ()=> hasBh && !!document.getElementById('pr-include-bh').checked;
   document.getElementById('pr-cancel').addEventListener('click', closeDialog);
   document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
-  document.getElementById('pr-without').addEventListener('click', ()=>{ closeDialog(); emit(false); });
-  document.getElementById('pr-with').addEventListener('click', ()=>{ closeDialog(); emit(true); });
+  document.getElementById('pr-save').addEventListener('click', ()=>{
+    saveParentReportToLog(key, idx, includeBh());
+    closeDialog();
+    showToast('تم حفظ التقرير في سجل الإجراءات');
+  });
+  document.getElementById('pr-print').addEventListener('click', ()=>{
+    const wb = includeBh();
+    closeDialog();
+    emit(wb);
+  });
 }
 
 
