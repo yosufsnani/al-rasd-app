@@ -263,14 +263,25 @@ td.cell .sym svg{width:16px; height:16px;}
 .sw-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
 .sw-body b{font-size:13px; font-weight:500; color:var(--text);}
 .sw-body i{font-style:normal; font-size:11px; font-weight:300; color:var(--muted); line-height:1.75;}
-.sw-row input{position:absolute; opacity:0; width:0; height:0;}
+/* بعض المتصفحات (سامسونج إنترنت خصوصًا مع الوضع الداكن التلقائي) ترسم
+   خانة الاختيار الأصلية فوق الشكل المخصَّص رغم إخفائها بالحجم صفر —
+   فيظهر المفتاح ممطوطًا مشوَّهًا. appearance:none تمنع رسمها من الأساس،
+   وforced-color-adjust تمنع «التصحيح التلقائي» من إعادة رسم .sw-track
+   والمقبض كعنصر تحكّم أصلي. */
+.sw-row input{
+  position:absolute; opacity:0; width:0; height:0; margin:0; padding:0;
+  -webkit-appearance:none; appearance:none;
+}
 .sw-track{
-  flex:0 0 auto; width:44px; height:26px; border-radius:14px; background:var(--surface-2);
-  border:1px solid var(--border); position:relative; transition:background .15s; margin-top:2px;
+  flex:0 0 44px; width:44px; height:26px; box-sizing:border-box; border-radius:14px;
+  background:var(--surface-2); border:1px solid var(--border); position:relative;
+  transition:background .15s; margin-top:2px;
+  -webkit-appearance:none; appearance:none; forced-color-adjust:none;
 }
 .sw-knob{
-  position:absolute; top:2px; inset-inline-end:2px; width:20px; height:20px; border-radius:50%;
-  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.18); transition:transform .15s;
+  position:absolute; top:2px; inset-inline-end:2px; width:20px; height:20px; box-sizing:border-box;
+  border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.18); transition:transform .15s;
+  forced-color-adjust:none;
 }
 .sw-row input:checked ~ .sw-track{background:var(--teal); border-color:var(--teal);}
 .sw-row input:checked ~ .sw-track .sw-knob{transform:translateX(-18px);}
