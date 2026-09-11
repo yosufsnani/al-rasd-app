@@ -4884,6 +4884,15 @@ function render(){
   const main = document.getElementById('main');
   const view = STATE.activeView;
 
+  /* الجدول (.table-wrap) يُستبدل بالكامل بعنصر DOM جديد في كل render() —
+     حتى عند رصد خانة واحدة فقط — فيبدأ ذلك العنصر الجديد بتمرير أفقي صفري.
+     كان هذا يبدو وكأن الشاشة «تقفز لأول بند» عند رصد خانة بعيدة، رغم أن
+     الإعادة تحدث دائمًا؛ الفرق أنها لا تُلاحَظ إلا حين تكون بعيدًا عن
+     البداية أصلًا. نحفظ موضع التمرير الحالي هنا، ونستعيده على العنصر
+     الجديد بعد إعادة البناء أسفل هذه الدالة. */
+  const prevTableWrap = main.querySelector('.table-wrap');
+  const prevScrollLeft = prevTableWrap ? prevTableWrap.scrollLeft : null;
+
   if(view === 'home'){
     main.innerHTML = renderHome();
     wireHomeEvents();
@@ -4910,6 +4919,10 @@ function render(){
     main.innerHTML = renderSectionSheet(STATE.activeTab);
     wireSectionEvents(STATE.activeTab);
     flashHighlightedRow();
+    if(prevScrollLeft !== null){
+      const wrap = main.querySelector('.table-wrap');
+      if(wrap) wrap.scrollLeft = prevScrollLeft;
+    }
     const headerLogo = document.querySelector('header.app-top img');
     const printLogo = document.querySelector('.print-logo');
     if(headerLogo && printLogo) printLogo.src = headerLogo.src;
