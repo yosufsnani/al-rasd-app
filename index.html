@@ -8006,16 +8006,17 @@ function printAnalysisReport(){
 }
 
 // طباعة تقرير إحالة واحد لكل طالب "يحتاج متابعة" ضمن نفس أمر الطباعة (كل
-// تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. ملاحظة: هذه
-// الدفعة لا تُحفظ في سجل الإجراءات، بخلاف مسار "📋 إحالة" الفردي.
+// تقرير بصفحته)، بدل تنزيل ملف PDF مُجمَّع عبر html2canvas. كل تقرير يُحفظ في
+// سجل الإجراءات أيضًا — بنفس ما يحفظه مسار "📋 إحالة" الفردي حين لا يُعدَّل
+// شيء فيه — فلا يعود الفرق الوحيد بين الدفعة والفردي هو التوثيق.
 function printAllFollowUpReferrals(){
   const followUps = needsFollowUpList();
   if(followUps.length===0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }
   const holder = document.getElementById('print-referral-holder');
-  holder.innerHTML = followUps
-    .map(f => referralSheetHtml(buildDefaultReferralData(f.key, f.idx)))
-    .join('');
-  showToast(`تم تجهيز ${followUps.length} تقرير — لن تُحفظ هذه الدفعة في سجل الإجراءات`);
+  const reports = followUps.map(f => buildDefaultReferralData(f.key, f.idx));
+  reports.forEach(data => saveReferralToArchive(data));
+  holder.innerHTML = reports.map(data => referralSheetHtml(data)).join('');
+  showToast(`تم تجهيز ${followUps.length} تقرير، وحُفظت جميعها في سجل الإجراءات`);
   printHolder(holder);
 }
 
