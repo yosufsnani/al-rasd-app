@@ -52,6 +52,7 @@ header.app-top .icon-btn{flex:0 0 auto;}
   background:transparent; border:none; border-radius:11px;
   color:var(--text-2); cursor:pointer;
 }
+.back-btn[hidden]{display:none !important;}   /* display:inline-flex أعلاه تغلب [hidden] */
 .back-btn:hover{background:var(--surface-2);}
 .back-btn:active{background:var(--border);}
 .back-btn svg{width:20px; height:20px;}
@@ -66,6 +67,10 @@ header.app-top .icon-btn{flex:0 0 auto;}
   display:flex; overflow-x:auto; background:var(--card); border-bottom:1px solid var(--border);
   scrollbar-width:none; gap:6px; padding:8px 12px;
 }
+/* قاعدة المؤلف display:flex أعلاه تغلب قاعدة المتصفح [hidden]{display:none}
+   مهما كانت الأولوية، فكان bar.hidden=true لا يخفي شيئًا: يبقى شريط فارغ
+   بحشوه وحدّه أعلى كل تبويب غير الرصد. */
+.tabbar[hidden]{display:none !important;}
 .tabbar::-webkit-scrollbar{display:none;}
 .tabbar button{
   flex:0 0 auto; height:34px; padding:0 15px; background:var(--card);
@@ -88,6 +93,7 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
   display:flex; height:var(--nav-h); padding:0 8px 10px;
   background:var(--card); border-top:1px solid var(--border);
 }
+.bottomnav[hidden]{display:none !important;}  /* وإلا بقي الشريط فوق شاشة فشل التحميل */
 .navtab{
   flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
   background:none; border:none; cursor:pointer; font-family:inherit; padding:0;
@@ -3995,7 +4001,7 @@ function renderAnalysis(opts){
   </div>`;
 
   /* ---- أداء الشعبة ---- */
-  const sectionChartCanvas = forPrint ? `` : `<div class="chart-box"><canvas id="chart-section-compare"></canvas></div>`;
+  const sectionChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-section-compare"></canvas></div>`;
   const sectionPerf = `
   <div class="card">
     <h2>📈 أداء الشعبة</h2>
@@ -4013,7 +4019,7 @@ function renderAnalysis(opts){
       <span class="ip-val">${Math.round(it.avgRatio*100)}%</span>
     </div>`;
   const worstDelayItems = [...allItems].filter(it=>it.lateN>0).sort((a,b)=>b.lateN-a.lateN).slice(0,3);
-  const itemChartCanvas = forPrint ? `` : `<div class="chart-box tall"><canvas id="chart-item-perf"></canvas></div>`;
+  const itemChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box tall"><canvas id="chart-item-perf"></canvas></div>`;
   const itemPerfCard = allItems.length===0 ? `` : `
   <div class="card">
     <h2>📊 أداء البنود</h2>
@@ -4046,7 +4052,7 @@ function renderAnalysis(opts){
     ANALYSIS_CHART_DATA.levelValues = LEVEL_TIERS.map(t=>levels[t.name]);
     ANALYSIS_CHART_DATA.levelTotal  = gradedTotal;
   }
-  const levelChartCanvas = (forPrint || gradedTotal===0) ? `` : `<div class="chart-box donut"><canvas id="chart-levels"></canvas></div>`;
+  const levelChartCanvas = (forPrint || gradedTotal===0 || !chartLibUsable()) ? `` : `<div class="chart-box donut"><canvas id="chart-levels"></canvas></div>`;
   const levelCard = `
   <div class="card">
     <h2>🏆 توزيع التقديرات</h2>
@@ -4115,7 +4121,7 @@ function renderAnalysis(opts){
     ANALYSIS_CHART_DATA.periodPrev   = periods.map(p=>p.prevPct);
     ANALYSIS_CHART_DATA.periodCur    = periods.map(p=>p.curPct);
   }
-  const periodChartCanvas = forPrint ? `` : `<div class="chart-box"><canvas id="chart-periods"></canvas></div>`;
+  const periodChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-periods"></canvas></div>`;
   const periodCard = periods.length===0 ? `` : `
   <div class="card">
     <h2>🔁 مقارنة الفترات</h2>
@@ -4487,6 +4493,32 @@ function referralReasonsLabel(e){
   if(e.reasonOther) parts.push(e.reasonOtherText ? `أخرى: ${e.reasonOtherText}` : "أخرى");
   return parts.length>0 ? parts.join("، ") : "—";
 }
+/* «حفظ في السجل» كان يُغلق النافذة، فيضطر المعلّم إلى فتحها من جديد ليطبع
+   التقرير نفسه. صار يحفظ ويُبقيها مفتوحة والطباعة على بعد ضغطة، ويقفل الزر
+   على حالة «حُفظ» حتى لا يتكرّر السجل بضغطتين. تُستعمل في نوافذ التقارير
+   الثلاث — لا في «تسجيل تواصل»، فليس فيها طباعة أصلًا وإغلاقها بعد الحفظ
+   هو الصواب. */
+/* المتصفح لا يُطلق click على زرٍّ معطَّل أصلًا، لكن الحارس يبقى صريحًا حتى
+   لا يعتمد منع التكرار على ذلك وحده. يقرأ الزر بمعرّفه لا من كائن الحدث،
+   فلا يتعلّق بشكل الحدث ولا ينهار إن استُدعي المعالج برمجيًّا. */
+function savedToLogAlready(btnId){
+  const b = document.getElementById(btnId);
+  return !!(b && b.disabled);
+}
+function markSavedToLog(btnId, msg){
+  const b = document.getElementById(btnId);
+  if(b){
+    b.textContent = '✅ حُفظ في السجل';
+    b.disabled = true;
+    b.style.opacity = '.6';
+    b.style.cursor = 'default';
+  }
+  showToast(msg || 'تم الحفظ في سجل الإجراءات — تستطيع الطباعة الآن');
+  /* النافذة تعيش في #dialog-holder خارج #main، فإعادة الرسم تُحدِّث السجل
+     وعمود «حالة التواصل» خلفها دون أن تمسّها. */
+  render();
+}
+
 function saveReferralToArchive(data){
   const entry = Object.assign({}, data, {
     id: 'ref_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
@@ -5071,14 +5103,13 @@ function render(){
   const main = document.getElementById('main');
   const view = STATE.activeView;
 
-  /* الجدول (.table-wrap) يُستبدل بالكامل بعنصر DOM جديد في كل render() —
-     حتى عند رصد خانة واحدة فقط — فيبدأ ذلك العنصر الجديد بتمرير أفقي صفري.
-     كان هذا يبدو وكأن الشاشة «تقفز لأول بند» عند رصد خانة بعيدة، رغم أن
-     الإعادة تحدث دائمًا؛ الفرق أنها لا تُلاحَظ إلا حين تكون بعيدًا عن
-     البداية أصلًا. نحفظ موضع التمرير الحالي هنا، ونستعيده على العنصر
-     الجديد بعد إعادة البناء أسفل هذه الدالة. */
-  const prevTableWrap = main.querySelector('.table-wrap');
-  const prevScrollLeft = prevTableWrap ? prevTableWrap.scrollLeft : null;
+  /* كل .table-wrap يُستبدل بعنصر DOM جديد في كل render() — حتى عند تغيير
+     خانة واحدة — فيبدأ الجديد بتمرير أفقي صفري، فتبدو الشاشة وكأنها «تقفز
+     لأول عمود». كان الحفظ والاستعادة في فرع الرصد وحده وعلى أول جدول فقط،
+     فبقيت العلّة في سجل الإجراءات (تغيير «الحالة» في آخر عمود). صار يشمل
+     كل الجداول في كل التبويبات، ويُستعاد بالترتيب ما دام عددها لم يتغيّر —
+     فإن تغيّر فالبنية اختلفت ولا معنى لمطابقة المواضع. */
+  const prevScrolls = [...main.querySelectorAll('.table-wrap')].map(w=> w.scrollLeft);
 
   if(view === 'home'){
     main.innerHTML = renderHome();
@@ -5106,14 +5137,20 @@ function render(){
     main.innerHTML = renderSectionSheet(STATE.activeTab);
     wireSectionEvents(STATE.activeTab);
     flashHighlightedRow();
-    if(prevScrollLeft !== null){
-      const wrap = main.querySelector('.table-wrap');
-      if(wrap) wrap.scrollLeft = prevScrollLeft;
-    }
     const headerLogo = document.querySelector('header.app-top img');
     const printLogo = document.querySelector('.print-logo');
     if(headerLogo && printLogo) printLogo.src = headerLogo.src;
   }
+
+  restoreTableScrolls(main, prevScrolls);
+}
+
+/* تُستدعى بعد إعادة بناء أي تبويب. */
+function restoreTableScrolls(main, prevScrolls){
+  if(!prevScrolls || prevScrolls.length===0) return;
+  const wraps = main.querySelectorAll('.table-wrap');
+  if(wraps.length !== prevScrolls.length) return;
+  wraps.forEach((w,i)=>{ if(prevScrolls[i]) w.scrollLeft = prevScrolls[i]; });
 }
 
 /* الترويسة العلوية تتغيّر حسب التبويب: الرصد يعرض اسم الشعبة فقط،
@@ -5240,15 +5277,43 @@ function chartBaseOptions(){
   };
 }
 
+/* حالة مكتبة الرسوم. كان الانتظار خمس محاولات × ٣٠٠ مللي = ثانية ونصف ثم
+   استسلامٌ صامت، وهي مدّة لا تكفي شبكة جوال بطيئة — فيبقى للمعلّم مربّعٌ
+   أبيض فارغ بارتفاع ٢٢٠ بكسل بلا أي تفسير، ولا يُعاد المحاولة أبدًا. صار
+   الرسم يُستدعى من onload مباشرة، والفشل القاطع يُخفي الصناديق. */
+let CHART_LIB_FAILED = false;
+let CHART_LIB_WAITING = false;   /* سلسلة انتظار واحدة مهما تكرّرت إعادة الرسم */
+function chartLibUsable(){ return typeof Chart !== 'undefined' && !CHART_LIB_FAILED; }
+function redrawIfOnAnalysis(){
+  try{ if(STATE && STATE.activeView === 'analysis') render(); }catch(e){}
+}
+window.onChartLibReady = function(){
+  CHART_LIB_FAILED = false; CHART_LIB_WAITING = false;
+  redrawIfOnAnalysis();
+};
+window.onChartLibFailed = function(){
+  CHART_LIB_FAILED = true; CHART_LIB_WAITING = false;
+  /* الأرقام والأشرطة النصّية تحت كل رسم تحمل المعلومة نفسها، فإخفاء الصندوق
+     لا يفقد المعلّم شيئًا — بل يزيل مربّعًا فارغًا محيّرًا. */
+  redrawIfOnAnalysis();
+};
+
 function drawAnalysisCharts(retriesLeft){
-  if(retriesLeft===undefined) retriesLeft = 5;
+  const first = (retriesLeft === undefined);
+  if(first) retriesLeft = 40;      /* ٢٠ ثانية، لا ثانية ونصف */
+  if(CHART_LIB_FAILED) return;
   if(typeof Chart === 'undefined'){
-    // Chart.js loads from a CDN <script> placed after our inline script, so
-    // on a very first render it may not be ready yet — retry briefly instead
-    // of silently giving up (the text-based bars remain visible either way).
-    if(retriesLeft>0) setTimeout(()=>drawAnalysisCharts(retriesLeft-1), 300);
+    if(first && CHART_LIB_WAITING) return;   /* لا نبدأ سلسلة مؤقّتات ثانية */
+    if(retriesLeft>0){
+      CHART_LIB_WAITING = true;
+      setTimeout(()=>drawAnalysisCharts(retriesLeft-1), 500);
+      return;
+    }
+    /* لم تصل بعد عشرين ثانية: نعلنها فاشلة ونُخفي الصناديق الفارغة. */
+    onChartLibFailed();
     return;
   }
+  CHART_LIB_WAITING = false;
   if(!ANALYSIS_CHART_DATA) return;
   // Destroy any previous instances before redrawing — reusing the same
   // <canvas> element without destroying the old Chart instance throws
@@ -7200,10 +7265,9 @@ function openReferralReportDialog(key, idx, openOpts){
     note: noteEl.value
   });
   document.getElementById('dlg-save-archive').addEventListener('click', ()=>{
-    const data = collectReferralData();
-    saveReferralToArchive(data);
-    closeDialog();
-    showToast('تم حفظ الإحالة في سجل الإجراءات');
+    if(savedToLogAlready('dlg-save-archive')) return;
+    saveReferralToArchive(collectReferralData());
+    markSavedToLog('dlg-save-archive', 'حُفظت الإحالة في السجل — تستطيع طباعتها الآن');
   });
   document.getElementById('dlg-ok').addEventListener('click', ()=>{
     const data = collectReferralData();
@@ -7229,6 +7293,11 @@ function behaviourReportSection(key, name, opts){
     recs = bad.concat(good).sort((a,b)=> (b.at||'').localeCompare(a.at||''));
   }
   const hidden = st.total - recs.length;
+  /* عمود «تفصيل المعلّم» هو النصّ الحرّ الاختياري الذي يكتبه المعلّم لحظة
+     التسجيل. كان اسمه «بيان» بجوار عمود اسمه «الملاحظة»، فالتبس الاثنان،
+     وكان يُطبع عمودًا كاملًا من الشرطات حين لا يكتب المعلّم شيئًا. صار
+     يُسمّى بما هو، ويسقط كلّه إن خلت كل الوقائع المعروضة من تفصيل. */
+  const anyNote = recs.some(r=> (r.note||'').trim() !== '');
   const summary = [
     st.severe ? `${st.severe} جسيمة` : '',
     st.mid    ? `${st.mid} متوسطة`   : '',
@@ -7248,9 +7317,9 @@ function behaviourReportSection(key, name, opts){
           <thead>
             <tr>
               <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">التاريخ</th>
-              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">الملاحظة</th>
+              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">السلوك</th>
               <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">الدرجة</th>
-              <th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">بيان</th>
+              ${anyNote ? `<th style="border:1px solid #cbd5e1; padding:5px; background:#f1f5f9;">تفصيل المعلّم</th>` : ``}
             </tr>
           </thead>
           <tbody>
@@ -7258,7 +7327,7 @@ function behaviourReportSection(key, name, opts){
               <td style="border:1px solid #cbd5e1; padding:5px; text-align:center; white-space:nowrap;">${escapeAttr(r.dateHijri||'')}</td>
               <td style="border:1px solid #cbd5e1; padding:5px; text-align:right;">${escapeAttr(rr.label)}</td>
               <td style="border:1px solid #cbd5e1; padding:5px; text-align:center;">${escapeAttr(BH_LEVEL_LABEL[rr.level]||'')}</td>
-              <td style="border:1px solid #cbd5e1; padding:5px; text-align:right;">${escapeAttr(r.note||'—')}</td>
+              ${anyNote ? `<td style="border:1px solid #cbd5e1; padding:5px; text-align:right;">${escapeAttr(r.note||'—')}</td>` : ``}
             </tr>`; }).join("")}
           </tbody>
         </table>
@@ -7726,9 +7795,9 @@ function printParentReport(key, idx){
   document.getElementById('pr-cancel').addEventListener('click', closeDialog);
   document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
   document.getElementById('pr-save').addEventListener('click', ()=>{
+    if(savedToLogAlready('pr-save')) return;
     saveParentReportToLog(key, idx, includeBh());
-    closeDialog();
-    showToast('تم حفظ التقرير في سجل الإجراءات');
+    markSavedToLog('pr-save', 'حُفظ التقرير في السجل — تستطيع طباعته الآن');
   });
   document.getElementById('pr-print').addEventListener('click', ()=>{
     const wb = includeBh();
@@ -8179,7 +8248,6 @@ function printAllFollowUpReferrals(){
   };
   const doSave = ()=>{
     reports.forEach(data => saveReferralToArchive(data));
-    showToast(`حُفظت ${reports.length} إحالة في سجل الإجراءات`);
   };
 
   const holder = document.getElementById('dialog-holder');
@@ -8199,7 +8267,11 @@ function printAllFollowUpReferrals(){
     </div>`;
   document.getElementById('paf-cancel').addEventListener('click', closeDialog);
   document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
-  document.getElementById('paf-save').addEventListener('click', ()=>{ closeDialog(); doSave(); });
+  document.getElementById('paf-save').addEventListener('click', ()=>{
+    if(savedToLogAlready('paf-save')) return;
+    doSave();
+    markSavedToLog('paf-save', `حُفظت ${reports.length} إحالة في السجل — تستطيع طباعتها الآن`);
+  });
   document.getElementById('paf-print').addEventListener('click', ()=>{ closeDialog(); doPrint(); });
 }
 
@@ -8331,7 +8403,12 @@ window.rasdStartApp = async function(){
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<!-- Chart.js يُحمَّل بعد سكربت التطبيق، فقد يصل متأخّرًا على شبكة الجوال. onload
+     يرسم فور وصوله بدل انتظار دورة استطلاع، وonerror يُعلن فشله فتُخفى صناديق
+     الرسوم بدل أن تبقى مربّعات بيضاء فارغة بلا تفسير. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"
+        onload="if(window.onChartLibReady) onChartLibReady();"
+        onerror="if(window.onChartLibFailed) onChartLibFailed();"></script>
 
 <div class="footer-note">تطبيق ويب لكشف رصد المشاريع — رصدك محفوظ تلقائيًا في حسابك السحابي، ويمكنك الدخول عليه من أي جهاز بنفس البريد وكلمة المرور. زر «نسخة احتياطية» يبقى خيارًا إضافيًا لحفظ نسخة JSON على جهازك.</div>
 
