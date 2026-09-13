@@ -1042,7 +1042,10 @@ body.modal-lock{ overflow:hidden; }
 
   tr{page-break-inside:avoid;}
 
-  .legend{font-size:7.5px !important; color:#000 !important; margin-top:3px; line-height:1.5 !important;}
+  /* شرح الرموز والتقديرات تعليماتٌ للمعلّم على الشاشة، لا محتوى للورقة:
+     تأكل ثلث الصفحة وتزيد الكشف صفحة أحيانًا. لا يبقى تحت الجدول إلا سطر
+     المعلّم ومدير المدرسة. */
+  .legend{display:none !important;}
   .print-footer{
     display:flex !important; justify-content:space-between; font-size:9px; color:#000;
     margin-top:6px; padding-top:4px; border-top:1px solid #999;
@@ -1079,7 +1082,7 @@ body.modal-lock{ overflow:hidden; }
   body.printing-all #print-all-holder thead{display:table-header-group !important;}
   body.printing-all #print-all-holder tr{break-inside:avoid; page-break-inside:avoid;}
   body.printing-all #print-all-holder .print-footer{display:flex !important; break-inside:avoid; page-break-inside:avoid;}
-  body.printing-all #print-all-holder .legend{display:block !important; break-inside:avoid; page-break-inside:avoid;}
+  body.printing-all #print-all-holder .legend{display:none !important;}
   body.printing-all #print-all-holder .card.meta-card,
   body.printing-all #print-all-holder .hint,
   body.printing-all #print-all-holder .toolbar,
@@ -1124,6 +1127,60 @@ body.modal-lock{ overflow:hidden; }
   }
   body.printing-doc #print-referral-holder .lg-tools,
   body.printing-doc #print-referral-holder .log-toolbar{display:none !important;}
+
+  /* ===== تقرير التحليل: عمودان بدل عمود =====
+     سبع بطاقات مرصوفة طولًا على ورقة A4 طولية كانت تملأ ثلاث صفحات، وأكثرها
+     ضيّق (أشرطة نسب وأرقام) يهدر نصف عرض الورقة. صُفّت في عمودين، وبقيت
+     الجداول العريضة (ap-wide) ممتدّة على العرض كاملًا. لا شيء يُحذف —
+     الترتيب والكثافة وحدهما تغيّرا. */
+  /* الترويسة كانت تأخذ من الصفحة قدر بطاقتين. */
+  body.printing-doc #print-referral-holder .ap-head{
+    padding-bottom:6px !important; margin-bottom:8px !important; gap:10px !important;
+  }
+  body.printing-doc #print-referral-holder .ap-head img{ height:30px !important; }
+  body.printing-doc #print-referral-holder .ap-head div{ font-size:9.5px !important; line-height:1.55 !important; }
+  body.printing-doc #print-referral-holder .ap-title{
+    font-size:13px !important; margin:0 0 8px !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print{
+    display:grid; grid-template-columns:1fr 1fr; gap:7px 10px; align-items:start;
+  }
+  body.printing-doc #print-referral-holder .analysis-print > .card{
+    break-inside:avoid; page-break-inside:avoid; margin:0 !important;
+    border:1px solid #d4d4d4 !important; border-radius:6px !important; padding:7px 9px !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print > .card.ap-wide{ grid-column:1 / -1; }
+  body.printing-doc #print-referral-holder .analysis-print h2{
+    font-size:11px !important; margin:0 0 5px !important; color:#111 !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print h3{
+    font-size:9.5px !important; margin:7px 0 3px !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print .ref-summary{ gap:5px !important; }
+  body.printing-doc #print-referral-holder .analysis-print .ref-summary-item{ padding:5px 7px !important; }
+  body.printing-doc #print-referral-holder .analysis-print .ref-summary-item .v{ font-size:14px !important; }
+  body.printing-doc #print-referral-holder .analysis-print .ref-summary-item span{ font-size:8.5px !important; }
+  /* بطاقة لكل شعبة مرصوفة طولًا كانت تبلغ ٦٢٥ بكسل مع ست شعب — أطول من
+     الصفحة العرضية (٧٤٨) ناقص ما قبلها، وbreak-inside:avoid يمنع تقسيمها
+     فتُزاح كلّها إلى صفحة تالية وتترك ما قبلها نصف فارغ. ثلاثٌ في الصف
+     تُنزلها إلى نحو الثلث. */
+  body.printing-doc #print-referral-holder .analysis-print .analysis-grid{
+    grid-template-columns:repeat(3,1fr) !important; gap:5px !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print .stat-card{
+    padding:5px 7px !important; break-inside:avoid; page-break-inside:avoid;
+  }
+  body.printing-doc #print-referral-holder .analysis-print .stat-card h3{
+    font-size:9.5px !important; margin:0 0 4px !important;
+  }
+  body.printing-doc #print-referral-holder .analysis-print .stat-row{ padding:2px 0 !important; }
+  body.printing-doc #print-referral-holder .analysis-print .stat-row,
+  body.printing-doc #print-referral-holder .analysis-print .item-perf-row,
+  body.printing-doc #print-referral-holder .analysis-print .late-rank-row{ font-size:8.5px !important; }
+  body.printing-doc #print-referral-holder .analysis-print table{ font-size:8.5px !important; }
+  body.printing-doc #print-referral-holder .analysis-print table th,
+  body.printing-doc #print-referral-holder .analysis-print table td{ padding:2px 3px !important; }
+  body.printing-doc #print-referral-holder .analysis-print .table-wrap{ overflow:visible !important; border:none !important; }
 }
 
 </style>
@@ -2114,6 +2171,41 @@ function addSection(name, namesList){
   persistState();
   render();
   showToast(names.length>0 ? `تمت إضافة الشعبة وإضافة ${names.length} طالب` : 'تمت إضافة الشعبة — يمكنك إضافة الطلاب الآن');
+  return true;
+}
+
+/* اسم الشعبة هو مفتاحها في كل مكان: sections وmeta وattDays وbehaviours
+   وSECTION_KEYS وsectionOrder وactiveTab، ويُنسخ أيضًا داخل كل سجل إحالة
+   وتواصل. فإعادة التسمية نقلٌ لهذه كلها معًا — ولهذا كان الحقل معطَّلًا.
+   ما يفوت واحدًا منها يُيتّم بيانات الشعبة: رصدها باقٍ لكن سجلّها يشير إلى
+   اسم لم يعد موجودًا. */
+function renameSection(oldName, newName){
+  const from = (oldName||'').trim();
+  const to   = (newName||'').trim();
+  if(from==='' || to==='' || to===from) return false;
+  const i = SECTION_KEYS.indexOf(from);
+  if(i===-1) return false;
+  if(STATE.sections[to]){ showAlertDialog('يوجد شعبة بهذا الاسم بالفعل'); return false; }
+
+  SECTION_KEYS[i] = to;                       /* في موضعها نفسه، فلا يتغيّر الترتيب */
+  STATE.sectionOrder = SECTION_KEYS.slice();
+  ['sections','meta','attDays','behaviours'].forEach(store=>{
+    const bag = STATE[store];
+    if(bag && Object.prototype.hasOwnProperty.call(bag, from)){
+      bag[to] = bag[from];
+      delete bag[from];
+    }
+  });
+  /* الإحالة تحفظ الشعبة في section والتواصل يحفظها في key (انظر actionLogRows)،
+     فلا بدّ من الحقلين معًا — وإلا بقيت سجلّات التواصل معلّقة على اسم زائل. */
+  [STATE.referrals, STATE.contacts].forEach(list=>{
+    (list||[]).forEach(r=>{
+      if(r.section === from) r.section = to;
+      if(r.key === from) r.key = to;
+    });
+  });
+  if(STATE.activeTab === from) STATE.activeTab = to;
+  persistState();
   return true;
 }
 
@@ -3660,13 +3752,13 @@ function renderSectionSheet(key, opts){
   <div class="card meta-card drop-panel">
     <div class="meta-grid">
       <div class="meta-field"><label>المادة</label><input id="m-subject" value="${escapeAttr(meta.subject)}" placeholder="مثال: علوم"></div>
-      <div class="meta-field"><label>الصف والشعبة</label><input value="${key}" disabled></div>
+      <div class="meta-field"><label>الصف والشعبة</label><input id="m-section-name" value="${escapeAttr(key)}" placeholder="مثال: الأول متوسط / أ"></div>
       <div class="meta-field"><label>الفصل الدراسي</label><input id="m-term" value="${escapeAttr(meta.term)}" placeholder="مثال: الفصل الأول"></div>
       <div class="meta-field"><label>العام الدراسي</label><input id="m-year" value="${escapeAttr(meta.year)}" placeholder="مثال: 1447هـ"></div>
       <div class="meta-field"><label>معلم المادة</label><input id="m-teacher" value="${escapeAttr(meta.teacher)}" placeholder="اسمك كما يظهر في التقارير"></div>
       <div class="meta-field"><label>مدير المدرسة</label><input id="m-principal" value="${escapeAttr(meta.principal)}" placeholder="اسم مدير المدرسة"></div>
     </div>
-    <div class="hint" style="margin-bottom:0;">هذه البيانات تظهر في الجزء الأيسر من الكليشة عند الطباعة.</div>
+    <div class="hint" style="margin-bottom:0;">هذه البيانات تظهر في الجزء الأيسر من الكليشة عند الطباعة. وتغيير «الصف والشعبة» يُعيد تسمية الشعبة نفسها — رصدها وحضورها وسجلّها ينتقل معها.</div>
   </div>` : ``}
 
   ${renderSectionTools(key)}
@@ -3989,7 +4081,7 @@ function renderAnalysis(opts){
   }
   const avgLate = lateN>0 ? sumLate/lateN : 0;
   const summaryBar = `
-  <div class="card">
+  <div class="card ap-wide">
     <h2>📌 نظرة عامة</h2>
     <div class="ref-summary">
       <div class="ref-summary-item"><span class="v">${totalN}</span><span>عدد الطلاب</span></div>
@@ -4003,7 +4095,7 @@ function renderAnalysis(opts){
   /* ---- أداء الشعبة ---- */
   const sectionChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-section-compare"></canvas></div>`;
   const sectionPerf = `
-  <div class="card">
+  <div class="card ap-wide">
     <h2>📈 أداء الشعبة</h2>
     ${sectionChartCanvas}
     <div class="analysis-grid">${cards}</div>
@@ -4022,7 +4114,7 @@ function renderAnalysis(opts){
   const itemChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box tall"><canvas id="chart-item-perf"></canvas></div>`;
   const itemPerfCard = allItems.length===0 ? `` : `
   <div class="card">
-    <h2>📊 أداء البنود</h2>
+    <h2>📊 أقوى الخانات وأضعفها</h2>
     ${itemChartCanvas}
     <h3 style="font-size:12.5px; color:var(--muted); margin:6px 0;">✅ الأفضل أداءً</h3>
     ${bestItems.map(itemRow).join("")}
@@ -4072,7 +4164,7 @@ function renderAnalysis(opts){
 
   /* ---- جدول مقارنة الشعب ---- */
   const comparisonTable = `
-  <div class="card">
+  <div class="card ap-wide">
     <h2>📋 جدول مقارنة الشعب</h2>
     <div class="table-wrap">
     <table class="analysis-table">
@@ -4100,7 +4192,7 @@ function renderAnalysis(opts){
   const catSorted = catPerf.slice().sort((a,b)=>a.pct-b.pct);
   const weakestCard = catPerf.length===0 ? `` : `
   <div class="card">
-    <h2>🧭 أداء البنود</h2>
+    <h2>🧭 إنجاز كل بند</h2>
     <div class="hint" style="margin-top:0; margin-bottom:10px;">
       ${catSorted.length>1
         ? `أضعف بند لدى طلابك هو <b>${escapeAttr(catSorted[0].name)}</b> بنسبة <b>${catSorted[0].pct}%</b>، وأقواها <b>${escapeAttr(catSorted[catSorted.length-1].name)}</b> بنسبة <b>${catSorted[catSorted.length-1].pct}%</b> — ركّز خطتك العلاجية على الأول.`
@@ -4123,7 +4215,7 @@ function renderAnalysis(opts){
   }
   const periodChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-periods"></canvas></div>`;
   const periodCard = periods.length===0 ? `` : `
-  <div class="card">
+  <div class="card ap-wide">
     <h2>🔁 مقارنة الفترات</h2>
     <div class="hint" style="margin-top:0; margin-bottom:8px;">مقارنة متوسط نسبة الإنجاز في كل شعبة بينها وبين نسختها المؤرشفة من فصل سابق.</div>
     ${periodChartCanvas}
@@ -5592,6 +5684,25 @@ function wireSectionEvents(key){
       updateAppChrome();
     });
   });
+
+  /* اسم الشعبة يُلتزم عند change لا input: إعادة التسمية على كل حرف تُنشئ
+     أسماء ناقصة، وتُبطل المفتاح key الذي تعتمد عليه بقية معالجات هذه الدالة. */
+  const secNameEl = document.getElementById('m-section-name');
+  if(secNameEl){
+    secNameEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') secNameEl.blur(); });
+    secNameEl.addEventListener('change', ()=>{
+      const to = (secNameEl.value||'').trim();
+      if(to === key) return;
+      if(to === ''){
+        secNameEl.value = key;
+        showAlertDialog('اسم الشعبة لا يكون فارغًا');
+        return;
+      }
+      if(!renameSection(key, to)){ secNameEl.value = key; return; }
+      render();
+      showToast(`تغيّر اسم الشعبة إلى «${to}»`);
+    });
+  }
 
   const toggleSectionMeta = ()=>{
     STATE.sectionMetaOpen = !STATE.sectionMetaOpen;
@@ -8212,7 +8323,7 @@ function printAnalysisReport(){
   const lh = STATE.letterhead;
   const logoSrc = document.querySelector('header.app-top img')?.src || '';
   const header = `
-  <div dir="rtl" style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:18px; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">
+  <div class="ap-head" dir="rtl" style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:14px; margin-bottom:18px; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">
     <div style="text-align:right; font-size:12px; line-height:1.9; flex:1; color:#111;">
       <div>${escapeAttr(lh.line1)}</div>
       <div>${escapeAttr(lh.line2)}</div>
@@ -8223,10 +8334,15 @@ function printAnalysisReport(){
       <div>التاريخ: ${escapeAttr(getHijriDateStr())} هـ</div>
     </div>
   </div>
-  <h1 style="text-align:center; font-size:18px; margin:0 0 20px; color:#111; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">تقرير تحليل أداء الشعب</h1>`;
+  <h1 class="ap-title" style="text-align:center; font-size:18px; margin:0 0 20px; color:#111; font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif;">تقرير تحليل أداء الشعب</h1>`;
 
-  holder.innerHTML = `<div class="print-doc" dir="rtl">${header}${renderAnalysis({forPrint:true})}</div>`;
-  printHolder(holder);
+  holder.innerHTML = `<div class="print-doc" dir="rtl">${header}<div class="analysis-print">${renderAnalysis({forPrint:true})}</div></div>`;
+  /* عرضيًا لا طوليًا: قيسَ عدد الصفحات فعليًا في كروميوم على ثلاثة أحجام
+     بيانات (٣ شعب/٤ بنود، ٦/٦، ٩/٨). الطولي بعمودٍ واحد: ٢ و٤ و٥ صفحات،
+     والطولي بعمودين لا يُحسّنه شيئًا (العمود يضيق فيطول محتواه بالقدر نفسه).
+     العرضي بعمودين: ٢ و٢ و٤. وثلاثة أعمدة أسوأ من عمودين على البيانات
+     الكبيرة — تضيق البطاقات فتطول. */
+  printHolder(holder, 'landscape');
 }
 
 // طباعة تقرير إحالة واحد لكل طالب "يحتاج متابعة" ضمن نفس أمر الطباعة (كل
