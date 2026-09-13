@@ -271,6 +271,81 @@ td.cell .sym svg{width:16px; height:16px;}
 .guide li{margin-bottom:3px;}
 .guide b{color:var(--text); font-weight:500;}
 
+/* ===== الجدول الدراسي: بطاقة اليوم في الرئيسية ===== */
+.sch-head{ display:flex; align-items:baseline; gap:8px; margin:0 2px 10px; }
+.sch-head b{ font-size:14px; font-weight:500; flex:1 1 auto; color:var(--text); }
+.sch-head span{ font-size:11px; color:var(--muted); font-weight:300; }
+.sch-empty{ padding:20px 14px; text-align:center; color:var(--muted); font-size:12.5px; font-weight:300; }
+.now-hero{
+  background:linear-gradient(135deg,var(--teal) 0%,var(--teal-d) 100%); color:#fff;
+  border-radius:18px; padding:16px 16px 14px; box-shadow:0 6px 20px rgba(14,145,121,.3);
+}
+/* بلا حصة جارية: الهدوء أصدق من لونٍ يوحي بنشاطٍ لا يجري. */
+.now-hero.idle{ background:var(--card); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow); }
+.nh-top{ display:flex; align-items:center; gap:8px; font-size:11px; opacity:.9; }
+.now-hero.idle .nh-top{ color:var(--muted); opacity:1; }
+.nh-live{
+  flex:0 0 auto; width:7px; height:7px; border-radius:50%; background:#8ef0d6;
+  box-shadow:0 0 0 3px rgba(142,240,214,.3);
+}
+.nh-name{ font-size:23px; font-weight:600; margin:8px 0 2px; line-height:1.25; overflow-wrap:break-word; }
+.nh-sub{ font-size:12px; opacity:.9; font-weight:300; }
+.now-hero.idle .nh-sub{ color:var(--muted); opacity:1; }
+.nh-bar{ height:5px; background:rgba(255,255,255,.25); border-radius:4px; margin:13px 0 7px; overflow:hidden; }
+.nh-bar span{ display:block; height:100%; background:#fff; border-radius:4px; }
+.nh-times{ display:flex; justify-content:space-between; font-size:10.5px; opacity:.85; direction:ltr; }
+.now-hero.idle .nh-times{ color:var(--muted); opacity:1; }
+.nh-btn{
+  width:100%; margin-top:13px; background:#fff; color:var(--teal-d); border:none; border-radius:12px;
+  padding:11px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+}
+.now-hero.idle .nh-btn{ background:var(--teal); color:#fff; }
+.up-next{
+  display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--border);
+  border-radius:13px; padding:10px 12px; margin-top:10px;
+}
+.un-lab{ flex:0 0 auto; font-size:10px; color:var(--muted); background:var(--surface-2); padding:3px 8px; border-radius:20px; }
+.un-body{ flex:1 1 auto; min-width:0; font-size:13px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.un-time{ flex:0 0 auto; font-size:11px; color:var(--muted); direction:ltr; }
+.rest-strip{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.rest-chip{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; background:var(--card);
+  border:1px solid var(--border); border-radius:10px; padding:6px 10px;
+  font-family:inherit; font-size:11.5px; color:var(--text); cursor:pointer;
+}
+.rest-chip .rc-n{ color:var(--muted); font-size:10px; }
+.rest-chip.done{ opacity:.45; }
+.rest-chip.free{ background:var(--surface-2); border-style:dashed; color:var(--text-2); cursor:default; }
+
+/* ===== الجدول الدراسي: محرّر الشبكة في حسابي ===== */
+.wk-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:12px; -webkit-overflow-scrolling:touch; }
+table.wk{ border-collapse:collapse; width:100%; min-width:560px; font-size:11.5px; }
+table.wk th, table.wk td{ border:1px solid var(--border); padding:0; text-align:center; }
+table.wk thead th{ background:var(--surface-2); font-weight:500; font-size:10.5px; padding:6px 3px; color:var(--text-2); }
+table.wk thead th i{ display:block; font-style:normal; font-size:9px; color:var(--muted); direction:ltr; font-weight:300; }
+table.wk th.wk-day{ background:var(--surface-2); font-weight:500; width:62px; font-size:11px; color:var(--text-2); }
+table.wk td{ height:40px; }
+.wk-cell{
+  display:block; width:100%; min-height:40px; border:none; background:transparent;
+  font-family:inherit; font-size:11px; cursor:pointer; padding:5px 3px; color:var(--text);
+  overflow:hidden; text-overflow:ellipsis;
+}
+.wk-cell.has{ background:var(--teal-soft); color:var(--teal-d); font-weight:500; }
+.wk-cell.note{ background:var(--yellow); color:var(--yellow-t); font-size:10px; }
+.wk-cell.empty{ color:var(--border); font-size:14px; }
+/* ١٩٠ بكسل لا ١٥٠: حقل type=time يعرض ص/م في الأجهزة ذات التوقيت ١٢ ساعة،
+   والحقل الضيّق يقصّها فتظهر ١٣:٠٠ كأنها ٠١:٠٠ — التباسٌ في موعد حصة. */
+.times-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; }
+.time-cell{
+  display:flex; align-items:center; gap:6px; border:1px solid var(--border);
+  border-radius:10px; padding:6px 8px; background:var(--bg);
+}
+.time-cell > span{ flex:0 0 auto; font-size:10.5px; color:var(--muted); font-weight:500; }
+.time-cell input{
+  flex:1 1 auto; min-width:0; border:none; background:none; font-family:inherit;
+  font-size:11.5px; color:var(--text); padding:0; direction:ltr; text-align:center;
+}
+
 /* ===== قائمة «حسابي»: صفٌّ لكل صفحة فرعية ===== */
 .acct-list{padding:0; overflow:hidden;}
 .acct-row{
@@ -1212,6 +1287,45 @@ body.modal-lock{ overflow:hidden; }
   body.printing-doc #print-referral-holder .analysis-print table td{ padding:2px 3px !important; }
   body.printing-doc #print-referral-holder .analysis-print .table-wrap{ overflow:visible !important; border:none !important; }
   /* على الورق يكفي الرسم صغيرًا: الأرقام تحته تحمل التفصيل. */
+  /* ===== الجدول الدراسي المطبوع ===== */
+  body.printing-doc #print-referral-holder .sched-print{ color:#111; }
+  body.printing-doc #print-referral-holder .sp-head{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    border-bottom:2px solid #0f766e; padding-bottom:8px; margin-bottom:10px; font-size:10.5px; line-height:1.8;
+  }
+  body.printing-doc #print-referral-holder .sp-title{
+    text-align:center; font-size:15px; margin:0 0 10px; font-weight:600;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid{
+    width:100%; border-collapse:collapse; font-size:10px; table-layout:fixed;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid th,
+  body.printing-doc #print-referral-holder table.sp-grid td{
+    border:1px solid #999; padding:6px 3px; text-align:center; vertical-align:middle;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid thead th{
+    background:#e9efee !important; font-weight:600;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid th.sp-day{
+    background:#f3f1ed !important; font-weight:600; width:74px;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid thead th i{
+    display:block; font-style:normal; font-weight:400; font-size:8.5px; color:#555; direction:ltr;
+  }
+  body.printing-doc #print-referral-holder table.sp-grid td b{ display:block; font-weight:600; font-size:10.5px; }
+  body.printing-doc #print-referral-holder table.sp-grid td i{ font-style:normal; color:#555; font-size:9px; }
+  body.printing-doc #print-referral-holder table.sp-grid td.sp-free{ color:#aaa; }
+  body.printing-doc #print-referral-holder table.sp-grid td.sp-note{
+    background:#fbfaf8 !important; color:#444;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  body.printing-doc #print-referral-holder .sp-foot{
+    display:flex; justify-content:space-between; font-size:10px; margin-top:10px;
+    padding-top:6px; border-top:1px solid #999;
+  }
+
   body.printing-doc #print-referral-holder .analysis-print .chart-box{
     max-width:215px !important; margin:0 auto 6px !important;
   }
@@ -1827,6 +1941,8 @@ function normalizeLoadedState(obj){
     obj.config = nc.config;
     obj.configOrder = nc.order;
     if(typeof obj.toolsOpen !== 'boolean') obj.toolsOpen = false;
+    /* schedule() نفسها تُصلح الناقص والتالف، فيكفي أن يوجد الحقل. */
+    if(!obj.schedule || typeof obj.schedule !== 'object') obj.schedule = blankSchedule();
     /* أعلام طيّ لوحات «حسابي» — أُلغيت لمّا صارت كل لوحة صفحةً مستقلة.
        نحذفها من الحالة المحمّلة حتى لا تظلّ تُرفع في الحمولة السحابية بلا معنى،
        ولأنها كانت تُزامَن بين الأجهزة فتفتح للمعلّم ما طواه على جهاز آخر. */
@@ -2236,6 +2352,9 @@ function renameSection(oldName, newName){
       if(r.key === from) r.key = to;
     });
   });
+  /* والجدول الدراسي: خاناته تحمل اسم الشعبة، فتنتقل معها — وإلا أشار جدولك
+     إلى شعبة لم تعد موجودة. */
+  schedule().days.forEach(row=> row.forEach((c,i)=>{ if(c && c.sec === from) row[i] = { sec: to }; }));
   if(STATE.activeTab === from) STATE.activeTab = to;
   persistState();
   return true;
@@ -2251,6 +2370,9 @@ function deleteSection(name){
       delete STATE.sections[name];
       delete STATE.meta[name];
       if(STATE.attDays) delete STATE.attDays[name];
+      if(STATE.behaviours) delete STATE.behaviours[name];
+      /* خانات الجدول التي كانت لهذه الشعبة تعود فراغًا. */
+      schedule().days.forEach(row=> row.forEach((c,i)=>{ if(c && c.sec === name) row[i] = null; }));
       if(STATE.activeTab === name){
         STATE.activeTab = SECTION_KEYS.length>0 ? SECTION_KEYS[0] : null;
         if(!STATE.activeTab) STATE.activeView = "home";
@@ -2654,7 +2776,14 @@ const ACCOUNT_PAGES = [
     state: ()=> ({ text:`${fmt(CAT_KEYS.length)} بنود`, on:true }),
     body: ()=> renderConfigPage() },
 
-  { id:'attendance', icon:'🗓️', title:'الحضور والغياب',
+  { id:'schedule', icon:'🗓️', title:'الجدول الدراسي',
+    desc:'حصصك في الأسبوع ومواعيدها',
+    state: ()=>{ if(!schedHasAny()) return { text:'لم يُعبّأ', on:false };
+                 const n = SCHED_DAYS.reduce((t,_,d)=> t + schedTeachCount(d), 0);
+                 return { text:`${fmt(n)} حصة`, on:true }; },
+    body: ()=> renderSchedulePage() },
+
+  { id:'attendance', icon:'📋', title:'الحضور والغياب',
     desc:'تسجيل الحضور ودرجة المواظبة',
     state: ()=>{ const a = attSettings();
                  if(!a.enabled) return { text:'متوقف', on:false };
@@ -2709,6 +2838,208 @@ function renderAccount(){
   <div class="hint" style="margin:12px 2px 0;">☁️ رصدك محفوظ تلقائيًا في حسابك السحابي — تدخل عليه من أي جهاز بنفس البريد وكلمة المرور.</div>`;
 }
 
+/* محرّر الجدول: شبكة الأسبوع كاملة تُمرَّر أفقيًا — جدول المعلّم كما يعرفه
+   على الورق. جرّبنا تبويبات الأيام أولًا فكانت تُخفي الأسبوع عن ناظره، وهو
+   ما يحتاج رؤيته ليعرف أين الفراغات. */
+function renderSchedulePage(){
+  const periods = schedPeriods();
+  const n = periods.length;
+  return `
+  <div class="card meta-card" style="margin-bottom:12px;">
+    <h2>أوقات الحصص</h2>
+    <div class="hint" style="margin:0 0 10px;">تُكتب مرة واحدة وتنطبق على كل أيام الأسبوع. اتركها فارغة إن لم ترد عرض الأوقات — يبقى الجدول يعمل، لكن «الحصة الجارية» لن تُحدَّد.</div>
+    <div class="times-grid">
+      ${periods.map((p,i)=>`
+        <div class="time-cell">
+          <span>${fmt(i+1)}</span>
+          <input type="time" data-sp-start="${i}" value="${escapeAttr(p.start)}" aria-label="بداية الحصة ${i+1}">
+          <span>–</span>
+          <input type="time" data-sp-end="${i}" value="${escapeAttr(p.end)}" aria-label="نهاية الحصة ${i+1}">
+        </div>`).join('')}
+    </div>
+    <div class="toolbar" style="margin:10px 0 0;">
+      <button type="button" id="sp-less" ${n<=SCHED_MIN_PERIODS?'disabled':''}>➖ حصة أقل</button>
+      <button type="button" id="sp-more" ${n>=SCHED_MAX_PERIODS?'disabled':''}>➕ حصة أكثر</button>
+    </div>
+  </div>
+
+  <div class="card meta-card">
+    <h2>حصص الأسبوع</h2>
+    <div class="wk-wrap">
+      <table class="wk">
+        <thead><tr><th class="wk-day">اليوم</th>
+          ${periods.map((p,i)=>`<th>${fmt(i+1)}${p.start?`<i>${escapeAttr(p.start)}</i>`:''}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${SCHED_DAYS.map((dname,d)=>`
+          <tr><th class="wk-day">${escapeAttr(dname)}</th>
+            ${Array.from({length:n}, (_,pi)=>{
+              const c = schedCell(d, pi);
+              const cls = c ? (c.sec ? 'has' : 'note') : 'empty';
+              const label = c ? escapeAttr(schedCellLabel(c)) : '+';
+              return `<td><button type="button" class="wk-cell ${cls}" data-wk-d="${d}" data-wk-p="${pi}">${label}</button></td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="hint">الأخضر حصص تدريس · الأصفر نصّ حرّ (انتظار، إشراف، نشاط) · و«+» خانة فارغة. اضغط أي خانة لتغييرها. حصص الشعب وحدها هي التي تفتح الرصد بضغطة من الرئيسية.</div>
+    <div class="toolbar" style="margin-bottom:0;">
+      <button type="button" id="sched-print">🖨️ طباعة الجدول</button>
+      <button type="button" id="sched-clear">🧹 تفريغ الجدول</button>
+    </div>
+  </div>`;
+}
+
+/* نافذة اختيار محتوى الخانة: شعبة، أو نصّ حرّ، أو فراغ. */
+function showSchedCellDialog(d, pi){
+  const cur = schedCell(d, pi);
+  const p = schedPeriods()[pi] || { start:'', end:'' };
+  const when = [SCHED_DAYS[d], `الحصة ${SCHED_PERIOD_NAMES[pi] || (pi+1)}`,
+                (p.start && p.end) ? `${p.start}–${p.end}` : ''].filter(Boolean).join(' · ');
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:380px;">
+        <h3>🗓️ ${escapeAttr(when)}</h3>
+        <div class="meta-field" style="margin-bottom:10px;">
+          <label>الشعبة</label>
+          <select id="wk-sec">
+            <option value="">— فراغ —</option>
+            ${SECTION_KEYS.map(k=>`<option value="${escapeAttr(k)}"${cur&&cur.sec===k?' selected':''}>${escapeAttr(sectionTitle(k))}</option>`).join('')}
+            <option value="__txt"${cur&&cur.txt?' selected':''}>✏️ نصّ حرّ…</option>
+          </select>
+        </div>
+        <div class="meta-field" id="wk-txt-wrap" style="margin-bottom:14px; display:${cur&&cur.txt?'block':'none'};">
+          <label>النصّ</label>
+          <input id="wk-txt" value="${escapeAttr(cur&&cur.txt?cur.txt:'')}" placeholder="مثال: انتظار · إشراف الفسحة · نشاط">
+        </div>
+        <div class="warn-actions">
+          <button type="button" class="btn-cancel" id="wk-cancel">إلغاء</button>
+          <button type="button" class="btn-ok" id="wk-save">حفظ</button>
+        </div>
+      </div>
+    </div>`;
+  const sel = document.getElementById('wk-sec');
+  const wrap = document.getElementById('wk-txt-wrap');
+  const txt = document.getElementById('wk-txt');
+  sel.addEventListener('change', ()=>{
+    const isTxt = sel.value === '__txt';
+    wrap.style.display = isTxt ? 'block' : 'none';
+    if(isTxt) txt.focus();
+  });
+  document.getElementById('dlg-overlay').addEventListener('click', (e)=>{ if(e.target.id==='dlg-overlay') closeDialog(); });
+  document.getElementById('wk-cancel').addEventListener('click', closeDialog);
+  document.getElementById('wk-save').addEventListener('click', ()=>{
+    let val = null;
+    if(sel.value === '__txt'){
+      const t = (txt.value||'').trim();
+      if(t === ''){ showAlertDialog('اكتب النصّ أو اختر «فراغ»'); return; }
+      val = { txt: t };
+    } else if(sel.value !== ''){
+      val = { sec: sel.value };
+    }
+    setSchedCell(d, pi, val);
+    closeDialog();
+    render();
+  });
+}
+
+function wireSchedulePageEvents(){
+  document.querySelectorAll('[data-wk-d]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      showSchedCellDialog(parseInt(btn.getAttribute('data-wk-d')), parseInt(btn.getAttribute('data-wk-p')));
+    });
+  });
+  /* الأوقات تُلتزم عند change لا input: حقل الوقت يُطلق input على كل رقم
+     يُكتب، فتُحفظ أوقات نصف مكتوبة. */
+  document.querySelectorAll('[data-sp-start],[data-sp-end]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const i = parseInt(inp.getAttribute('data-sp-start') ?? inp.getAttribute('data-sp-end'));
+      const isStart = inp.hasAttribute('data-sp-start');
+      const p = schedPeriods()[i];
+      if(!p) return;
+      p[isStart ? 'start' : 'end'] = inp.value || '';
+      persistState();
+      render();
+    });
+  });
+  const more = document.getElementById('sp-more');
+  if(more) more.addEventListener('click', ()=>{ if(setSchedPeriodCount(schedPeriods().length + 1)) render(); });
+  const less = document.getElementById('sp-less');
+  if(less) less.addEventListener('click', ()=>{
+    const n = schedPeriods().length;
+    const lost = schedule().days.reduce((t,row)=> t + (row[n-1] ? 1 : 0), 0);
+    const go = ()=>{ if(setSchedPeriodCount(n - 1)) render(); };
+    if(lost > 0) showConfirmDialog('حذف آخر حصة',
+      `سيُحذف عمود الحصة ${fmt(n)} وما فيه من ${fmt(lost)} خانة معبّأة. هل تريد المتابعة؟`, go);
+    else go();
+  });
+  const pr = document.getElementById('sched-print');
+  if(pr) pr.addEventListener('click', ()=> printSchedule());
+  const cl = document.getElementById('sched-clear');
+  if(cl) cl.addEventListener('click', ()=>{
+    showConfirmDialog('تفريغ الجدول', 'ستُمسح كل خانات الأسبوع. الأوقات تبقى كما هي. هل تريد المتابعة؟', ()=>{
+      schedule().days.forEach(row=> row.fill(null));
+      persistState();
+      render();
+      showToast('تم تفريغ الجدول');
+    });
+  });
+}
+
+/* الجدول الأسبوعي المطبوع — وثيقة قائمة بذاتها، A4 عرضي في صفحة واحدة. */
+function printSchedule(){
+  const holder = document.getElementById('print-referral-holder');
+  const lh = STATE.letterhead || blankLetterhead();
+  const logoSrc = document.querySelector('header.app-top img')?.src || '';
+  const periods = schedPeriods();
+  const teacher = (SECTION_KEYS.map(k=>(STATE.meta[k]||{}).teacher).find(t=>t&&t.trim()) || '').trim();
+  const principal = (SECTION_KEYS.map(k=>(STATE.meta[k]||{}).principal).find(t=>t&&t.trim()) || '').trim();
+  const subject = (SECTION_KEYS.map(k=>(STATE.meta[k]||{}).subject).find(t=>t&&t.trim()) || '').trim();
+  const term = (SECTION_KEYS.map(k=>(STATE.meta[k]||{}).term).find(t=>t&&t.trim()) || '').trim();
+  const year = (SECTION_KEYS.map(k=>(STATE.meta[k]||{}).year).find(t=>t&&t.trim()) || '').trim();
+
+  holder.innerHTML = `
+  <div class="print-doc sched-print" dir="rtl">
+    <div class="sp-head">
+      <div>
+        ${escapeAttr(lh.line1)}<br>${escapeAttr(lh.line2)}<br><b>${escapeAttr(lh.school)}</b>
+      </div>
+      ${logoSrc?`<img alt="شعار وزارة التعليم" src="${logoSrc}" style="height:34px; width:auto; max-width:100px; object-fit:contain;">`:''}
+      <div style="text-align:left;">
+        ${teacher?`معلم المادة: ${escapeAttr(teacher)}<br>`:''}
+        ${subject?`المادة: ${escapeAttr(subject)}<br>`:''}
+        ${[term, year].filter(Boolean).join(' ')}
+      </div>
+    </div>
+    <h1 class="sp-title">الجدول الدراسي الأسبوعي</h1>
+    <table class="sp-grid">
+      <thead><tr>
+        <th class="sp-day">اليوم \ الحصة</th>
+        ${periods.map((p,i)=>`<th>${escapeAttr(SCHED_PERIOD_NAMES[i] || (i+1))}${(p.start&&p.end)?`<i>${escapeAttr(p.start)}–${escapeAttr(p.end)}</i>`:''}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${SCHED_DAYS.map((dname,d)=>`
+        <tr><th class="sp-day">${escapeAttr(dname)}</th>
+          ${periods.map((_,pi)=>{
+            const c = schedCell(d, pi);
+            if(!c) return `<td class="sp-free">—</td>`;
+            if(c.txt) return `<td class="sp-note">${escapeAttr(c.txt)}</td>`;
+            const sub = (STATE.meta[c.sec]||{}).subject || '';
+            return `<td><b>${escapeAttr(sectionTitle(c.sec))}</b>${sub?`<i>${escapeAttr(sub)}</i>`:''}</td>`;
+          }).join('')}
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="sp-foot">
+      <div>معلم المادة: ${escapeAttr(teacher)}</div>
+      <div>مدير المدرسة: ${escapeAttr(principal)}</div>
+    </div>
+  </div>`;
+  printHolder(holder, 'landscape');
+}
+
 function renderDataPage(){
   return `
   <div class="card">
@@ -2758,6 +3089,7 @@ function wireAccountEvents(){
   /* حرّاس if(el) داخل wireSettingsPanelEvents تتكفّل بأن يربط كلُّ صفحة عناصرها
      وحدها ويتجاوز ما ليس فيها، فلا حاجة لتوزيع الربط على الصفحات. */
   wireSettingsPanelEvents();
+  wireSchedulePageEvents();
   wireDataButtons();
   const nt = document.getElementById('btn-new-term');
   if(nt) nt.addEventListener('click', ()=> showNewTermDialog());
@@ -3156,6 +3488,7 @@ function renderGuidePage(){
         <li><b>مواعيد تسليم البنود</b> (اختيارية) ← حسابي › <b>مواعيد تسليم البنود</b>، أو بالضغط على رقم الخانة في رأس الجدول. تظهر في التقارير: «الواجب ٣ — ١٥ محرم — لم يسلّم».</li>
         <li><b>التوقيع</b> الذي يُدرج في التقارير ← حسابي › <b>التوقيع الإلكتروني</b>.</li>
         <li><b>السجل السلوكي</b> و<b>الحضور والغياب</b> ← لكلٍّ صفحته في <b>حسابي</b>، وفيها مفتاح التفعيل وكل خياراته.</li>
+        <li><b>جدولك الدراسي</b> ← حسابي › <b>الجدول الدراسي</b>: أوقات الحصص مرة واحدة، ثم شبكة الأسبوع. وتظهر حصص اليوم في <b>الرئيسية</b>، والحصة الجارية بشريط يبيّن ما تبقّى منها، وضغطة عليها تفتح رصد شعبتها. والجدول الأسبوعي يُطبع في صفحة واحدة.</li>
         <li><b>التصدير والنسخ الاحتياطية وبدء فصل جديد وتسجيل الخروج</b> ← حسابي › <b>البيانات والحساب</b>.</li>
       </ul>
 
@@ -3228,6 +3561,115 @@ const ATT_CODES = [ATT_PRESENT, ATT_LATE, ATT_EXCUSED, ATT_ABSENT];
 const ATT_LABEL = { 'ح':'حاضر', 'ت':'متأخر', 'ع':'غائب بعذر', 'غ':'غائب', '-':'لم يُسجَّل' };
 const ATT_COLOR = { 'ح':'var(--teal-d)', 'ت':'#B87514', 'ع':'#3D6FC4', 'غ':'#C0392B', '-':'var(--muted)' };
 const ATT_BG    = { 'ح':'var(--green)', 'ت':'var(--yellow)', 'ع':'#E7EEF9', 'غ':'var(--red)', '-':'var(--empty)' };
+
+/* ================= الجدول الدراسي =================
+   الأسبوع الدراسي السعودي: الأحد إلى الخميس. الفهرس هنا يطابق Date.getDay()
+   (٠ = الأحد) حتى لا نحتاج تحويلًا عند سؤال «أي يوم اليوم؟»، والجمعة (٥)
+   والسبت (٦) خارج الجدول.
+   الخانة: null فراغ · {sec:'شعبة 1'} حصة تدريس · {txt:'انتظار'} نصّ حرّ.
+   حصص الشعب وحدها هي التي تفتح الرصد بضغطة. */
+const SCHED_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
+const SCHED_PERIOD_NAMES = ['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة','التاسعة','العاشرة'];
+const SCHED_MIN_PERIODS = 1, SCHED_MAX_PERIODS = 10, SCHED_DEFAULT_PERIODS = 7;
+
+function blankSchedule(){
+  return {
+    periods: Array.from({length: SCHED_DEFAULT_PERIODS}, ()=> ({ start:'', end:'' })),
+    days: SCHED_DAYS.map(()=> Array(SCHED_DEFAULT_PERIODS).fill(null))
+  };
+}
+/* تُصلح أي حالة محمّلة قديمة أو ناقصة، وتوحّد أطوال الصفوف مع عدد الحصص. */
+function schedule(){
+  const s = STATE.schedule;
+  if(!s || typeof s !== 'object' || Array.isArray(s)){ STATE.schedule = blankSchedule(); return STATE.schedule; }
+  if(!Array.isArray(s.periods) || s.periods.length===0) s.periods = blankSchedule().periods;
+  s.periods = s.periods.slice(0, SCHED_MAX_PERIODS).map(p=>({
+    start: (p && typeof p.start === 'string') ? p.start : '',
+    end:   (p && typeof p.end   === 'string') ? p.end   : ''
+  }));
+  const n = s.periods.length;
+  if(!Array.isArray(s.days)) s.days = [];
+  s.days = SCHED_DAYS.map((_,d)=>{
+    const row = Array.isArray(s.days[d]) ? s.days[d] : [];
+    return Array.from({length:n}, (_,i)=> normSchedCell(row[i]));
+  });
+  return s;
+}
+function normSchedCell(c){
+  if(!c || typeof c !== 'object') return null;
+  if(typeof c.sec === 'string' && c.sec.trim() !== '') return { sec: c.sec };
+  if(typeof c.txt === 'string' && c.txt.trim() !== '') return { txt: c.txt.trim() };
+  return null;
+}
+function schedPeriods(){ return schedule().periods; }
+function schedCell(d, p){ const row = schedule().days[d]; return row ? row[p] || null : null; }
+function setSchedCell(d, p, val){
+  const s = schedule();
+  if(!s.days[d] || p < 0 || p >= s.periods.length) return false;
+  s.days[d][p] = normSchedCell(val);
+  persistState();
+  return true;
+}
+function setSchedPeriodCount(n){
+  const s = schedule();
+  n = Math.max(SCHED_MIN_PERIODS, Math.min(SCHED_MAX_PERIODS, n|0));
+  const cur = s.periods.length;
+  if(n === cur) return false;
+  if(n > cur){
+    for(let i=cur; i<n; i++){
+      s.periods.push({ start:'', end:'' });
+      s.days.forEach(row=> row.push(null));
+    }
+  } else {
+    s.periods.length = n;
+    s.days.forEach(row=> row.length = n);
+  }
+  persistState();
+  return true;
+}
+/* هل عبّأ المعلّم جدوله أصلًا؟ خانة واحدة تكفي. */
+function schedHasAny(){
+  return schedule().days.some(row=> row.some(c=> c !== null));
+}
+function schedDayCount(d){
+  const row = schedule().days[d] || [];
+  return row.filter(c=> c !== null).length;
+}
+/* عدد الحصص التي هي تدريس فعلي (تفتح الرصد) في يوم. */
+function schedTeachCount(d){
+  const row = schedule().days[d] || [];
+  return row.filter(c=> c && c.sec).length;
+}
+function schedCellLabel(c){
+  if(!c) return '';
+  return c.sec ? sectionTitle(c.sec) : (c.txt || '');
+}
+
+/* ---- الوقت ---- */
+function hmToMin(hm){
+  const m = /^\s*(\d{1,2})\s*:\s*(\d{2})\s*$/.exec(String(hm||''));
+  if(!m) return null;
+  const h = +m[1], mi = +m[2];
+  if(h>23 || mi>59) return null;
+  return h*60 + mi;
+}
+function minNow(){ const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+/* ٠–٤ الأحد إلى الخميس، و‎-1‎ لعطلة نهاية الأسبوع. */
+function todayDayIndex(){
+  const g = new Date().getDay();
+  return g <= 4 ? g : -1;
+}
+/* حالة حصة بالنسبة للحظة الحالية: قبل / الآن / بعد — وnull إن كانت بلا وقت. */
+function periodClock(idx, nowMin){
+  const p = schedPeriods()[idx];
+  if(!p) return null;
+  const a = hmToMin(p.start), b = hmToMin(p.end);
+  if(a === null || b === null || b <= a) return null;
+  const now = (nowMin === undefined) ? minNow() : nowMin;
+  if(now < a) return { state:'future', startsIn: a - now, a, b };
+  if(now >= b) return { state:'past', a, b };
+  return { state:'now', leftMin: b - now, pct: Math.round(((now - a) / (b - a)) * 100), a, b };
+}
 
 function blankAttendance(){
   return { enabled:false, affectsGrade:false, weight:5 };
@@ -5115,6 +5557,107 @@ function renderAttentionCard(){
   </div>`;
 }
 
+/* بطاقة «حصص اليوم» في الرئيسية.
+   المعلّم لا يفتح التطبيق ليرى جدوله — يفتحه ليعرف ماذا عنده الآن. فالبطاقة
+   تُجيب ذلك في كتلة واحدة كبيرة (اسم الشعبة، كم مضى من الحصة، وزرّ يفتح
+   رصدها)، وبقيةُ اليوم تتقلّص إلى سطر «التالية» وشريط رقائق. */
+function renderTodayCard(){
+  const d = todayDayIndex();
+  const head = (label)=> `
+    <div class="sch-head"><b>🗓️ حصص اليوم</b><span>${escapeAttr(label)}</span></div>`;
+
+  const stamp = (name)=> `${name} · ${getHijriDateStr()}`;
+  if(d === -1){
+    return `${head(stamp(new Date().getDay()===5 ? 'الجمعة' : 'السبت'))}
+      <div class="card sch-empty">إجازة نهاية الأسبوع — لا حصص اليوم</div>`;
+  }
+  if(!schedHasAny()){
+    return `${head(stamp(SCHED_DAYS[d]))}
+      <div class="card sch-empty">
+        لم تُعبّئ جدولك بعد.
+        <div style="margin-top:12px;">
+          <button type="button" class="icon-btn sch-fill-btn" id="btn-fill-schedule"
+            style="background:var(--teal); color:#fff; border-color:var(--teal);">🗓️ تعبئة الجدول</button>
+        </div>
+      </div>`;
+  }
+
+  const row = schedule().days[d] || [];
+  const filled = row.map((c,i)=> ({ c, i })).filter(x=> x.c !== null);
+  if(filled.length === 0){
+    return `${head(stamp(SCHED_DAYS[d]))}
+      <div class="card sch-empty">لا حصص لك اليوم (${escapeAttr(SCHED_DAYS[d])})</div>`;
+  }
+
+  const now = minNow();
+  const clocks = {};
+  filled.forEach(x=>{ clocks[x.i] = periodClock(x.i, now); });
+
+  /* الجارية، وإلا أقرب قادمة، وإلا الأولى — حتى لا تبقى البطاقة بلا بطل. */
+  const cur = filled.find(x=> clocks[x.i] && clocks[x.i].state === 'now');
+  const upcoming = filled.filter(x=> clocks[x.i] && clocks[x.i].state === 'future')
+                         .sort((a,b)=> clocks[a.i].startsIn - clocks[b.i].startsIn);
+  const hero = cur || upcoming[0] || filled[0];
+  const hk = clocks[hero.i];
+  const heroIsNow = !!(hk && hk.state === 'now');
+  const pt = schedPeriods()[hero.i] || { start:'', end:'' };
+
+  const heroLine = heroIsNow
+    ? `<span class="nh-live"></span> الحصة ${escapeAttr(SCHED_PERIOD_NAMES[hero.i] || (hero.i+1))} · جارية الآن`
+    : (hk && hk.state === 'future'
+        ? `الحصة ${escapeAttr(SCHED_PERIOD_NAMES[hero.i] || (hero.i+1))} · بعد ${fmt(hk.startsIn)} دقيقة`
+        : `الحصة ${escapeAttr(SCHED_PERIOD_NAMES[hero.i] || (hero.i+1))}`);
+
+  const heroSub = hero.c.sec
+    ? [escapeAttr((STATE.meta[hero.c.sec]||{}).subject || ''), `${fmt(namedCount(hero.c.sec))} طالبًا`].filter(Boolean).join(' · ')
+    : 'ليست حصة تدريس';
+
+  const bar = heroIsNow ? `
+    <div class="nh-bar"><span style="width:${hk.pct}%"></span></div>
+    <div class="nh-times"><span>${escapeAttr(pt.start)}</span><span>تبقّى ${fmt(hk.leftMin)} دقيقة</span><span>${escapeAttr(pt.end)}</span></div>`
+    : ((pt.start || pt.end) ? `
+    <div class="nh-times" style="margin-top:11px;"><span>${escapeAttr(pt.start)}</span><span></span><span>${escapeAttr(pt.end)}</span></div>` : ``);
+
+  const heroBtn = hero.c.sec
+    ? `<button type="button" class="nh-btn" data-sched-open="${escapeAttr(hero.c.sec)}">افتح رصد ${escapeAttr(sectionTitle(hero.c.sec))} ←</button>`
+    : ``;
+
+  /* التالية بعد البطل. */
+  const after = filled.filter(x=> x.i > hero.i)[0];
+  const nextRow = after ? `
+    <div class="up-next">
+      <span class="un-lab">التالية</span>
+      <span class="un-body">${escapeAttr(schedCellLabel(after.c))}</span>
+      <span class="un-time">${escapeAttr((schedPeriods()[after.i]||{}).start || '')}</span>
+    </div>` : ``;
+
+  const chips = filled.filter(x=> x.i !== hero.i).map(x=>{
+    const k = clocks[x.i];
+    const past = k && k.state === 'past';
+    const cls = x.c.sec ? (past ? 'done' : '') : 'free';
+    const inner = `<span class="rc-n">${fmt(x.i+1)}</span> ${escapeAttr(schedCellLabel(x.c))}`;
+    return x.c.sec
+      ? `<button type="button" class="rest-chip ${cls}" data-sched-open="${escapeAttr(x.c.sec)}">${inner}</button>`
+      : `<span class="rest-chip free">${inner}</span>`;
+  }).join('');
+
+  return `${head(stamp(SCHED_DAYS[d]))}
+  <div class="now-hero${heroIsNow ? '' : ' idle'}">
+    <div class="nh-top">${heroLine}</div>
+    <div class="nh-name">${escapeAttr(schedCellLabel(hero.c))}</div>
+    <div class="nh-sub">${heroSub}</div>
+    ${bar}
+    ${heroBtn}
+  </div>
+  ${nextRow}
+  ${chips ? `<div class="rest-strip">${chips}</div>` : ``}`;
+}
+
+function namedCount(key){
+  const rows = STATE.sections[key] || [];
+  return rows.filter(r=> (r.name||'').trim() !== '').length;
+}
+
 function renderHome(){
   const lh = STATE.letterhead || blankLetterhead();
   const teacher = (SECTION_KEYS.map(k=>STATE.meta[k] && STATE.meta[k].teacher).find(t=>t && t.trim()) || '').trim();
@@ -5154,6 +5697,8 @@ function renderHome(){
     <div class="home-avatar">${escapeAttr(initial)}</div>
   </div>
 
+  ${renderTodayCard()}
+
   <div class="search-box">
     <span class="sb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></span>
     <input type="search" id="student-search" placeholder="ابحث عن طالب في كل الشعب…" value="${escapeAttr(SEARCH_QUERY)}" autocomplete="off">
@@ -5176,7 +5721,28 @@ function renderHome(){
   </button>`;
 }
 
+/* ضغطة على حصة تدريس تفتح رصد شعبتها — وهذه هي فائدة البطاقة الأولى. */
+function wireTodayCardEvents(){
+  document.querySelectorAll('[data-sched-open]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const key = el.getAttribute('data-sched-open');
+      if(!STATE.sections[key]) return;
+      STATE.activeTab = key;
+      SELECTED_ROWS.clear(); EXPANDED_CARDS.clear();
+      switchView('rasd');
+    });
+  });
+  const fill = document.getElementById('btn-fill-schedule');
+  if(fill) fill.addEventListener('click', ()=>{
+    STATE.activeView = 'account';
+    persistState();
+    render();
+    openAccountPage('schedule');
+  });
+}
+
 function wireHomeEvents(){
+  wireTodayCardEvents();
   document.querySelectorAll('[data-open-section]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       SELECTED_ROWS.clear();
