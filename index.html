@@ -593,8 +593,15 @@ tr.row-selected td.name-c, tr.row-selected td.idx-c{background:#dbeafe !importan
 .stat-row{display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-bottom:1px dashed #eef0f3;}
 .stat-row:last-child{border-bottom:none;}
 .stat-row .v{font-weight:700; color:var(--text);}
-.bar-track{height:8px; background:#eef1f5; border-radius:6px; overflow:hidden; margin-top:8px;}
-.bar-fill{height:100%; background:var(--teal); border-radius:6px;}
+/* display:flex يجعل التعبئة عنصرًا مرنًا: تُكتَّل تلقائيًا فتعمل width،
+   وتمتدّ رأسيًا فلا تحتاج height:100% (وهي لا تعمل أصلًا ما لم يكن للأب
+   ارتفاع محدَّد). */
+.bar-track{height:8px; background:#eef1f5; border-radius:6px; overflow:hidden; margin-top:8px; display:flex; align-items:stretch;}
+/* display:block ضروري: بطاقتا «إنجاز كل بند» و«أقوى الخانات» تستعملان
+   <span class="bar-fill">، والعنصر السطري يتجاهل width وheight تمامًا —
+   فكان الشريط بعرض صفر: مسارٌ رمادي فارغ بلا تعبئة، على الشاشة والورق معًا.
+   (المسار نفسه كان يظهر لأنه عنصر مرن فيُكتَّل تلقائيًا.) */
+.bar-fill{display:block; background:var(--teal); border-radius:6px;}
 
 table.analysis-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px;}
 table.analysis-table th, table.analysis-table td{border:1px solid var(--border); padding:8px 6px; text-align:center;}
@@ -647,6 +654,14 @@ table.analysis-table tbody tr:last-child{font-weight:800; background:#f6f7f9;}
 .item-perf-row .ip-name{color:var(--text); flex:1 1 auto; min-width:0;}
 .item-perf-row .ip-track{flex:1 1 90px; max-width:110px;}
 .item-perf-row .ip-val{font-weight:700; color:var(--text); flex:0 0 auto; width:44px; text-align:left;}
+/* بطاقة «إنجاز كل بند» كانت بلا أي تنسيق: اسمٌ في سطر، ثم شريط بعرض الصفحة،
+   ثم النسبة في سطر ثالث — بحجم نصّ الصفحة كاملًا. تُصفّ الآن في سطر واحد
+   كجارتها. */
+.ip-row{display:flex; align-items:center; gap:8px; font-size:12.5px; padding:7px 0; border-bottom:1px dashed #eef0f3;}
+.ip-row:last-child{border-bottom:none;}
+.ip-row .ip-label{color:var(--text); flex:1 1 auto; min-width:0;}
+.ip-row .ip-track{flex:1 1 90px; max-width:110px; margin-top:0;}
+.ip-row .ip-val{font-weight:700; color:var(--text); flex:0 0 auto; width:44px; text-align:left;}
 .followup-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:4px;}
 .followup-table th, .followup-table td{border:1px solid var(--border); padding:7px 6px; text-align:center; vertical-align:middle;}
 .followup-table thead th{background:var(--gray-head); color:#fff; font-size:11.5px;}
@@ -868,10 +883,12 @@ tr.row-found td{background:#FFF6D8 !important; transition:background .4s;}
 .late-rank-row:last-child{border-bottom:none;}
 .late-rank-row .lr-badge{background:var(--orange); color:var(--orange-t); font-weight:700; font-size:11px; padding:2px 9px; border-radius:20px;}
 .empty-note{font-size:12.5px; color:var(--muted); padding:8px 2px;}
-.chart-box{position:relative; width:100%; height:220px; margin-bottom:14px;}
-.chart-box.tall{height:280px;}
-.chart-box.donut{height:210px;}
-@media(max-width:420px){ .chart-box.donut{height:240px;} }
+/* الرسم SVG بنسبة أبعاد ثابتة من viewBox، فلا حاجة لارتفاع مفروض:
+   height:auto يمنع التشوّه ويترك الرسم يتقلّص مع عرض الجوال. */
+/* السقف ضروري: الرسم SVG بنسبة أبعاد ثابتة وwidth:100%، فعلى شاشة عريضة
+   أو عمود طباعة عريض يتمدّد عرضًا فيطول ارتفاعه بالقدر نفسه ويأكل الصفحة. */
+.chart-box{width:100%; max-width:460px; margin:0 auto 14px;}
+.chart-box .chart-svg{display:block; width:100%; height:auto;}
 
 .hint{font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.8;}
 .autosave-note{font-size:12px; color:#0f7a5c; background:#eafaf3; border:1px solid #cdeee0; padding:7px 10px; border-radius:8px; margin-bottom:10px; display:inline-block;}
@@ -1148,14 +1165,20 @@ body.modal-lock{ overflow:hidden; }
   body.printing-doc #print-referral-holder .ap-title{
     font-size:13px !important; margin:0 0 8px !important;
   }
+  /* أعمدةٌ متدفّقة لا شبكة. الشبكة تصفّ البطاقات في صفوف، والصفُّ لا ينقسم:
+     بطاقةٌ طويلة في أحد عموديه تدفع الصفّ كلّه إلى الصفحة التالية وتترك
+     نصف الصفحة قبله فارغًا — وهو ما ظهر فعلًا في المعاينة. التدفّق بالأعمدة
+     يملأ العمود الأول ثم الثاني ثم الصفحة التالية، فلا فجوات. */
   body.printing-doc #print-referral-holder .analysis-print{
-    display:grid; grid-template-columns:1fr 1fr; gap:7px 10px; align-items:start;
+    columns:2; column-gap:10px; orphans:3; widows:3;
   }
   body.printing-doc #print-referral-holder .analysis-print > .card{
-    break-inside:avoid; page-break-inside:avoid; margin:0 !important;
+    break-inside:avoid; page-break-inside:avoid;
+    margin:0 0 7px !important; display:block;
     border:1px solid #d4d4d4 !important; border-radius:6px !important; padding:7px 9px !important;
   }
-  body.printing-doc #print-referral-holder .analysis-print > .card.ap-wide{ grid-column:1 / -1; }
+  /* الجداول العريضة تخرج من التدفّق وتمتدّ على العرض كاملًا. */
+  body.printing-doc #print-referral-holder .analysis-print > .card.ap-wide{ column-span:all; }
   body.printing-doc #print-referral-holder .analysis-print h2{
     font-size:11px !important; margin:0 0 5px !important; color:#111 !important;
   }
@@ -1182,11 +1205,16 @@ body.modal-lock{ overflow:hidden; }
   body.printing-doc #print-referral-holder .analysis-print .stat-row{ padding:2px 0 !important; }
   body.printing-doc #print-referral-holder .analysis-print .stat-row,
   body.printing-doc #print-referral-holder .analysis-print .item-perf-row,
-  body.printing-doc #print-referral-holder .analysis-print .late-rank-row{ font-size:8.5px !important; }
+  body.printing-doc #print-referral-holder .analysis-print .ip-row,
+  body.printing-doc #print-referral-holder .analysis-print .late-rank-row{ font-size:8.5px !important; padding:3px 0 !important; }
   body.printing-doc #print-referral-holder .analysis-print table{ font-size:8.5px !important; }
   body.printing-doc #print-referral-holder .analysis-print table th,
   body.printing-doc #print-referral-holder .analysis-print table td{ padding:2px 3px !important; }
   body.printing-doc #print-referral-holder .analysis-print .table-wrap{ overflow:visible !important; border:none !important; }
+  /* على الورق يكفي الرسم صغيرًا: الأرقام تحته تحمل التفصيل. */
+  body.printing-doc #print-referral-holder .analysis-print .chart-box{
+    max-width:215px !important; margin:0 auto 6px !important;
+  }
 }
 
 </style>
@@ -1537,8 +1565,6 @@ body.modal-lock{ overflow:hidden; }
 <script>
 /* ================= DATA MODEL ================= */
 const SECTION_KEYS = ["شعبة 1","شعبة 2","شعبة 3"];
-let ANALYSIS_CHART_DATA = null; // computed by renderAnalysis(), consumed by wireAnalysisEvents() to draw Chart.js charts
-let ANALYSIS_CHART_INSTANCES = {};
 /* الكشف يبدأ فارغًا: ثلاث شعب جاهزة بصفوف بلا أسماء، يملؤها المعلّم بنفسه
    أو يستوردها من نور أو من إكسل. كان هنا ٢٦ كيلوبايت من صفوف متطابقة
    مكتوبة حرفًا حرفًا، تُنزَّل مع كل زيارة بلا فائدة. */
@@ -4099,11 +4125,14 @@ function renderAnalysis(opts){
   </div>`;
 
   /* ---- أداء الشعبة ---- */
-  const sectionChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-section-compare"></canvas></div>`;
+  const sectionChartSvg = `<div class="chart-box">${svgVBars(
+    SECTION_KEYS,
+    SECTION_KEYS.map(k=> totalMax>0 ? Math.round((stats[k].avgFinal/totalMax)*1000)/10 : 0),
+    { title:'متوسط إنجاز كل شعبة' })}</div>`;
   const sectionPerf = `
   <div class="card ap-wide">
     <h2>📈 أداء الشعبة</h2>
-    ${sectionChartCanvas}
+    ${sectionChartSvg}
     <div class="analysis-grid">${cards}</div>
   </div>`;
 
@@ -4117,11 +4146,14 @@ function renderAnalysis(opts){
       <span class="ip-val">${Math.round(it.avgRatio*100)}%</span>
     </div>`;
   const worstDelayItems = [...allItems].filter(it=>it.lateN>0).sort((a,b)=>b.lateN-a.lateN).slice(0,3);
-  const itemChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box tall"><canvas id="chart-item-perf"></canvas></div>`;
+  const itemChartSvg = `<div class="chart-box auto">${svgHBars(
+    [...bestItems, ...worstItems].map(it=>it.label),
+    [...bestItems, ...worstItems].map(it=>Math.round(it.avgRatio*1000)/10),
+    { title:'أقوى الخانات وأضعفها', colorFor: v=> v<60 ? CHART_CRIT : CHART_TEAL })}</div>`;
   const itemPerfCard = allItems.length===0 ? `` : `
   <div class="card">
     <h2>📊 أقوى الخانات وأضعفها</h2>
-    ${itemChartCanvas}
+    ${itemChartSvg}
     <h3 style="font-size:12.5px; color:var(--muted); margin:6px 0;">✅ الأفضل أداءً</h3>
     ${bestItems.map(itemRow).join("")}
     <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">⚠️ الأضعف أداءً</h3>
@@ -4132,29 +4164,18 @@ function renderAnalysis(opts){
     <div class="hint">النسبة تمثل متوسط الإنجاز للبند عبر كل الطلاب الذين وصلهم (المتروك ${symIcon("⬜")} لا يُحتسب). البند الذي يتأخر فيه كثيرون قد تكون مشكلته في موعده أو وضوح تعليماته لا في الطلاب.</div>
   </div>`;
 
-  /* ---- بيانات الرسوم البيانية (تُستهلك من wireAnalysisEvents بعد إدراج الـ canvas في الصفحة) ---- */
-  if(!forPrint){
-    ANALYSIS_CHART_DATA = {
-      sectionLabels: SECTION_KEYS,
-      sectionValues: SECTION_KEYS.map(k=> totalMax>0 ? Math.round((stats[k].avgFinal/totalMax)*1000)/10 : 0),
-      itemLabels: [...bestItems, ...worstItems].map(it=>it.label),
-      itemValues: [...bestItems, ...worstItems].map(it=>Math.round(it.avgRatio*1000)/10)
-    };
-  }
-
   /* ---- توزيع المستوى ---- */
   const levels = levelDistribution();
   const gradedTotal = LEVEL_TIERS.reduce((a,t)=>a+levels[t.name], 0);
-  if(!forPrint && ANALYSIS_CHART_DATA){
-    ANALYSIS_CHART_DATA.levelLabels = LEVEL_TIERS.map(t=>t.name);
-    ANALYSIS_CHART_DATA.levelValues = LEVEL_TIERS.map(t=>levels[t.name]);
-    ANALYSIS_CHART_DATA.levelTotal  = gradedTotal;
-  }
-  const levelChartCanvas = (forPrint || gradedTotal===0 || !chartLibUsable()) ? `` : `<div class="chart-box donut"><canvas id="chart-levels"></canvas></div>`;
+  const levelChartSvg = gradedTotal===0 ? `` : `<div class="chart-box donut">${svgDonut(
+    LEVEL_TIERS.map(t=>t.name),
+    LEVEL_TIERS.map(t=>levels[t.name]),
+    LEVEL_RAMP,
+    { title:`توزيع التقديرات — ${gradedTotal} طالبًا` })}</div>`;
   const levelCard = `
   <div class="card">
     <h2>🏆 توزيع التقديرات</h2>
-    ${levelChartCanvas}
+    ${levelChartSvg}
     <div class="ref-summary">
       ${LEVEL_TIERS.map(t=>`
       <div class="ref-summary-item lvl-tier" style="--tier-bg:${t.bg}; --tier-fg:${t.fg};">
@@ -4214,17 +4235,14 @@ function renderAnalysis(opts){
 
   /* ---- 🔁 مقارنة الفترات ---- */
   const periods = periodComparison();
-  if(!forPrint && ANALYSIS_CHART_DATA && periods.length>0){
-    ANALYSIS_CHART_DATA.periodLabels = periods.map(p=>p.key);
-    ANALYSIS_CHART_DATA.periodPrev   = periods.map(p=>p.prevPct);
-    ANALYSIS_CHART_DATA.periodCur    = periods.map(p=>p.curPct);
-  }
-  const periodChartCanvas = (forPrint || !chartLibUsable()) ? `` : `<div class="chart-box"><canvas id="chart-periods"></canvas></div>`;
+  const periodChartSvg = `<div class="chart-box">${svgGroupedBars(
+    periods.map(p=>p.key), periods.map(p=>p.prevPct), periods.map(p=>p.curPct),
+    { title:'الفترة السابقة مقابل الحالية' })}</div>`;
   const periodCard = periods.length===0 ? `` : `
   <div class="card ap-wide">
     <h2>🔁 مقارنة الفترات</h2>
     <div class="hint" style="margin-top:0; margin-bottom:8px;">مقارنة متوسط نسبة الإنجاز في كل شعبة بينها وبين نسختها المؤرشفة من فصل سابق.</div>
-    ${periodChartCanvas}
+    ${periodChartSvg}
     <div class="table-wrap">
     <table class="followup-table">
       <thead><tr><th>الشعبة</th><th>الفترة السابقة</th><th>الفترة الحالية</th><th>الفرق</th></tr></thead>
@@ -5341,8 +5359,7 @@ function wireViewLinks(){
 }
 
 function wireAnalysisEvents(){
-  wireViewLinks();
-  drawAnalysisCharts();
+  wireViewLinks();   /* الرسوم SVG داخل الترميز — لا خطوة رسم بعد العرض */
 }
 
 /* ===== الرسوم البيانية =====
@@ -5358,212 +5375,173 @@ const CHART_GRID      = '#EFEBE4';
 const CHART_SURFACE   = '#FFFFFF';
 const LEVEL_RAMP = ['#0A5F4E','#12866E','#3EA88E','#6FBCA7','#96CFC0'];
 
-function chartBaseOptions(){
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 260 },
-    plugins: {
-      legend: { display:false },
-      tooltip: {
-        backgroundColor: '#1F2421', titleColor:'#fff', bodyColor:'#fff',
-        titleFont:{ family:"'Readex Pro','Tajawal',sans-serif", size:12 },
-        bodyFont:{ family:"'Readex Pro','Tajawal',sans-serif", size:12 },
-        padding: 9, cornerRadius: 8, displayColors: false
-      }
+/* ===== رسوم بيانية مرسومة هنا، بلا مكتبة خارجية =====
+   كانت تعتمد على Chart.js من CDN. ومكتبةٌ لا تصل — شبكة مدرسة بطيئة أو
+   محجوبة — تعني غياب الرسوم كلها عن المعلّم، وهو ما حدث فعلًا. SVG مرسوم
+   هنا لا يحتاج شبكة، ويعمل بلا اتصال، ويُطبع مع التقرير (canvas يخرج فارغًا
+   في كثير من محرّكات الطباعة)، ويوفّر ٢٠٠ كيلوبايت من التحميل.
+   الاتجاه: الفئة الأولى على اليمين كالقراءة العربية. */
+const SVG_FONT = "'Readex Pro','Tajawal',system-ui,sans-serif";
+
+/* عرض viewBox قريب من عرض الجوال، فلا يتقلّص الخطّ إلى ما لا يُقرأ.
+   text-anchor مصرَّح في كل نصّ: SVG لا يرث اتجاه الصفحة، والنصّ العربي
+   المرساة عند البداية يمتدّ يمينًا فيخرج من الإطار — وهو ما حدث فعلًا. */
+const SVG_W = 360;
+
+/* الصفحة RTL ونصّ SVG يرث اتجاهها، فتنقلب دلالة text-anchor عمّا يتوقّعه
+   المرء: قِيس فعليًا في المتصفح أن anchor="end" عند x يجعل الصندوق يبدأ من x
+   ويمتدّ يمينًا، وanchor="start" يجعله ينتهي عند x ممتدًّا يسارًا. هذان
+   الاسمان يصرّحان بالمقصود بدل الاعتماد على تذكّر الانقلاب — والخطأ فيه
+   أخرج أسماء الخانات كلّها خارج الإطار. */
+const ANCHOR_L = 'start';   /* ينتهي عند x (يمتدّ يسارًا) */
+const ANCHOR_R = 'end';     /* يبدأ من x (يمتدّ يمينًا) */
+
+function svgWrap(w, h, body, cls){
+  return `<svg class="chart-svg${cls?' '+cls:''}" viewBox="0 0 ${w} ${h}" width="100%"
+    preserveAspectRatio="xMidYMid meet" role="img" font-family="${SVG_FONT}">${body}</svg>`;
+}
+function svgTitle(text, w){
+  return `<text x="${w/2}" y="13" text-anchor="middle" font-size="11.5" font-weight="500" fill="${CHART_INK}">${escapeAttr(text)}</text>`;
+}
+function svgClip(s, max){
+  s = String(s||'');
+  return s.length > max ? s.slice(0, max-1) + '…' : s;
+}
+
+/* ---- أعمدة رأسية بنسبة مئوية ---- */
+function svgVBars(labels, values, opts){
+  const o = opts || {};
+  if(!labels || labels.length===0) return '';
+  const W = SVG_W, H = 190, padT = 30, padB = 34, padR = 34, padL = 8;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const n = labels.length, slot = plotW / n;
+  const barW = Math.min(38, slot * 0.5);
+  const yOf = v => padT + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+  const cx = i => W - padR - (i + 0.5) * slot;          /* الأولى على اليمين */
+
+  const grid = [0,50,100].map(g=>`
+    <line x1="${padL}" x2="${W-padR}" y1="${yOf(g)}" y2="${yOf(g)}" stroke="${CHART_GRID}" stroke-width="1"/>
+    <text x="${W-padR+4}" y="${yOf(g)+3.5}" text-anchor="${ANCHOR_R}" font-size="9" fill="${CHART_MUTED}">${g}%</text>`).join('');
+
+  const bars = values.map((v,i)=>{
+    const val = Math.round(Math.max(0, Math.min(100, v||0)));
+    const top = yOf(val), hgt = Math.max(val>0 ? 2 : 0, padT + plotH - top);
+    const color = o.colorFor ? o.colorFor(val) : CHART_TEAL;
+    return `
+    <rect x="${(cx(i)-barW/2).toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${hgt.toFixed(1)}" rx="3" fill="${color}"/>
+    <text x="${cx(i).toFixed(1)}" y="${(top-4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="500" fill="${CHART_INK}">${val}%</text>
+    <text x="${cx(i).toFixed(1)}" y="${H-padB+14}" text-anchor="middle" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(labels[i], 11))}</text>`;
+  }).join('');
+
+  return svgWrap(W, H, `${o.title?svgTitle(o.title,W):''}${grid}
+    <line x1="${padL}" x2="${W-padR}" y1="${yOf(0)}" y2="${yOf(0)}" stroke="${CHART_MUTED}" stroke-width="1"/>${bars}`);
+}
+
+/* ---- أعمدة أفقية: أسماء الخانات العربية أطول من أن تتّسع تحت عمود.
+   القراءة يمينًا-يسارًا: الاسم ثم الشريط ثم النسبة. ---- */
+function svgHBars(labels, values, opts){
+  const o = opts || {};
+  if(!labels || labels.length===0) return '';
+  const n = labels.length;
+  const W = SVG_W, rowH = 22, padT = 26, padB = 16, labelW = 104, valW = 30;
+  const H = padT + n*rowH + padB;
+  const x1 = W - labelW;                 /* حافة الشريط اليمنى */
+  const plotW = x1 - valW;
+  const xOf = v => x1 - (Math.max(0, Math.min(100, v)) / 100) * plotW;
+  const cy = i => padT + i*rowH + rowH/2;
+
+  const rows = values.map((v,i)=>{
+    const val = Math.round(Math.max(0, Math.min(100, v||0)));
+    const x = xOf(val), w = Math.max(val>0 ? 2 : 0, x1 - x);
+    const color = o.colorFor ? o.colorFor(val) : CHART_TEAL;
+    return `
+    <text x="${W-4}" y="${cy(i)+3.5}" text-anchor="${ANCHOR_L}" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(labels[i], 16))}</text>
+    <rect x="${x1-plotW}" y="${cy(i)-6}" width="${plotW}" height="12" rx="3" fill="${CHART_GRID}"/>
+    <rect x="${x.toFixed(1)}" y="${cy(i)-6}" width="${w.toFixed(1)}" height="12" rx="3" fill="${color}"/>
+    <text x="2" y="${cy(i)+3.5}" text-anchor="${ANCHOR_R}" font-size="9" font-weight="500" fill="${CHART_INK}">${val}%</text>`;
+  }).join('');
+
+  return svgWrap(W, H, `${o.title?svgTitle(o.title,W):''}${rows}`);
+}
+
+/* ---- دونات توزيع التقديرات ----
+   الترتيب يحمله السطوع لا الصبغة (آمن لعمى الألوان بالبناء)، وكل شريحة
+   موسومة باسمها وعددها في المفتاح فلا تُحمَّل الهوية على اللون وحده. */
+function svgDonut(labels, values, colors, opts){
+  const o = opts || {};
+  const total = values.reduce((a,b)=>a+(b||0), 0);
+  if(total <= 0) return '';
+  const shown = labels.map((l,i)=>({l, v:values[i]||0, c:colors[i%colors.length]})).filter(x=>x.v>0);
+  const W = SVG_W, rOut = 52, rIn = rOut*0.58;
+  const H = Math.max(150, 34 + Math.max(rOut*2 + 12, shown.length*19 + 6));
+  const cx = W - rOut - 12, cy = 30 + rOut;
+
+  let acc = -Math.PI/2;
+  const pt = (r,a)=> `${(cx + r*Math.cos(a)).toFixed(2)},${(cy + r*Math.sin(a)).toFixed(2)}`;
+  const arcs = shown.map(sl=>{
+    const frac = sl.v / total;
+    const a0 = acc, a1 = acc + frac*Math.PI*2; acc = a1;
+    /* شريحة كاملة: دائرتان بقاعدة evenodd — القوس الواحد تنطبق طرفاه فيختفي. */
+    if(frac >= 0.999){
+      return `<path fill-rule="evenodd" fill="${sl.c}" d="M ${pt(rOut,0)} A ${rOut} ${rOut} 0 1 1 ${pt(rOut,Math.PI)} A ${rOut} ${rOut} 0 1 1 ${pt(rOut,0)} Z
+        M ${pt(rIn,0)} A ${rIn} ${rIn} 0 1 1 ${pt(rIn,Math.PI)} A ${rIn} ${rIn} 0 1 1 ${pt(rIn,0)} Z"/>`;
     }
+    const large = (a1-a0) > Math.PI ? 1 : 0;
+    return `<path fill="${sl.c}" stroke="${CHART_SURFACE}" stroke-width="1.5"
+      d="M ${pt(rOut,a0)} A ${rOut} ${rOut} 0 ${large} 1 ${pt(rOut,a1)} L ${pt(rIn,a1)} A ${rIn} ${rIn} 0 ${large} 0 ${pt(rIn,a0)} Z"/>`;
+  }).join('');
+
+  const lx = W - rOut*2 - 26;
+  const legend = shown.map((sl,i)=>{
+    const y = 38 + i*19;
+    return `
+    <rect x="${lx-11}" y="${y-8}" width="10" height="10" rx="2.5" fill="${sl.c}"/>
+    <text x="${lx-16}" y="${y}" text-anchor="${ANCHOR_L}" font-size="9.5" fill="${CHART_INK}">${escapeAttr(sl.l)} — ${sl.v}</text>`;
+  }).join('');
+
+  return svgWrap(W, H, `${o.title?svgTitle(o.title,W):''}${arcs}
+    <text x="${cx}" y="${cy-1}" text-anchor="middle" font-size="16" font-weight="600" fill="${CHART_INK}">${total}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="8.5" fill="${CHART_MUTED}">طالبًا</text>${legend}`);
+}
+
+/* ---- أعمدة مزدوجة: نقطتان زمنيتان مقارنة، لا اتجاه ---- */
+function svgGroupedBars(labels, seriesA, seriesB, opts){
+  const o = opts || {};
+  if(!labels || labels.length===0) return '';
+  const W = SVG_W, H = 206, padT = 28, padB = 50, padR = 34, padL = 8;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const n = labels.length, slot = plotW / n;
+  const barW = Math.min(20, slot * 0.28);
+  const yOf = v => padT + plotH - (Math.max(0, Math.min(100, v)) / 100) * plotH;
+  const cx = i => W - padR - (i + 0.5) * slot;
+
+  const grid = [0,50,100].map(g=>`
+    <line x1="${padL}" x2="${W-padR}" y1="${yOf(g)}" y2="${yOf(g)}" stroke="${CHART_GRID}" stroke-width="1"/>
+    <text x="${W-padR+4}" y="${yOf(g)+3.5}" text-anchor="${ANCHOR_R}" font-size="9" fill="${CHART_MUTED}">${g}%</text>`).join('');
+
+  const bar = (v, x, color)=>{
+    if(v === null || v === undefined) return '';
+    const val = Math.round(Math.max(0, Math.min(100, v)));
+    const top = yOf(val), hgt = Math.max(val>0 ? 2 : 0, padT + plotH - top);
+    return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${hgt.toFixed(1)}" rx="2.5" fill="${color}"/>`;
   };
+  const groups = labels.map((lb,i)=>`
+    ${bar(seriesA[i], cx(i)+1, CHART_TEAL_SOFT)}
+    ${bar(seriesB[i], cx(i)-barW-1, CHART_TEAL)}
+    <text x="${cx(i).toFixed(1)}" y="${H-padB+14}" text-anchor="middle" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(lb, 11))}</text>`).join('');
+
+  const ly = H - 12;
+  const legend = `
+    <rect x="${W/2+4}" y="${ly-8}" width="9" height="9" rx="2.5" fill="${CHART_TEAL_SOFT}"/>
+    <text x="${W/2+17}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">الفترة السابقة</text>
+    <rect x="${W/2-70}" y="${ly-8}" width="9" height="9" rx="2.5" fill="${CHART_TEAL}"/>
+    <text x="${W/2-57}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">الفترة الحالية</text>`;
+
+  return svgWrap(W, H, `${o.title?svgTitle(o.title,W):''}${grid}
+    <line x1="${padL}" x2="${W-padR}" y1="${yOf(0)}" y2="${yOf(0)}" stroke="${CHART_MUTED}" stroke-width="1"/>${groups}${legend}`);
 }
 
-/* حالة مكتبة الرسوم. كان الانتظار خمس محاولات × ٣٠٠ مللي = ثانية ونصف ثم
-   استسلامٌ صامت، وهي مدّة لا تكفي شبكة جوال بطيئة — فيبقى للمعلّم مربّعٌ
-   أبيض فارغ بارتفاع ٢٢٠ بكسل بلا أي تفسير، ولا يُعاد المحاولة أبدًا. صار
-   الرسم يُستدعى من onload مباشرة، والفشل القاطع يُخفي الصناديق. */
-let CHART_LIB_FAILED = false;
-let CHART_LIB_WAITING = false;   /* سلسلة انتظار واحدة مهما تكرّرت إعادة الرسم */
-function chartLibUsable(){ return typeof Chart !== 'undefined' && !CHART_LIB_FAILED; }
-function redrawIfOnAnalysis(){
-  try{ if(STATE && STATE.activeView === 'analysis') render(); }catch(e){}
-}
-window.onChartLibReady = function(){
-  CHART_LIB_FAILED = false; CHART_LIB_WAITING = false;
-  redrawIfOnAnalysis();
-};
-window.onChartLibFailed = function(){
-  CHART_LIB_FAILED = true; CHART_LIB_WAITING = false;
-  /* الأرقام والأشرطة النصّية تحت كل رسم تحمل المعلومة نفسها، فإخفاء الصندوق
-     لا يفقد المعلّم شيئًا — بل يزيل مربّعًا فارغًا محيّرًا. */
-  redrawIfOnAnalysis();
-};
 
-function drawAnalysisCharts(retriesLeft){
-  const first = (retriesLeft === undefined);
-  if(first) retriesLeft = 40;      /* ٢٠ ثانية، لا ثانية ونصف */
-  if(CHART_LIB_FAILED) return;
-  if(typeof Chart === 'undefined'){
-    if(first && CHART_LIB_WAITING) return;   /* لا نبدأ سلسلة مؤقّتات ثانية */
-    if(retriesLeft>0){
-      CHART_LIB_WAITING = true;
-      setTimeout(()=>drawAnalysisCharts(retriesLeft-1), 500);
-      return;
-    }
-    /* لم تصل بعد عشرين ثانية: نعلنها فاشلة ونُخفي الصناديق الفارغة. */
-    onChartLibFailed();
-    return;
-  }
-  CHART_LIB_WAITING = false;
-  if(!ANALYSIS_CHART_DATA) return;
-  // Destroy any previous instances before redrawing — reusing the same
-  // <canvas> element without destroying the old Chart instance throws
-  // "Canvas is already in use" and leaves a blank chart.
-  Object.values(ANALYSIS_CHART_INSTANCES).forEach(ch=>{ try{ ch.destroy(); }catch(e){} });
-  ANALYSIS_CHART_INSTANCES = {};
-
-  Chart.defaults.font.family = "'Readex Pro','Tajawal',system-ui,sans-serif";
-  Chart.defaults.font.size = 11;
-  Chart.defaults.color = CHART_MUTED;
-
-  const pctAxis = (horizontal)=>({
-    beginAtZero:true, max:100,
-    grid:{ color:CHART_GRID, drawBorder:false },
-    ticks:{ callback:v=>v+'%', font:{size:10} },
-    border:{ display:false }
-  });
-  const catAxis = ()=>({
-    grid:{ display:false },
-    ticks:{ font:{size:11}, color:CHART_INK },
-    border:{ display:false }
-  });
-
-  /* ---- متوسط الشعب: سلسلة واحدة، لون واحد، بلا مفتاح (العنوان يسمّيها) ---- */
-  const secCanvas = document.getElementById('chart-section-compare');
-  if(secCanvas && ANALYSIS_CHART_DATA.sectionLabels.length>0){
-    ANALYSIS_CHART_INSTANCES.section = new Chart(secCanvas, {
-      type: 'bar',
-      data: {
-        labels: ANALYSIS_CHART_DATA.sectionLabels,
-        datasets: [{
-          label: 'متوسط الإنجاز',
-          data: ANALYSIS_CHART_DATA.sectionValues,
-          backgroundColor: CHART_TEAL,
-          borderRadius: 4,
-          borderSkipped: 'bottom',
-          maxBarThickness: 42
-        }]
-      },
-      options: Object.assign(chartBaseOptions(), {
-        scales: { y: pctAxis(), x: catAxis() },
-        plugins: Object.assign(chartBaseOptions().plugins, {
-          title: { display:true, text:'متوسط إنجاز كل شعبة', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
-          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
-            callbacks:{ label: c=> ` ${c.parsed.y}%` }
-          })
-        })
-      })
-    });
-  }
-
-  /* ---- أداء البنود: أفقي لأن أسماء البنود عربية طويلة لا تتسع تحت عمود ----
-     اللون الأحمر هنا حالة (دون ٦٠٪) لا هوية سلسلة، ومعه وسم نصي في التلميح. */
-  const itemCanvas = document.getElementById('chart-item-perf');
-  if(itemCanvas && ANALYSIS_CHART_DATA.itemLabels.length>0){
-    ANALYSIS_CHART_INSTANCES.item = new Chart(itemCanvas, {
-      type: 'bar',
-      data: {
-        labels: ANALYSIS_CHART_DATA.itemLabels,
-        datasets: [{
-          label: 'متوسط الإنجاز',
-          data: ANALYSIS_CHART_DATA.itemValues,
-          backgroundColor: ANALYSIS_CHART_DATA.itemValues.map(v=> v<60 ? CHART_CRIT : CHART_TEAL),
-          borderRadius: 4,
-          borderSkipped: 'start',
-          maxBarThickness: 22
-        }]
-      },
-      options: Object.assign(chartBaseOptions(), {
-        indexAxis: 'y',
-        scales: { x: pctAxis(true), y: catAxis() },
-        plugins: Object.assign(chartBaseOptions().plugins, {
-          title: { display:true, text:'أفضل وأضعف البنود', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
-          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
-            callbacks:{ label: c=> ` ${c.parsed.x}%${c.parsed.x<60 ? ' — دون الحد المقبول' : ''}` }
-          })
-        })
-      })
-    });
-  }
-
-  /* ---- توزيع التقديرات: دونات، الترتيب يحمله السطوع، وكل شريحة موسومة ---- */
-  const lvlCanvas = document.getElementById('chart-levels');
-  if(lvlCanvas && ANALYSIS_CHART_DATA.levelValues && ANALYSIS_CHART_DATA.levelTotal>0){
-    const total = ANALYSIS_CHART_DATA.levelTotal;
-    ANALYSIS_CHART_INSTANCES.levels = new Chart(lvlCanvas, {
-      type: 'doughnut',
-      data: {
-        labels: ANALYSIS_CHART_DATA.levelLabels,
-        datasets: [{
-          data: ANALYSIS_CHART_DATA.levelValues,
-          backgroundColor: LEVEL_RAMP,
-          borderColor: CHART_SURFACE,
-          borderWidth: 2,
-          hoverOffset: 4
-        }]
-      },
-      options: Object.assign(chartBaseOptions(), {
-        cutout: '58%',
-        plugins: Object.assign(chartBaseOptions().plugins, {
-          legend: {
-            display: true, position: 'right',
-            labels: {
-              boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded',
-              padding: 11, color: CHART_INK, font:{size:11},
-              generateLabels: (chart)=>{
-                const d = chart.data;
-                return d.labels.map((lb,i)=>({
-                  text: `${lb} — ${d.datasets[0].data[i]}`,
-                  fillStyle: d.datasets[0].backgroundColor[i],
-                  strokeStyle: d.datasets[0].backgroundColor[i],
-                  lineWidth: 0, index: i,
-                  hidden: false
-                }));
-              }
-            }
-          },
-          title: { display:true, text:`توزيع التقديرات — ${total} طالبًا`, color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:8} },
-          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
-            callbacks:{ label: c=> ` ${c.label}: ${c.parsed} طالبًا (${Math.round((c.parsed/total)*100)}%)` }
-          })
-        })
-      })
-    });
-  }
-
-  /* ---- مقارنة الفترات: أعمدة مزدوجة لا خط — نقطتان زمنيتان مقارنة لا اتجاه ---- */
-  const perCanvas = document.getElementById('chart-periods');
-  if(perCanvas && ANALYSIS_CHART_DATA.periodLabels && ANALYSIS_CHART_DATA.periodLabels.length>0){
-    ANALYSIS_CHART_INSTANCES.periods = new Chart(perCanvas, {
-      type: 'bar',
-      data: {
-        labels: ANALYSIS_CHART_DATA.periodLabels,
-        datasets: [
-          { label:'الفترة السابقة', data:ANALYSIS_CHART_DATA.periodPrev, backgroundColor:CHART_TEAL_SOFT, borderRadius:4, borderSkipped:'bottom', maxBarThickness:26 },
-          { label:'الفترة الحالية', data:ANALYSIS_CHART_DATA.periodCur,  backgroundColor:CHART_TEAL,      borderRadius:4, borderSkipped:'bottom', maxBarThickness:26 }
-        ]
-      },
-      options: Object.assign(chartBaseOptions(), {
-        scales: { y: pctAxis(), x: catAxis() },
-        plugins: Object.assign(chartBaseOptions().plugins, {
-          legend: { display:true, position:'bottom', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'rectRounded', padding:14, color:CHART_INK, font:{size:11} } },
-          title: { display:true, text:'الفترة السابقة مقابل الحالية', color:CHART_INK, font:{size:12.5, weight:'500'}, padding:{bottom:10} },
-          tooltip: Object.assign(chartBaseOptions().plugins.tooltip, {
-            displayColors: true,
-            callbacks:{ label: c=> ` ${c.dataset.label}: ${c.parsed.y===null?'—':c.parsed.y+'%'}` }
-          })
-        })
-      })
-    });
-  }
-}
 
 /* عناصر كثيرة في هذه الشاشة اختيارية: أدوات الشعبة مطوية افتراضيًا، وبطاقة
    بيانات الشعبة مطوية، وشاشتا «سريع» و«الحضور» تظهران في وضعهما فقط. ربطها
@@ -8525,12 +8503,6 @@ window.rasdStartApp = async function(){
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Chart.js يُحمَّل بعد سكربت التطبيق، فقد يصل متأخّرًا على شبكة الجوال. onload
-     يرسم فور وصوله بدل انتظار دورة استطلاع، وonerror يُعلن فشله فتُخفى صناديق
-     الرسوم بدل أن تبقى مربّعات بيضاء فارغة بلا تفسير. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"
-        onload="if(window.onChartLibReady) onChartLibReady();"
-        onerror="if(window.onChartLibFailed) onChartLibFailed();"></script>
 
 <div class="footer-note">تطبيق ويب لكشف رصد المشاريع — رصدك محفوظ تلقائيًا في حسابك السحابي، ويمكنك الدخول عليه من أي جهاز بنفس البريد وكلمة المرور. زر «نسخة احتياطية» يبقى خيارًا إضافيًا لحفظ نسخة JSON على جهازك.</div>
 
