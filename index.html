@@ -3432,7 +3432,7 @@ function renderGuidePage(){
 
       <h3>من أين أبدأ؟</h3>
       <ul>
-        <li><b>١ — شعبك:</b> «🏫 إضافة شعبة جديدة» من الرئيسية أو من أعلى تبويب الرصد. وفيها ثلاثة مسارات: لصق الأسماء، أو ملف إكسل، أو <b>📄 كشف نور PDF</b> — وهذا الأخير يُنشئ الشعبة بطلابها دفعة واحدة و<b>يقترح اسمها من الكشف نفسه</b> («الأول متوسط / أ»).</li>
+        <li><b>١ — شعبك:</b> «🏫 إضافة شعبة جديدة» من الرئيسية أو من أعلى تبويب الرصد. وفيها ثلاثة مسارات: لصق الأسماء، أو ملف إكسل، أو <b>📄 كشف أسماء PDF</b> — وهذا الأخير يُنشئ الشعبة بطلابها دفعة واحدة و<b>يقترح اسمها من الكشف نفسه</b> («الأول متوسط / أ»).</li>
         <li><b>٢ — طلاب إضافيون:</b> «➕ إضافة طالب» لواحد، أو «إضافة عدة طلاب» داخل الشعبة — وفيها المسارات الثلاثة نفسها.</li>
         <li><b>٣ — بنودك:</b> «عناصر الرصد» في تبويب <b>حسابي</b> — أضف بندًا أو احذفه، وغيّر عدد خاناته ودرجته.</li>
         <li><b>٤ — بيانات الكشف:</b> «بيانات الشعبة» في تبويب الرصد (المادة والصف والفصل)، و«بيانات الكليشة» في تبويب <b>حسابي</b> (الوزارة والمدرسة).</li>
@@ -3504,7 +3504,7 @@ function renderGuidePage(){
         <li><b>🎲 قرعة المشاركة</b>: تسحب اسمًا وترصد إجابته في نفس النافذة. <b>عادلة افتراضيًا</b> — من قلّ نصيبه أوفر حظًا فلا يُنسى أحد ولا يُستهدف أحد — ويمكن جعلها عشوائية محضة. تستبعد تلقائيًا <b>الغائبين اليوم</b> ومن اختير في الجولة، و«تخطّي» لا يرصد ولا يحتسب.</li>
         <li><b>🚫 استبعاد من القرعة</b> من قائمة الطالب — يبقى في الكشف ويُرصد عاديًا، لكن لا يُسحب اسمه فجأة أمام الفصل.</li>
         <li><b>📝 ملاحظة عن الطالب</b> — خاصة بك، يظهر مؤشرها بجانب الاسم، و<b>تُمهَّد بها تقارير الإحالة الداخلية</b>. لا تُرسل لولي الأمر ولا تظهر في تقريره ولا رسالته.</li>
-        <li><b>📄 استيراد كشف نور</b>: متاح عند إنشاء شعبة جديدة وداخل الشعبة معًا. تُستخرج الأسماء و<b>تُعرض للمراجعة قبل إضافتها</b> — راجع العدد والأسماء قبل التأكيد، ولو ظهرت رموز غريبة أو نقص فألغِ الاستيراد. ويعرض عليك تعبئة اسم المدرسة والمعلّم من ترويسة الكشف، دون أن يطمس ما كتبتَه بنفسك.</li>
+        <li><b>📄 استيراد كشف أسماء PDF</b>: متاح عند إنشاء شعبة جديدة وداخل الشعبة معًا. تُستخرج الأسماء و<b>تُعرض للمراجعة قبل إضافتها</b> — راجع العدد والأسماء قبل التأكيد، ولو ظهرت رموز غريبة أو نقص فألغِ الاستيراد. ويعرض عليك تعبئة اسم المدرسة والمعلّم من ترويسة الكشف، دون أن يطمس ما كتبتَه بنفسك.</li>
         <li><b>↩︎ التراجع</b> يظهر بعد كل حذف أو تفريغ ويبقى ست ثوانٍ. بعدها لا رجعة.</li>
       </ul>
 
@@ -6884,7 +6884,7 @@ function showAddSectionDialog(){
         <div class="import-tabs">
           <button type="button" class="active" id="tab-sec-paste">📋 لصق الأسماء</button>
           <button type="button" id="tab-sec-excel">📊 إكسل</button>
-          <button type="button" id="tab-sec-pdf">📄 نور PDF</button>
+          <button type="button" id="tab-sec-pdf">📄 PDF</button>
         </div>
         <div class="import-pane active" id="pane-sec-paste">
           <textarea id="dlg-section-names" rows="7" placeholder="أحمد محمد&#10;سعد علي&#10;..."></textarea>
@@ -6898,7 +6898,7 @@ function showAddSectionDialog(){
           </div>
         </div>
         <div class="import-pane" id="pane-sec-pdf">
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر كشف أسماء الطلاب كما ينزل من <b>نظام نور</b> بصيغة PDF. تُنشأ الشعبة بأسمائها دفعة واحدة، و<b>يُقترح اسم الشعبة من الكشف نفسه</b>. ستُعرض الأسماء للمراجعة قبل الإضافة.</p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر <b>كشف أسماء الطلاب</b> بصيغة PDF كما ينزل من نظام المدرسة. تُنشأ الشعبة بأسمائها دفعة واحدة، و<b>يُقترح اسم الشعبة من الكشف نفسه</b>. ستُعرض الأسماء للمراجعة قبل الإضافة.</p>
           <div class="file-pick-row">
             <button type="button" id="dlg-sec-btn-pick-pdf">📄 اختيار ملف PDF</button>
             <input type="file" id="dlg-sec-pdf-file" accept="application/pdf,.pdf" style="display:none">
@@ -7236,7 +7236,7 @@ async function readNoorPdfFile(file, setStatus){
     if(rows.length === 0) rows = parseNoorRows(flat);
     if(rows.length === 0){
       setStatus('');
-      showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء من نور — جرّب اللصق اليدوي.');
+      showAlertDialog('قرأت الملف لكن لم أتعرّف على صفوف الطلاب فيه. لعلّه ليس كشف أسماء طلاب — جرّب اللصق اليدوي.');
       return null;
     }
     setStatus('');
@@ -7342,14 +7342,14 @@ function showImportStudentsDialog(key){
         <div class="import-tabs">
           <button type="button" class="active" id="tab-paste">📋 لصق</button>
           <button type="button" id="tab-excel">📊 إكسل</button>
-          <button type="button" id="tab-pdf">📄 نور PDF</button>
+          <button type="button" id="tab-pdf">📄 PDF</button>
         </div>
         <div class="import-pane active" id="pane-paste">
           <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px;">الصق أسماء الطلاب، كل اسم في سطر مستقل:</p>
           <textarea id="dlg-paste-names" rows="8" placeholder="أحمد محمد&#10;سعد علي&#10;..."></textarea>
         </div>
         <div class="import-pane" id="pane-pdf">
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر كشف أسماء الطلاب كما ينزل من <b>نظام نور</b> بصيغة PDF. ستُعرض الأسماء للمراجعة قبل إضافتها.</p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 8px; line-height:1.9;">اختر <b>كشف أسماء الطلاب</b> بصيغة PDF كما ينزل من نظام المدرسة. ستُعرض الأسماء للمراجعة قبل إضافتها.</p>
           <div class="file-pick-row">
             <button type="button" id="dlg-btn-pick-pdf">📄 اختيار ملف PDF</button>
             <input type="file" id="dlg-pdf-file" accept="application/pdf,.pdf" style="display:none">
