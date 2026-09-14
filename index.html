@@ -116,6 +116,15 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
 .list-head{display:flex; align-items:center; gap:10px; padding:22px 2px 10px;}
 .list-head b{font-size:13.5px; font-weight:500; color:var(--text);}
 .list-head span{font-size:12px; font-weight:300; color:var(--muted);}
+.list-head .lh-act{
+  margin-inline-start:auto; flex:0 0 auto; background:var(--card); border:1px solid var(--border);
+  color:var(--text-2); border-radius:9px; padding:5px 11px; font-family:inherit; font-size:11.5px; cursor:pointer;
+}
+.list-head .lh-act:active{background:var(--surface-2);}
+/* في وضع الترتيب: البطاقة لا تُفتح، والسهمان يحلّان محل الشارة والسهم. */
+.sec-card.reordering{ cursor:default; }
+.sec-card.reordering:active{ background:var(--card); }
+.sec-move{ flex:0 0 auto; display:flex; gap:6px; }
 .sec-card{
   background:var(--card); border:1px solid var(--border); border-radius:18px;
   padding:19px 16px; box-shadow:var(--shadow); display:flex; align-items:center; gap:13px;
@@ -1835,6 +1844,9 @@ let ACCOUNT_PAGE = null;
 /* عند مغادرة صفحة فرعية بالتبويب السفلي لا بزر الرجوع، نُرجع سجلّ المتصفح
    خطوةً لننظّفه — وهذا العلم يجعل popstate الناتج يمرّ بلا إعادة رسم. */
 let ACCOUNT_POP_SILENT = false;
+/* وضع ترتيب الشعب في الرئيسية. عابرٌ في الذاكرة لا يُحفظ ولا يُزامَن — ترتيب
+   الشعب نفسه يُحفظ (sectionOrder)، أمّا «هل أنا الآن أرتّب؟» فحالةُ لحظة. */
+let REORDER_SECTIONS = false;
 /* حقول ماتت مع نظام الصفحات — تُحذف من أي حالة محمّلة (سحابة أو نسخة احتياطية). */
 const ACCOUNT_DEAD_FLAGS = ['letterheadOpen','signatureOpen','configOpen','guideOpen','datesOpen','bhItemsOpen','panelsCollapsedOnce'];
 
@@ -2276,6 +2288,7 @@ function applyLoadedState(obj){
 function switchView(view){
   if(!VIEWS.includes(view)) return;
   if(STATE.activeView !== view) SELECTED_ROWS.clear();
+  REORDER_SECTIONS = false;   /* وضع مؤقّت لا يُتابعك بين التبويبات */
   /* الخروج من صفحة فرعية بالتبويب السفلي: نغلقها ونسحب مدخلها من سجلّ المتصفح
      حتى لا يبقى مدخل ميّت يبتلع ضغطة الرجوع الأولى بعده. */
   if(ACCOUNT_PAGE !== null){
@@ -2356,6 +2369,22 @@ function renameSection(oldName, newName){
      إلى شعبة لم تعد موجودة. */
   schedule().days.forEach(row=> row.forEach((c,i)=>{ if(c && c.sec === from) row[i] = { sec: to }; }));
   if(STATE.activeTab === from) STATE.activeTab = to;
+  persistState();
+  return true;
+}
+
+/* نقل شعبة خطوةً في الترتيب. sectionOrder هو مصدر الترتيب لكل شيء —
+   بطاقات الرئيسية، وتبويبات الرصد، وجدول مقارنة الشعب، وطباعة الكل،
+   وقوائم الجدول الدراسي — فيكفي تحريكه. */
+function moveSection(name, delta){
+  const i = SECTION_KEYS.indexOf(name);
+  if(i === -1) return false;
+  const j = i + delta;
+  if(j < 0 || j >= SECTION_KEYS.length) return false;
+  const tmp = SECTION_KEYS[i];
+  SECTION_KEYS[i] = SECTION_KEYS[j];
+  SECTION_KEYS[j] = tmp;
+  STATE.sectionOrder = SECTION_KEYS.slice();
   persistState();
   return true;
 }
@@ -3488,6 +3517,7 @@ function renderGuidePage(){
         <li><b>مواعيد تسليم البنود</b> (اختيارية) ← حسابي › <b>مواعيد تسليم البنود</b>، أو بالضغط على رقم الخانة في رأس الجدول. تظهر في التقارير: «الواجب ٣ — ١٥ محرم — لم يسلّم».</li>
         <li><b>التوقيع</b> الذي يُدرج في التقارير ← حسابي › <b>التوقيع الإلكتروني</b>.</li>
         <li><b>السجل السلوكي</b> و<b>الحضور والغياب</b> ← لكلٍّ صفحته في <b>حسابي</b>، وفيها مفتاح التفعيل وكل خياراته.</li>
+        <li><b>ترتيب شعبك</b> ← من <b>الرئيسية</b>: زرّ «↕️ ترتيب» بجانب «شعبك»، ثم حرّكها بالسهمين و«✓ تم». الترتيب يسري على الرئيسية وتبويبات الرصد وجدول المقارنة والطباعة والجدول الدراسي.</li>
         <li><b>جدولك الدراسي</b> ← حسابي › <b>الجدول الدراسي</b>: أوقات الحصص مرة واحدة، ثم شبكة الأسبوع. وتظهر حصص اليوم في <b>الرئيسية</b>، والحصة الجارية بشريط يبيّن ما تبقّى منها، وضغطة عليها تفتح رصد شعبتها. والجدول الأسبوعي يُطبع في صفحة واحدة.</li>
         <li><b>التصدير والنسخ الاحتياطية وبدء فصل جديد وتسجيل الخروج</b> ← حسابي › <b>البيانات والحساب</b>.</li>
       </ul>
@@ -5676,12 +5706,26 @@ function renderHome(){
       : fu.urgent>0
         ? `<span class="pill-badge" style="background:var(--red); color:var(--red-t);">${fmt(fu.urgent)} حالة عاجلة${fu.warn>0?` · ${fmt(fu.warn)} متابعة`:''}</span>`
         : `<span class="pill-badge" style="background:var(--orange); color:var(--orange-t);">${fmt(fu.warn)} بحاجة متابعة</span>`;
-    return `<button type="button" class="sec-card" data-open-section="${escapeAttr(key)}">
+    const body = `
       <span class="sec-key">${escapeAttr(sectionBadgeText(key))}</span>
       <span style="flex:1 1 auto; min-width:0;">
         <span class="s-name">${escapeAttr(sectionTitle(key))}</span>
         <span class="s-sub">${[escapeAttr(meta.subject||''), `${fmt(count)} طالبًا`].filter(Boolean).join(' · ')}</span>
-      </span>
+      </span>`;
+    /* في وضع الترتيب تُستبدل البطاقةُ الزرُّ بعنصر لا يُفتح: ضغطةٌ خاطئة
+       أثناء الترتيب تنقلك إلى الرصد وتُضيّع ما كنت تفعل. */
+    if(REORDER_SECTIONS){
+      const i = SECTION_KEYS.indexOf(key);
+      return `<div class="sec-card reordering">
+        ${body}
+        <span class="sec-move">
+          <button type="button" class="cfg-mini" data-sec-up="${escapeAttr(key)}" title="تحريك لأعلى" aria-label="تحريك ${escapeAttr(sectionTitle(key))} لأعلى" ${i===0?'disabled':''}>▲</button>
+          <button type="button" class="cfg-mini" data-sec-down="${escapeAttr(key)}" title="تحريك لأسفل" aria-label="تحريك ${escapeAttr(sectionTitle(key))} لأسفل" ${i===SECTION_KEYS.length-1?'disabled':''}>▼</button>
+        </span>
+      </div>`;
+    }
+    return `<button type="button" class="sec-card" data-open-section="${escapeAttr(key)}">
+      ${body}
       ${badge}
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex:0 0 auto;"><path d="m15 6-6 6 6 6"/></svg>
     </button>`;
@@ -5708,7 +5752,12 @@ function renderHome(){
 
   ${renderAttentionCard()}
 
-  <div class="list-head"><b>شعبك</b><span>${SECTION_KEYS.length===0 ? 'لا توجد شعب بعد' : fmt(SECTION_KEYS.length)+' شعب'}</span></div>
+  <div class="list-head">
+    <b>شعبك</b>
+    <span>${SECTION_KEYS.length===0 ? 'لا توجد شعب بعد' : fmt(SECTION_KEYS.length)+' شعب'}</span>
+    ${SECTION_KEYS.length>1 ? `<button type="button" class="lh-act" id="btn-reorder-sections">${REORDER_SECTIONS ? '✓ تم' : '↕️ ترتيب'}</button>` : ``}
+  </div>
+  ${REORDER_SECTIONS ? `<div class="hint" style="margin:-4px 2px 10px;">حرّك شعبك بالسهمين. الترتيب يسري على الرئيسية وتبويبات الرصد والتقارير والطباعة.</div>` : ``}
   ${cards}
   <button type="button" class="add-row" id="home-add-section">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -5719,6 +5768,20 @@ function renderHome(){
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
     بدء فصل دراسي جديد
   </button>`;
+}
+
+function wireReorderEvents(){
+  const t = document.getElementById('btn-reorder-sections');
+  if(t) t.addEventListener('click', ()=>{
+    REORDER_SECTIONS = !REORDER_SECTIONS;
+    render();
+  });
+  document.querySelectorAll('[data-sec-up]').forEach(b=>{
+    b.addEventListener('click', ()=>{ if(moveSection(b.getAttribute('data-sec-up'), -1)) render(); });
+  });
+  document.querySelectorAll('[data-sec-down]').forEach(b=>{
+    b.addEventListener('click', ()=>{ if(moveSection(b.getAttribute('data-sec-down'), 1)) render(); });
+  });
 }
 
 /* ضغطة على حصة تدريس تفتح رصد شعبتها — وهذه هي فائدة البطاقة الأولى. */
@@ -5743,6 +5806,7 @@ function wireTodayCardEvents(){
 
 function wireHomeEvents(){
   wireTodayCardEvents();
+  wireReorderEvents();
   document.querySelectorAll('[data-open-section]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       SELECTED_ROWS.clear();
