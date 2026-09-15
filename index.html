@@ -2098,8 +2098,21 @@ async function loadState(){
 
 /* ===== الحفظ ===== */
 let saveTimer;
+let PUSH_INFLIGHT = false;  // طلب رفع في الطريق الآن
+let EDIT_SEQ      = 0;      // يزيد مع كل تعديل: نعرف هل تغيّر شيء أثناء الرفع
+let SELF_HEAL     = 0;      // مرات تبنّي كتابتنا صامتًا دون نجاح بينها
+
+/* أختامٌ كتبناها نحن. لو وجدنا الصفَّ يحمل أحدها فهو كتابتنا لا كتابة جهازٍ آخر. */
+const OUR_STAMPS = [];
+function rememberStamp(st){
+  if(!st) return;
+  OUR_STAMPS.push(st);
+  if(OUR_STAMPS.length > 40) OUR_STAMPS.shift();
+}
+
 function persistState(){
   if(!SAVE_ENABLED) return;
+  EDIT_SEQ++;
   PENDING_PUSH = true;
   saveLocal();                    // فوري ولا يفشل
   setSyncState('saving');
@@ -2109,18 +2122,25 @@ function persistState(){
 
 async function pushRemote(){
   if(!SAVE_ENABLED || !CURRENT_UID || !PENDING_PUSH) return;
+  /* طلبان متوازيان يحملان الختم نفسه: الأول يفوز والثاني يسقط في قفل الإصدار
+     فيبدو تضاربًا مع جهاز آخر وهو كتابتنا. فالرفع يُسلسل: واحدٌ في الطريق لا غير. */
+  if(PUSH_INFLIGHT) return;   // العَلَم PENDING_PUSH باقٍ، والطلب الجاري يرفعه بعده
+  PUSH_INFLIGHT = true;
+  const seq = EDIT_SEQ;           // التعديلات التي يحملها هذا الطلب
   const sb = window.supabaseClient;
   const payload = STATE;
   const now = new Date().toISOString();
+  let done = false;               // هل ننتقل لرفع ما تراكم بعده؟
   try{
     let stamp;
+    rememberStamp(now);
     if(REMOTE_STAMP === null){
       const { data, error } = await sb.from('rasd_data')
         .insert({ user_id: CURRENT_UID, key: CLOUD_KEY, value: payload, updated_at: now })
         .select('updated_at').maybeSingle();
       if(error){
-        /* 23505: صفٌّ أُنشئ من جهاز آخر بيننا — تضارب لا خطأ شبكة. */
-        if(error.code === '23505'){ return onConflictDetected(); }
+        /* 23505: الصفُّ موجود سلفًا — إمّا كتابتنا وإمّا جهاز آخر، نتبيّن. */
+        if(error.code === '23505'){ done = (await reconcileLockFailure() === 'self'); return; }
         throw error;
       }
       stamp = data ? data.updated_at : now;
@@ -2131,19 +2151,25 @@ async function pushRemote(){
         .eq('user_id', CURRENT_UID).eq('key', CLOUD_KEY).eq('updated_at', REMOTE_STAMP)
         .select('updated_at');
       if(error) throw error;
-      if(!data || data.length === 0) return onConflictDetected();
+      if(!data || data.length === 0){ done = (await reconcileLockFailure() === 'self'); return; }
       stamp = data[0].updated_at;
     }
     REMOTE_STAMP = stamp;
-    PENDING_PUSH = false;
+    rememberStamp(stamp);
+    SELF_HEAL = 0;
+    /* تعديلٌ وقع بعد انطلاق هذا الطلب لم يصل السحابة، فلا يُشطب عَلَمُه. */
+    if(EDIT_SEQ === seq){ PENDING_PUSH = false; setSyncState('idle'); }
     saveLocal();
-    setSyncState('idle');
+    done = true;
   }catch(e){
     console.warn('تعذّر الرفع للسحابة', e);
     PENDING_PUSH = true;
     saveLocal();
     setSyncState(navigator.onLine === false ? 'offline' : 'error');
     scheduleRetry();
+  }finally{
+    PUSH_INFLIGHT = false;
+    if(done && PENDING_PUSH && !CONFLICT_OPEN) pushRemote();
   }
 }
 
@@ -2152,22 +2178,41 @@ function scheduleRetry(){
   retryTimer = setTimeout(()=>{ if(PENDING_PUSH) pushRemote(); }, 20000);
 }
 
-/* ===== التضارب بين جهازين ===== */
+/* ===== التضارب بين جهازين =====
+   سقوط قفل الإصدار لا يعني جهازًا آخر بالضرورة: قد يكون طلبًا لنا سبقنا.
+   فنقرأ الصفَّ أولًا ثم نحكم — ولا نزعج المعلّم إلا بتضاربٍ حقيقي. */
 let CONFLICT_OPEN = false;
-async function onConflictDetected(){
-  if(CONFLICT_OPEN) return;
-  CONFLICT_OPEN = true;
+async function reconcileLockFailure(){
+  if(CONFLICT_OPEN) return 'conflict';
   PENDING_PUSH = true;
   saveLocal();
-  setSyncState('error');
   const sb = window.supabaseClient;
   let remote = null;
   try{
-    const { data } = await sb.from('rasd_data')
+    const { data, error } = await sb.from('rasd_data')
       .select('value, updated_at').eq('user_id', CURRENT_UID).eq('key', CLOUD_KEY).maybeSingle();
+    if(error) throw error;
     remote = data;
-  }catch(e){}
+  }catch(e){
+    /* لا نعرف حال السحابة: لا نتّهم أحدًا ولا نمحو شيئًا — نعيد المحاولة. */
+    setSyncState(navigator.onLine === false ? 'offline' : 'error');
+    scheduleRetry();
+    return 'retry';
+  }
+  /* الصفُّ يحمل ختمًا من أختامنا: كتابتنا نحن. نتبنّاه ونكمل بلا نافذة. */
+  if(remote && OUR_STAMPS.indexOf(remote.updated_at) >= 0){
+    REMOTE_STAMP = remote.updated_at;
+    /* لو دار هذا مرارًا بلا نجاح فالخلل عندنا لا عند المعلّم: نؤجّل ونعيد
+       المحاولة، ولا نعرض عليه تضاربًا ليس بتضارب. */
+    if(SELF_HEAL >= 5){ setSyncState('error'); scheduleRetry(); return 'retry'; }
+    SELF_HEAL++;
+    setSyncState('saving');
+    return 'self';
+  }
+  CONFLICT_OPEN = true;
+  setSyncState('error');
   showConflictDialog(remote);
+  return 'conflict';
 }
 
 function showConflictDialog(remote, localValueOverride){
@@ -2195,6 +2240,7 @@ function showConflictDialog(remote, localValueOverride){
     /* نتبنّى ختم السحابة الحالي ثم نكتب فوقه — قرار صريح من المعلم. */
     REMOTE_STAMP = remote ? remote.updated_at : null;
     CONFLICT_OPEN = false;
+    SELF_HEAL = 0;
     closeDialog();
     if(localValueOverride){
       applyLoadedState(normalizeLoadedState(localValueOverride));
@@ -2207,6 +2253,7 @@ function showConflictDialog(remote, localValueOverride){
   document.getElementById('cf-take-remote').addEventListener('click', ()=>{
     if(!remote){ showToast('تعذّر جلب نسخة الجهاز الآخر — حاول لاحقًا'); return; }
     CONFLICT_OPEN = false;
+    SELF_HEAL = 0;
     closeDialog();
     REMOTE_STAMP = remote.updated_at;
     PENDING_PUSH = false;
