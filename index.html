@@ -221,7 +221,11 @@ main{padding:12px; max-width:1400px; margin:0 auto; padding-bottom:calc(var(--na
 .stu-card.sev-urgent{--flag-rail:#C0392B; border-color:#F2D9D5; border-right-color:var(--flag-rail); background:#FFFCFB;}
 .stu-card.sev-warn{--flag-rail:#D9822B; border-color:#F3DFD3; border-right-color:var(--flag-rail); background:#FFFDFB;}
 .stu-top{display:flex; align-items:center; gap:10px; margin-bottom:11px; cursor:pointer;}
-.stu-top .s-nm{flex:1 1 auto; font-size:14.5px; font-weight:500; color:var(--text); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.stu-top .s-nm{
+  flex:1 1 auto; font-size:14.5px; font-weight:500; color:var(--text); min-width:0; overflow:hidden;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  white-space:normal; overflow-wrap:break-word; line-height:1.4;
+}
 .stu-top .s-score{font-size:15px; font-weight:600; color:var(--text); white-space:nowrap;}
 .stu-top .s-score i{font-size:11.5px; font-weight:300; color:var(--muted); font-style:normal;}
 .stu-top .s-chev{flex:0 0 auto; color:var(--muted); transition:transform .15s;}
@@ -468,9 +472,14 @@ table.wk td{ height:40px; }
 .qe-row:last-child{border-bottom:none;}
 .qe-row.unmarked{background:#FCFBF8;}
 .qe-num{flex:0 0 auto; width:22px; font-size:11px; color:var(--muted); text-align:center;}
+/* على الجوال لا يبقى للاسم هنا إلا ~١٠٥ بكسل بعد الرقم وأزرار الرموز، وهي
+   لا تكفي اسمًا رباعيًا أبدًا. ثلاثة أسطر لا سطران: زرّ الرمز ٤٤ بكسل فالسطران
+   مجّانيان، والثالث يسع أطول الأسماء بلا قصّ ولا تصغير خطٍّ يدفع ثمنه
+   الثلاثون من أجل واحد. */
 .qe-name{
   flex:1 1 auto; min-width:0; font-size:13.5px; color:var(--text);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+  white-space:normal; overflow-wrap:break-word; line-height:1.45;
 }
 .qe-btns{flex:0 0 auto; display:flex; gap:5px;}
 .qe-btn{
@@ -581,9 +590,14 @@ table.grid thead tr.sub th{background:#eef1f5; font-size:11px; font-weight:600; 
 th.g-cat{background:var(--cat, var(--gray-head));}
 th.g-idx{background:var(--gray-head);} th.g-final{background:var(--gray-head);}
 col.wide{}
+/* العمود لاصق، فكل بكسل يزيده يُقتطع من مساحة الرصد في كل موضع تمرير لا مرة
+   واحدة. لذا يبقى ضيقًا حيث المساحة ثمينة (الجوال) ويتّسع حيث تتّسع الشاشة. */
 th.name-h, td.name-c{
   position:sticky; right:34px; background:#fff; z-index:5; text-align:right; padding:6px 10px !important;
   min-width:170px; max-width:170px; box-shadow:-1px 0 0 #dbe1ea inset;
+}
+@media (min-width:820px){
+  th.name-h, td.name-c{ min-width:240px; max-width:240px; }
 }
 th.idx-h, td.idx-c{
   position:sticky; right:0; background:#fff; z-index:5; min-width:34px; max-width:34px;
@@ -593,8 +607,12 @@ thead th.idx-h{background:var(--gray-head); color:#fff; position:sticky; right:0
 thead th.name-h{background:var(--gray-head); color:#fff; position:sticky; right:34px; z-index:15;}
 
 td.name-c .name-wrap{display:flex; align-items:center; gap:2px; padding:4px 2px;}
+/* سطران بدل القصّ: يستوعبان الاسم الرباعي كاملًا بلا اقتطاع بكسل واحد من
+   مساحة الرصد. والصفوف قصيرة الأسماء تبقى بارتفاعها الأصلي. */
 td.name-c .name-text{
-  flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  flex:1; min-width:0; overflow:hidden;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  white-space:normal; overflow-wrap:break-word; line-height:1.45;
   text-align:right; font-size:12.5px; color:var(--text);
 }
 td.name-c .name-text.empty-name{color:var(--muted); font-style:italic;}
@@ -1106,8 +1124,11 @@ body.modal-lock{ overflow:hidden; }
     font-size:8px !important;
   }
   col.col-idx{width:2.2%;}
-  col.col-name{width:8.5%;}
-  col.col-data{width:calc(62% / var(--item-count, 1));}
+  /* ٨٫٥٪ كانت تترك ٨٢ بكسل للنصّ على A4 عرضية، والاسم الرباعي يحتاج ٨٦–١٢١،
+     فيُقصّ اسم العائلة — وهو أكثر ما يميّز الطالب. ١٣٪ تكفيها جميعًا، وثمنها
+     ١٫٣ بكسل من كل عمود بند (١٨٫٦ ← ١٧٫٣) وهي خانة مربّعٍ صغير لا تتأثر. */
+  col.col-name{width:13%;}
+  col.col-data{width:calc(57.5% / var(--item-count, 1));}
   col.col-sum{width:2%;}
   col.col-final{width:5.4%;}
   col.col-del{width:0.1%;}
@@ -1128,7 +1149,10 @@ body.modal-lock{ overflow:hidden; }
     position:static !important; box-shadow:none !important;
   }
   td.name-c{max-width:none !important; min-width:0 !important; text-align:right !important;}
-  td.name-c .name-text{font-size:8px !important; color:#000 !important;}
+  /* ارتفاع السطر على الورق يُضرب في عدد الطلاب: بكسل واحد زيادة في الصف
+     يعني ٣٠ بكسلًا في شعبةٍ من ثلاثين — وهي وحدها كفيلة بدفع الكشف إلى
+     صفحة ثانية. فلا يرث السطرُ هنا ارتفاعَ الشاشة. */
+  td.name-c .name-text{font-size:8px !important; color:#000 !important; line-height:normal !important;}
   td.name-c .name-arrow{display:none !important;}
 
   td.cell{font-size:9px !important; width:auto !important;}
@@ -2725,7 +2749,7 @@ function renderSectionRows(key){
     }
     return `<tr class="${rowClass}" data-row="${idx}">
       <td class="idx-c">${idx+1}</td>
-      <td class="name-c"><div class="name-wrap"><span class="name-text${empty?' empty-name':''}">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span>${studentNote(row) ? `<span class="note-dot" title="${escapeAttr(studentNote(row))}">📝</span>` : ``}<button type="button" class="name-arrow" data-name-idx="${idx}" data-key="${key}" title="خيارات الطالب">▾</button></div></td>
+      <td class="name-c"><div class="name-wrap"><span class="name-text${empty?' empty-name':''}"${empty?'':` title="${escapeAttr(row.name)}"`}>${empty ? 'اسم الطالب' : escapeAttr(shortenName(row.name))}</span>${studentNote(row) ? `<span class="note-dot" title="${escapeAttr(studentNote(row))}">📝</span>` : ``}<button type="button" class="name-arrow" data-name-idx="${idx}" data-key="${key}" title="خيارات الطالب">▾</button></div></td>
       ${CAT_KEYS.map(k=>
         (row[k]||[]).map((v,gi)=>cellHtml(key,idx,k,gi,v)).join("") +
         `<td class="sum-c">${fmt(c[k+'Sum'])}</td>`
@@ -2745,6 +2769,19 @@ function fmt(n){
 }
 function escapeAttr(s){
   return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+}
+
+/* آخر ملاذ حين يفوق الاسم السطرين: يُقصّ من الوسط لا من آخره. قصّ الآخر
+   يضيّع اسم العائلة أولًا وهو أكثر ما يميّز الطالب، أمّا «الأول … العائلة»
+   فيبقى معرِّفًا. العتبة عالية عمدًا: الاسم الرباعي المعتاد لا يبلغها. */
+const NAME_MAX_CHARS = 40;
+function shortenName(name){
+  const n = (name || '').trim();
+  if(n.length <= NAME_MAX_CHARS) return n;
+  const parts = n.split(/\s+/);
+  if(parts.length < 3) return n;
+  const short = parts[0] + ' … ' + parts[parts.length - 1];
+  return short.length < n.length ? short : n;
 }
 
 /* ================= RENDER: عرض البطاقات ================= */
@@ -2816,7 +2853,7 @@ function renderSectionCards(key){
     })() : '';
     return `<div class="stu-card${c.severity?` is-flag sev-${c.severity}`:''}${open?' open':''}">
       <div class="stu-top" data-toggle-card="${idx}">
-        <span class="s-nm">${empty ? 'اسم الطالب' : escapeAttr(row.name)}</span>
+        <span class="s-nm"${empty?'':` title="${escapeAttr(row.name)}"`}>${empty ? 'اسم الطالب' : escapeAttr(shortenName(row.name))}</span>
         ${studentLevelChip(c, empty)}
         <span class="s-score">${fmt(c.final)}<i>/${fmt(maxTotal)}</i></span>
         <span class="s-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></span>
@@ -3878,7 +3915,7 @@ function renderQuickEntry(key){
     const v = (row[k]||[])[gi] || '⬜';
     return `<div class="qe-row${v==='⬜'?' unmarked':''}">
       <span class="qe-num">${idx+1}</span>
-      <span class="qe-name">${escapeAttr(row.name)}</span>
+      <span class="qe-name" title="${escapeAttr(row.name)}">${escapeAttr(shortenName(row.name))}</span>
       <span class="qe-btns">
         ${SYMS.slice().reverse().map(sym=>`
           <button type="button" class="qe-btn sym-${SYM_CLASS[sym]}${v===sym?' on':''}" data-quick-set="${idx}" data-quick-sym="${escapeAttr(sym)}" title="${escapeAttr(SYM_LABEL[sym])}" aria-label="${escapeAttr(SYM_LABEL[sym])}">${symIcon(sym)}</button>`).join("")}
@@ -4221,7 +4258,7 @@ function renderAttendanceEntry(key){
     const cur = attGet(row, di);
     return `<div class="qe-row${cur===ATT_NONE?' unmarked':''}">
       <span class="qe-num">${idx+1}</span>
-      <span class="qe-name">${escapeAttr(row.name)}</span>
+      <span class="qe-name" title="${escapeAttr(row.name)}">${escapeAttr(shortenName(row.name))}</span>
       <span class="qe-btns">
         ${ATT_CODES.map(code=>`
           <button type="button" class="qe-btn att-btn${cur===code?' on':''}" data-att-set="${idx}" data-att-code="${code}"
