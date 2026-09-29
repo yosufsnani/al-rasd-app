@@ -380,6 +380,18 @@ table.wk td{ height:40px; }
   flex:0 0 auto; font-size:10.5px; font-weight:400; padding:3px 9px;
   border-radius:20px; white-space:nowrap;
 }
+.cf-compare{
+  display:flex; gap:8px; margin-bottom:12px;
+}
+.cf-side{
+  flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:4px;
+  border:1px solid var(--border); border-radius:10px; padding:9px 10px; background:var(--bg);
+}
+.cf-side span{font-size:11px; color:var(--muted); font-weight:400;}
+.cf-side b{font-size:12.5px; font-weight:500; color:var(--text); line-height:1.5;}
+.cf-side b.cf-more{color:var(--teal-d);}
+.cf-side b.cf-less{color:var(--muted); font-weight:400;}
+
 .rescue-row{
   display:flex; align-items:center; gap:12px; padding:11px 2px;
   border-bottom:1px solid var(--border);
@@ -1085,6 +1097,18 @@ body.modal-lock{ overflow:hidden; }
   width:100%; background:var(--teal); color:#fff; border:none; border-radius:9px; padding:11px;
   font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit;
 }
+/* كانت هذه القاعدة تصبغ كل أزرار النوافذ باللون نفسه، فيبدو زرّ الإلغاء —
+   وزرُّ «اعتمد نسخة الجهاز الآخر» الذي يمحو عمل المعلّم — كزرّ التأكيد
+   تمامًا. الفعل الثانوي يجب أن يُرى ثانويًا. */
+.warn-modal button.btn-cancel{
+  background:#fff; color:var(--text); border:1px solid var(--border); font-weight:500;
+}
+.warn-modal button.btn-cancel:active{background:var(--surface-2);}
+/* وما يمحو بيانات يُعلن عن نفسه. */
+.warn-modal button.btn-danger{
+  background:#fff; color:#b91c1c; border:1px solid #f3c6c6; font-weight:500;
+}
+.warn-modal button.btn-danger:active{background:#fdf2f2;}
 @media print{ .warn-overlay{display:none !important;} }
 
 /* Print-only header/footer, hidden on screen */
@@ -2063,7 +2087,11 @@ function saveLocal(){
   if(!CURRENT_UID) return;
   try{
     localStorage.setItem(localKey(CURRENT_UID), JSON.stringify({
-      value: STATE, stamp: REMOTE_STAMP, dirty: PENDING_PUSH, savedAt: new Date().toISOString()
+      value: STATE, stamp: REMOTE_STAMP, dirty: PENDING_PUSH, savedAt: new Date().toISOString(),
+      /* أختامنا تعيش في الذاكرة وحدها، وتموت إن أسقط الجوال الصفحة. فإن
+         وصلت كتابتُنا وضاع جوابها، عادت الصفحة لا تعرف أن الصفَّ كتابتُها
+         فتتّهم نفسها بالتضارب. نحفظها معها لتنجو من إعادة التحميل. */
+      ours: OUR_STAMPS.slice(-20)
     }));
     LOCAL_SAVE_FAILED = false;
   }catch(e){
@@ -2163,7 +2191,10 @@ async function loadState(){
 
     /* تعديلات على الجهاز لم تُرفع بعد */
     if(local && local.dirty){
-      if(local.stamp === remoteStamp){
+      /* أختام كتبناها قبل أن تُغلق الصفحة: صفٌّ يحملها هو كتابتُنا وصلت
+         وضاع جوابها — لا جهازٌ آخر. ونسخة الجهاز أحدث منها أو مثلها. */
+      if(Array.isArray(local.ours)) local.ours.forEach(rememberStamp);
+      if(local.stamp === remoteStamp || OUR_STAMPS.indexOf(remoteStamp) >= 0){
         /* السحابة كما تركناها — تعديلات الجهاز أحدث، ترفع فورًا */
         REMOTE_STAMP = remoteStamp;
         PENDING_PUSH = true;
@@ -2332,18 +2363,29 @@ function showConflictDialog(remote, localValueOverride){
   const localValue = localValueOverride || STATE;
   const holder = document.getElementById('dialog-holder');
   const when = remote && remote.updated_at ? new Date(remote.updated_at).toLocaleString('ar-SA') : 'وقت غير معروف';
+  /* الاختيار كان أعمى: زرّان متشابهان بلا دليلٍ على ما يكسبه المعلّم أو
+     يخسره. عدد الخانات المرصودة في كل نسخة يجعل الخطأ مرئيًا قبل وقوعه. */
+  const mineN = countMarks(localValue);
+  const theirN = countMarks(remote && remote.value);
+  const tag = (n, other)=> n > other
+    ? `<b class="cf-more">${n} خانة مرصودة — الأكثر</b>`
+    : (n < other ? `<b class="cf-less">${n} خانة مرصودة</b>` : `<b>${n} خانة مرصودة</b>`);
   holder.innerHTML = `
     <div class="warn-overlay" id="dlg-overlay">
       <div class="warn-modal" style="max-width:440px;">
         <h3>⚠️ بياناتك تغيّرت من جهاز آخر</h3>
-        <p style="margin:0 0 8px; font-size:12.5px; line-height:1.9; color:var(--text-2);">
+        <p style="margin:0 0 10px; font-size:12.5px; line-height:1.9; color:var(--text-2);">
           رُصد شيء في حسابك من جهاز أو تبويب آخر (آخر تعديل هناك: ${escapeAttr(when)})، وعندك هنا تعديلات لم تُرفع بعد.
-          <b>لن يُمحى شيء دون اختيارك.</b>
+          <b>لن يُمحى شيء دون اختيارك، ونحتفظ بالنسختين في «نسخ النجاة».</b>
         </p>
-        <div class="hint" style="margin-top:0; margin-bottom:14px;">لو لم تكن متأكدًا: اختر «احتفظ بنسخة الجهاز الآخر»، فنسخة هذا الجهاز تبقى محفوظة عليه ويمكن استرجاعها بنسخة احتياطية.</div>
+        <div class="cf-compare">
+          <div class="cf-side"><span>💾 هذا الجهاز</span>${tag(mineN, theirN)}</div>
+          <div class="cf-side"><span>☁️ الجهاز الآخر</span>${tag(theirN, mineN)}</div>
+        </div>
+        <div class="hint" style="margin-top:0; margin-bottom:14px;">اختر النسخة الأكثر رصدًا إن لم تكن متأكدًا — والأخرى تبقى في «حسابي ← البيانات» ويمكن استرجاعها.</div>
         <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px;">
-          <button type="button" class="btn-ok" id="cf-keep-local">💾 اعتمد ما على هذا الجهاز (يستبدل الآخر)</button>
-          <button type="button" class="btn-cancel" id="cf-take-remote">☁️ احتفظ بنسخة الجهاز الآخر (يلغي تعديلاتي هنا)</button>
+          <button type="button" class="btn-ok" id="cf-keep-local">💾 اعتمد ما على هذا الجهاز (${mineN} خانة)</button>
+          <button type="button" class="btn-danger" id="cf-take-remote">☁️ اعتمد نسخة الجهاز الآخر (${theirN} خانة) — يمحو ما هنا</button>
           <button type="button" class="btn-cancel" id="cf-backup">📦 نزّل نسخة احتياطية من بيانات هذا الجهاز أولًا</button>
         </div>
       </div>
@@ -2416,6 +2458,16 @@ function updateSaveBanner(){
 /* عودة الاتصال ترفع ما تراكم فورًا بدل انتظار دورة إعادة المحاولة. */
 if(typeof window !== 'undefined' && window.addEventListener){
   window.addEventListener('online', ()=>{ if(PENDING_PUSH) pushRemote(); });
+  /* الجوال يخنق مؤقّتات الصفحة المخفيّة أو يوقفها، فالرفع المؤجَّل ٩٠٠ مللي
+     قد لا ينطلق أصلًا إن خرج المعلّم من التطبيق بعد آخر رصدة — ويبقى عمله
+     على الجهاز وحده. فنرفع فورًا لحظة الاختفاء، ونرفع ما تراكم عند العودة. */
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden'){
+      if(PENDING_PUSH){ clearTimeout(saveTimer); pushRemote(); }
+    }else if(PENDING_PUSH){
+      pushRemote();
+    }
+  });
   window.addEventListener('beforeunload', (e)=>{
     if(PENDING_PUSH && SAVE_ENABLED){ e.preventDefault(); e.returnValue = ''; return ''; }
   });
