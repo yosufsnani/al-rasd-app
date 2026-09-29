@@ -380,6 +380,23 @@ table.wk td{ height:40px; }
   flex:0 0 auto; font-size:10.5px; font-weight:400; padding:3px 9px;
   border-radius:20px; white-space:nowrap;
 }
+.rescue-row{
+  display:flex; align-items:center; gap:12px; padding:11px 2px;
+  border-bottom:1px solid var(--border);
+}
+.rescue-row:last-child{border-bottom:none;}
+.rescue-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.rescue-body b{font-size:13.5px; font-weight:500; color:var(--text);}
+.rescue-body i{font-style:normal; font-size:11px; font-weight:300; color:var(--muted); line-height:1.6;}
+.rescue-more{
+  font-style:normal; font-size:11px; font-weight:500; color:var(--teal-d);
+  background:var(--teal-soft); border-radius:20px; padding:2px 9px; align-self:flex-start;
+}
+.rescue-btn{
+  flex:0 0 auto; border:1px solid var(--border); background:#fff; color:var(--text);
+  border-radius:9px; padding:8px 14px; font-family:inherit; font-size:12.5px; cursor:pointer;
+}
+.rescue-btn:active{transform:scale(.97);}
 .ar-state.on{background:var(--teal-soft); color:var(--teal-d);}
 .ar-state.off{background:var(--surface-2); color:var(--muted);}
 .ar-chev{flex:0 0 auto; width:15px; height:15px; color:var(--muted);}
@@ -2041,15 +2058,25 @@ let SYNC_STATE    = 'idle'; // idle | saving | offline | error
 let retryTimer    = null;
 
 function localKey(uid){ return LOCAL_PREFIX + uid; }
+let LOCAL_SAVE_FAILED = false;
 function saveLocal(){
   if(!CURRENT_UID) return;
   try{
     localStorage.setItem(localKey(CURRENT_UID), JSON.stringify({
       value: STATE, stamp: REMOTE_STAMP, dirty: PENDING_PUSH, savedAt: new Date().toISOString()
     }));
+    LOCAL_SAVE_FAILED = false;
   }catch(e){
-    /* امتلأ التخزين أو مُنع (تصفح خاص) — السحابة تبقى المسار الوحيد. */
+    /* امتلأ التخزين أو مُنع (تصفح خاص) — السحابة تبقى المسار الوحيد.
+       والصمت هنا خطر: نسخة الجهاز تبقى عالقة على حالةٍ قديمة، وهي النسخة
+       التي تُعرض على المعلّم ليعتمدها عند التضارب. فيجب أن يعلم. */
     console.warn('تعذّر الحفظ على الجهاز', e);
+    if(!LOCAL_SAVE_FAILED){
+      LOCAL_SAVE_FAILED = true;
+      if(typeof showToast === 'function' && document.getElementById('toast')){
+        showToast('⚠️ تعذّر الحفظ على هذا الجهاز — أبقِ الصفحة مفتوحة حتى يصل الرفع');
+      }
+    }
   }
 }
 function loadLocal(uid){
@@ -2061,6 +2088,53 @@ function loadLocal(uid){
   }catch(e){ return null; }
 }
 function clearLocal(uid){ try{ localStorage.removeItem(localKey(uid || CURRENT_UID)); }catch(e){} }
+
+/* ===== نسخ النجاة =====
+   كل استبدالٍ للحالة — اعتماد نسخة جهاز آخر، استرجاع أرشيف، استيراد ملف،
+   أو اختيارٌ في نافذة التضارب — قد يمحو رصد حصّةٍ كاملة بضغطة واحدة، بلا
+   رجعة. فقبل أي استبدال نحتفظ بما سيُمحى في مفتاحٍ مستقلّ عن نسخة العمل،
+   ويستطيع المعلّم استرجاعه من «حسابي ← بياناتي». */
+const RESCUE_PREFIX = 'rasd_rescue_v1:';
+const RESCUE_KEEP   = 3;
+function rescueKey(uid){ return RESCUE_PREFIX + (uid || CURRENT_UID); }
+
+/* عدد الخانات المرصودة: هو ما يقيس «كم عملٍ في هذه النسخة» للمعلّم. */
+function countMarks(st){
+  if(!st || !st.sections) return 0;
+  let n = 0;
+  Object.keys(st.sections).forEach(k=>{
+    (st.sections[k] || []).forEach(r=>{
+      if(!r || typeof r !== 'object') return;
+      Object.keys(r).forEach(c=>{
+        if(Array.isArray(r[c])) r[c].forEach(v=>{ if(v && v !== '⬜') n++; });
+      });
+    });
+  });
+  return n;
+}
+function readRescue(uid){
+  try{
+    const raw = localStorage.getItem(rescueKey(uid));
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter(e=> e && e.value && e.value.sections) : [];
+  }catch(e){ return []; }
+}
+function stashRescue(value, why){
+  if(!CURRENT_UID || !value || !value.sections) return;
+  const entry = { at: new Date().toISOString(), why: why || '', marks: countMarks(value), value };
+  let list = readRescue();
+  /* لا نُكرّر نسخةً مطابقة لأحدث ما عندنا. */
+  if(list[0] && list[0].marks === entry.marks && JSON.stringify(list[0].value) === JSON.stringify(value)) return;
+  list.unshift(entry);
+  /* التخزين محدود: نتنازل عن الأقدم حتى تُكتب النسخة، ولا نفشل صامتين. */
+  for(let keep = Math.min(RESCUE_KEEP, list.length); keep >= 1; keep--){
+    try{
+      localStorage.setItem(rescueKey(), JSON.stringify(list.slice(0, keep)));
+      return;
+    }catch(e){ /* امتلأ — جرّب بعدد أقل */ }
+  }
+  console.warn('تعذّر حفظ نسخة النجاة');
+}
 
 /* يرجع {ok, saveable, state, offline, conflict} —
    ok:false تعني «تعذّر الوصول للبيانات ولا نسخة على الجهاز»، لا «لا توجد بيانات». */
@@ -2138,6 +2212,15 @@ function rememberStamp(st){
   if(OUR_STAMPS.length > 40) OUR_STAMPS.shift();
 }
 
+/* طلبٌ يعلَق على شبكة الجوال لا يعود ولا يفشل. بلا مهلة يبقى PUSH_INFLIGHT
+   مرفوعًا إلى الأبد فيتوقّف الحفظ السحابي كلّه بصمت، والمؤشّر يقول «يحفظ».
+   المهلة تُعيده إلى مسار الخطأ وإعادة المحاولة. */
+const PUSH_TIMEOUT_MS = 25000;
+function withPushTimeout(p){
+  return Promise.race([ p,
+    new Promise((_,rej)=> setTimeout(()=> rej(new Error('انتهت مهلة الرفع')), PUSH_TIMEOUT_MS)) ]);
+}
+
 function persistState(){
   if(!SAVE_ENABLED) return;
   EDIT_SEQ++;
@@ -2163,9 +2246,9 @@ async function pushRemote(){
     let stamp;
     rememberStamp(now);
     if(REMOTE_STAMP === null){
-      const { data, error } = await sb.from('rasd_data')
+      const { data, error } = await withPushTimeout(sb.from('rasd_data')
         .insert({ user_id: CURRENT_UID, key: CLOUD_KEY, value: payload, updated_at: now })
-        .select('updated_at').maybeSingle();
+        .select('updated_at').maybeSingle());
       if(error){
         /* 23505: الصفُّ موجود سلفًا — إمّا كتابتنا وإمّا جهاز آخر، نتبيّن. */
         if(error.code === '23505'){ done = (await reconcileLockFailure() === 'self'); return; }
@@ -2174,10 +2257,10 @@ async function pushRemote(){
       stamp = data ? data.updated_at : now;
     } else {
       /* الشرط .eq('updated_at', REMOTE_STAMP) هو قفل الإصدار: صفر صفوف = تغيّر خلفنا. */
-      const { data, error } = await sb.from('rasd_data')
+      const { data, error } = await withPushTimeout(sb.from('rasd_data')
         .update({ value: payload, updated_at: now })
         .eq('user_id', CURRENT_UID).eq('key', CLOUD_KEY).eq('updated_at', REMOTE_STAMP)
-        .select('updated_at');
+        .select('updated_at'));
       if(error) throw error;
       if(!data || data.length === 0){ done = (await reconcileLockFailure() === 'self'); return; }
       stamp = data[0].updated_at;
@@ -2194,16 +2277,18 @@ async function pushRemote(){
     PENDING_PUSH = true;
     saveLocal();
     setSyncState(navigator.onLine === false ? 'offline' : 'error');
-    scheduleRetry();
+    scheduleRetry(/انتهت مهلة الرفع/.test(e && e.message) ? 4000 : 20000);
   }finally{
     PUSH_INFLIGHT = false;
     if(done && PENDING_PUSH && !CONFLICT_OPEN) pushRemote();
   }
 }
 
-function scheduleRetry(){
+/* المهلة الافتراضية للانقطاع ٢٠ ثانية. أمّا الطلب الذي انتهت مهلته فالشبكة
+   موجودة وبطيئة لا غائبة، والمعلّم يرصد الآن — فلا نتركه بلا حفظ كل هذا. */
+function scheduleRetry(ms){
   clearTimeout(retryTimer);
-  retryTimer = setTimeout(()=>{ if(PENDING_PUSH) pushRemote(); }, 20000);
+  retryTimer = setTimeout(()=>{ if(PENDING_PUSH) pushRemote(); }, ms || 20000);
 }
 
 /* ===== التضارب بين جهازين =====
@@ -2270,7 +2355,11 @@ function showConflictDialog(remote, localValueOverride){
     CONFLICT_OPEN = false;
     SELF_HEAL = 0;
     closeDialog();
+    /* ما على السحابة سيُستبدل، وما على الشاشة قد يكون نسخةَ السحابة —
+       نحفظ الاثنتين قبل أي استبدال. */
+    if(remote && remote.value) stashRescue(remote.value, 'نسخة الجهاز الآخر قبل اعتماد هذا الجهاز');
     if(localValueOverride){
+      stashRescue(STATE, 'ما كان معروضًا قبل اعتماد نسخة الجهاز');
       applyLoadedState(normalizeLoadedState(localValueOverride));
       render();
     }
@@ -2283,6 +2372,8 @@ function showConflictDialog(remote, localValueOverride){
     CONFLICT_OPEN = false;
     SELF_HEAL = 0;
     closeDialog();
+    /* هذا الاختيار يمحو عمل هذا الجهاز — أخطر زرٍّ في التطبيق. */
+    stashRescue(localValue, 'نسخة هذا الجهاز قبل اعتماد الجهاز الآخر');
     REMOTE_STAMP = remote.updated_at;
     PENDING_PUSH = false;
     applyLoadedState(normalizeLoadedState(remote.value));
@@ -3172,7 +3263,56 @@ function renderDataPage(){
       <button id="btn-logout" style="color:#b91c1c; border-color:#f3c6c6;">🚪 تسجيل خروج</button>
     </div>
     <div class="hint" style="margin-top:10px;">☁️ رصدك محفوظ تلقائيًا في حسابك السحابي — تدخل عليه من أي جهاز بنفس البريد وكلمة المرور. النسخة الاحتياطية خيار إضافي تحفظه على جهازك.</div>
+  </div>
+  ${renderRescueCard()}`;
+}
+
+/* نسخ النجاة: ما احتفظ به التطبيق تلقائيًا قبل كل استبدالٍ للبيانات.
+   لا تظهر البطاقة إلا إن وُجدت نسخة — فلا تُقلق معلّمًا لم يفقد شيئًا. */
+function renderRescueCard(){
+  const list = readRescue();
+  if(list.length === 0) return '';
+  const now = countMarks(STATE);
+  const rows = list.map((e,i)=>{
+    const when = e.at ? new Date(e.at).toLocaleString('ar-SA') : 'وقت غير معروف';
+    const more = e.marks - now;
+    return `
+    <div class="rescue-row">
+      <div class="rescue-body">
+        <b>${e.marks} خانة مرصودة</b>
+        ${more > 0 ? `<em class="rescue-more">أكثر من الحالي بـ ${more}</em>` : ``}
+        <i>${escapeAttr(when)}${e.why ? ' · ' + escapeAttr(e.why) : ''}</i>
+      </div>
+      <button type="button" class="rescue-btn" data-rescue-use="${i}">استرجاع</button>
+    </div>`;
+  }).join('');
+  return `
+  <div class="card">
+    <h2>🛟 نسخ النجاة</h2>
+    <div class="hint" style="margin-top:0;">يحفظ التطبيق نسخةً تلقائيًا قبل أي استبدالٍ للبيانات (اعتماد نسخة جهاز آخر، استيراد ملف، استعادة أرشيف). الحالي الآن: <b>${now} خانة مرصودة</b>.</div>
+    ${rows}
   </div>`;
+}
+
+function bindRescueCard(){
+  document.querySelectorAll('[data-rescue-use]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = parseInt(btn.getAttribute('data-rescue-use'), 10);
+      const list = readRescue();
+      const entry = list[i];
+      if(!entry) return;
+      showConfirmDialog(
+        'استرجاع نسخة النجاة؟',
+        'ستحلّ هذه النسخة (' + entry.marks + ' خانة مرصودة) محلّ ما في التطبيق الآن (' + countMarks(STATE) + ' خانة). وسنحفظ الحالي في نسخة نجاةٍ أخرى قبل الاستبدال، فلا شيء يضيع.',
+        ()=>{
+          stashRescue(STATE, 'ما كان في التطبيق قبل استرجاع نسخة نجاة');
+          applyLoadedState(normalizeLoadedState(entry.value));
+          persistState();
+          render();
+          showToast('تم استرجاع نسخة النجاة');
+        });
+    });
+  });
 }
 
 /* فتح صفحة فرعية يدفع مدخلًا في سجلّ المتصفح، فيعيدك زرُّ الرجوع في الهاتف
@@ -3226,6 +3366,7 @@ function wireAccountEvents(){
 
 /* أزرار التصدير والنسخ الاحتياطية — تعيش في تبويب حسابي */
 function wireDataButtons(){
+  bindRescueCard();
   const x = document.getElementById('btn-export-xlsx');
   if(x) x.addEventListener('click', ()=> exportXlsx());
   const j = document.getElementById('btn-export-json');
@@ -8857,6 +8998,8 @@ function importJson(e){
         if(!Array.isArray(obj.referrals)) obj.referrals = [];
         SELECTED_ROWS.clear();
         EXPANDED_CARDS.clear();
+        /* الاستيراد يمحو كل ما في التطبيق — نحفظه قبل أن يذهب. */
+        stashRescue(STATE, 'ما كان في التطبيق قبل استيراد ملف');
         applyLoadedState(normalizeLoadedState(obj));
         persistState();
         render();
@@ -9189,6 +9332,10 @@ function bootWithState(res){
     /* السحابة تغيّرت من جهاز آخر بينما هنا تعديلات لم تُرفع — الشاشة تعرض نسخة
        السحابة، والمعلم يختار. نحتفظ بنسخة الجهاز داخل النافذة نفسها. */
     setSyncState('error');
+    /* بلا هذا العَلَم تستطيع نافذةٌ ثانية أن تحلّ محلّ هذه، ومعها تضيع
+       نسخة الجهاز التي لا تعيش إلا داخل إغلاق هذه النافذة. */
+    CONFLICT_OPEN = true;
+    stashRescue(res.conflict.localValue, 'نسخة الجهاز عند اكتشاف التضارب');
     showConflictDialog({ value: res.state, updated_at: res.conflict.remoteStamp }, res.conflict.localValue);
   } else if(res.pushNow){
     /* تعديلات جهاز لم تُرفع والسحابة لم تتغيّر — ارفعها الآن. */
