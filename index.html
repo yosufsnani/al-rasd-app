@@ -2252,9 +2252,29 @@ function withPushTimeout(p){
     new Promise((_,rej)=> setTimeout(()=> rej(new Error('انتهت مهلة الرفع')), PUSH_TIMEOUT_MS)) ]);
 }
 
+/* الشبكة التي لا تُنصب إلا عند ظهور نافذةٍ شبكةٌ واهية: لو ضاع العمل بسببٍ
+   آخر لم يكن خلفه شيء. فنأخذ نسخةً كل ربع ساعةٍ من الرصد الجادّ — ولا نأخذ
+   شيئًا إن لم يتقدّم العمل، فلا نملأ تخزين الجهاز بنسخٍ متطابقة. */
+let AUTO_RESCUE_AT    = 0;
+let AUTO_RESCUE_MARKS = -1;
+const AUTO_RESCUE_EVERY  = 15 * 60 * 1000;
+const AUTO_RESCUE_GROWTH = 15;
+function maybeAutoRescue(){
+  if(!CURRENT_UID) return;
+  const now = Date.now();
+  const n = countMarks(STATE);
+  if(AUTO_RESCUE_MARKS < 0){ AUTO_RESCUE_MARKS = n; AUTO_RESCUE_AT = now; return; }
+  if(n < AUTO_RESCUE_MARKS + AUTO_RESCUE_GROWTH) return;
+  if(now - AUTO_RESCUE_AT < AUTO_RESCUE_EVERY) return;
+  AUTO_RESCUE_MARKS = n;
+  AUTO_RESCUE_AT = now;
+  stashRescue(STATE, 'نسخة تلقائية أثناء الرصد');
+}
+
 function persistState(){
   if(!SAVE_ENABLED) return;
   EDIT_SEQ++;
+  maybeAutoRescue();
   PENDING_PUSH = true;
   saveLocal();                    // فوري ولا يفشل
   setSyncState('saving');
@@ -3319,12 +3339,18 @@ function renderDataPage(){
   ${renderRescueCard()}`;
 }
 
-/* نسخ النجاة: ما احتفظ به التطبيق تلقائيًا قبل كل استبدالٍ للبيانات.
-   لا تظهر البطاقة إلا إن وُجدت نسخة — فلا تُقلق معلّمًا لم يفقد شيئًا. */
+/* نسخ النجاة: ما احتفظ به التطبيق تلقائيًا. البطاقة تظهر دائمًا — غيابها
+   حين تخلو يترك المعلّم لا يدري أللشبكة وجودٌ أصلًا أم لا. */
 function renderRescueCard(){
   const list = readRescue();
-  if(list.length === 0) return '';
   const now = countMarks(STATE);
+  if(list.length === 0){
+    return `
+  <div class="card">
+    <h2>🛟 نسخ النجاة</h2>
+    <div class="hint" style="margin-top:0;">لا توجد نسخة بعد. يأخذ التطبيق نسخةً تلقائيًا كل ربع ساعة من الرصد، وقبل أي استبدالٍ للبيانات (اعتماد نسخة جهاز آخر، استيراد ملف، استعادة أرشيف) — فتستطيع الرجوع إليها لو ضاع شيء. الحالي الآن: <b>${now} خانة مرصودة</b>.</div>
+  </div>`;
+  }
   const rows = list.map((e,i)=>{
     const when = e.at ? new Date(e.at).toLocaleString('ar-SA') : 'وقت غير معروف';
     const more = e.marks - now;
@@ -3341,7 +3367,7 @@ function renderRescueCard(){
   return `
   <div class="card">
     <h2>🛟 نسخ النجاة</h2>
-    <div class="hint" style="margin-top:0;">يحفظ التطبيق نسخةً تلقائيًا قبل أي استبدالٍ للبيانات (اعتماد نسخة جهاز آخر، استيراد ملف، استعادة أرشيف). الحالي الآن: <b>${now} خانة مرصودة</b>.</div>
+    <div class="hint" style="margin-top:0;">نسخٌ يأخذها التطبيق تلقائيًا كل ربع ساعة من الرصد، وقبل أي استبدالٍ للبيانات. الحالي الآن: <b>${now} خانة مرصودة</b>.</div>
     ${rows}
   </div>`;
 }
