@@ -8211,7 +8211,10 @@ function computeReferralIndicators(row){
   const calc = studentCalc(row);
   const ratioPct = calc.maxGrade>0 ? Math.round((calc.final/calc.maxGrade)*100) : null;
   const worstLabel = worstTrouble>0 ? cfg[worstKey].name : "لا يوجد تعثر واضح";
-  return { assessedCount, lateCount: calc.lateCount, ratioPct, worstLabel };
+  /* عدم التسليم هو أقوى ما يحمله التقرير: المرشد يتدخّل للمهمّة التي لم
+     تصل أصلًا قبل أن يتدخّل للمتأخرة. وتقرير ولي الأمر يعرضه منذ البداية،
+     فكان المرشد وحده يُحرم منه. */
+  return { assessedCount, lateCount: calc.lateCount, missCount: calc.missCount, ratioPct, worstLabel };
 }
 
 function referralDefaultNote(recipientLabel, bothReasons, lowAchievement, frequentLate){
@@ -8275,7 +8278,7 @@ function openReferralReportDialog(key, idx, openOpts){
         </div>
         <div class="hint" style="margin:0 0 10px; line-height:1.9;">
           مؤشرات الرصد (تُحسب تلقائيًا من الشعبة):<br>
-          عدد المهام المرصودة: <b>${ind.assessedCount}</b> — عدد التأخيرات: <b>${ind.lateCount}</b> — نسبة الإنجاز: <b>${ind.ratioPct!==null?ind.ratioPct+'%':'—'}</b><br>
+          عدد المهام المرصودة: <b>${ind.assessedCount}</b> — لم تُسلَّم: <b>${ind.missCount}</b> — سُلّمت متأخرة: <b>${ind.lateCount}</b> — نسبة الإنجاز: <b>${ind.ratioPct!==null?ind.ratioPct+'%':'—'}</b><br>
           أكثر جانب ظهر فيه التعثر: <b>${escapeAttr(ind.worstLabel)}</b>
         </div>
         <div class="meta-field" style="margin-bottom:14px;">
@@ -8331,6 +8334,7 @@ function openReferralReportDialog(key, idx, openOpts){
     behaviourKey: key,
     assessedCount: ind.assessedCount,
     lateCount: ind.lateCount,
+    missCount: ind.missCount,
     ratioPct: ind.ratioPct,
     worstLabel: ind.worstLabel,
     note: noteEl.value
@@ -8454,9 +8458,15 @@ function referralSheetHtml(data){
       ${data.includeStats ? `
       <div class="rf-section">
         <h3>مؤشرات الرصد</h3>
+        <!-- الإحالات المحفوظة في الأرشيف تُطبع بهذه الدالة نفسها، والقديمة منها
+             لا تحمل حقل «لم تُسلَّم». فيُحذف السطر لا يُطبع فارغًا: الورقة
+             المؤرشفة صورةُ ما أُرسل يومها، لا تُستكمل بعد حين. -->
         <div class="rf-grid">
           <div class="rf-row"><span class="rf-label">عدد المهام المرصودة:</span><span>${data.assessedCount}</span></div>
-          <div class="rf-row"><span class="rf-label">عدد التأخيرات:</span><span>${data.lateCount}</span></div>
+          ${typeof data.missCount === 'number'
+            ? `<div class="rf-row"><span class="rf-label">مهام لم تُسلَّم:</span><span>${data.missCount}</span></div>`
+            : ``}
+          <div class="rf-row"><span class="rf-label">مهام سُلّمت متأخرة:</span><span>${data.lateCount}</span></div>
           <div class="rf-row"><span class="rf-label">نسبة الإنجاز:</span><span>${data.ratioPct!==null?data.ratioPct+'%':'—'}</span></div>
           <div class="rf-row full"><span class="rf-label">أكثر جانب ظهر فيه التعثر:</span><span>${escapeAttr(data.worstLabel)}</span></div>
         </div>
@@ -8498,7 +8508,8 @@ function buildDefaultReferralData(key, idx){
     studentName: row.name, section:key, subject:meta.subject, teacher:meta.teacher,
     recipientLabel, term:meta.term,
     reasonLow: lowAchievement, reasonLate: frequentLate, reasonBoth: bothReasons, reasonOther:false, reasonOtherText:'',
-    includeStats:true, assessedCount:ind.assessedCount, lateCount:ind.lateCount, ratioPct:ind.ratioPct, worstLabel:ind.worstLabel,
+    includeStats:true, assessedCount:ind.assessedCount, lateCount:ind.lateCount, missCount:ind.missCount,
+    ratioPct:ind.ratioPct, worstLabel:ind.worstLabel,
     tasks: troubledTasks(row),
     note
   };
