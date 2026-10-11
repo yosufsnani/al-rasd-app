@@ -680,6 +680,33 @@ td.final-green{background:var(--green); color:var(--green-t);}
 td.final-yellow{background:var(--yellow); color:var(--yellow-t);}
 td.final-red{background:var(--red); color:var(--red-t);}
 
+/* ===== ترويسة الرصد الثابتة =====
+   اسم البند هو نصف المعلومة في كل خانة: بلا ترويسةٍ ثابتة يرصد المعلّم في
+   عمودٍ لا يعرف اسمه بعد أن ينزل بضعة طلاب. العمودان «م» و«اسم الطالب»
+   ثابتان أفقيًا منذ البداية، وهذا يُكمل الزوج رأسيًا.
+
+   الثبات يحتاج حاوية تمرير حقيقية: الصفحة لا تصلح لأن body عندها
+   overflow-x:hidden فيصير حاويةً للتمرير ويُبطل أي التصاقٍ بالشاشة. فنُعطي
+   الجدولَ إطارَه: ارتفاعٌ أقصى بقدر ما تبقّى من الشاشة فوق الشريط السفلي.
+   max-height لا height: الشعبة القليلة الطلاب تبقى بحجمها ولا تترك فراغًا. */
+@media screen{
+  .grid-wrap{
+    max-height: calc(100vh - var(--nav-h) - 24px);
+    max-height: calc(100dvh - var(--nav-h) - 24px);
+    overflow-y:auto;
+  }
+  /* موضع الصفّ الثاني = ارتفاع الأول بالضبط، ومصدرهما واحد: قاعدة الارتفاع
+     أدناه (٣٠ على الجوال، ٣٤ فوقها). أي تغيير لتلك يُغيَّر هنا معه. */
+  .grid-wrap table.grid{ --grp-h:34px; }
+  .grid-wrap table.grid thead tr.grp th{ position:sticky; top:0; z-index:20; }
+  .grid-wrap table.grid thead tr.sub th{ position:sticky; top:var(--grp-h); z-index:20; }
+  /* ركن الترويسة: ثابتٌ في المحورين معًا، ففوق الجميع. */
+  .grid-wrap table.grid thead th.g-idx{ z-index:26 !important; }
+}
+@media screen and (max-width:640px){
+  .grid-wrap table.grid{ --grp-h:30px; }
+}
+
 /* ===== Mobile: shrink data columns (not the name column) so more shows without dragging ===== */
 @media(max-width:640px){
   table.grid{min-width:1350px; font-size:10.5px;}
@@ -1186,6 +1213,10 @@ body.modal-lock{ overflow:hidden; }
   th.g-cat{border-bottom:3px solid var(--cat, #4B5563) !important;}
   th.g-idx, th.g-final, th.name-h{background:#e5e7eb !important; border-bottom:3px solid #4B5563 !important;}
 
+  .grid-wrap{ max-height:none !important; overflow:visible !important; }
+  table.grid thead tr.grp th, table.grid thead tr.sub th, table.grid thead th.g-idx{
+    position:static !important; top:auto !important;
+  }
   th.name-h, td.name-c, th.idx-h, td.idx-c{
     position:static !important; box-shadow:none !important;
   }
@@ -2883,8 +2914,8 @@ function colGroupHeader(){
   return colgroup + `
   <thead>
     <tr class="grp">
-      <th class="g-idx" style="position:sticky;right:0;z-index:16;" rowspan="2">م</th>
-      <th class="g-idx name-h" style="position:sticky;right:34px;z-index:16;" rowspan="2">اسم الطالب</th>
+      <th class="g-idx" style="position:sticky;right:0;top:0;z-index:26;" rowspan="2">م</th>
+      <th class="g-idx name-h" style="position:sticky;right:34px;top:0;z-index:26;" rowspan="2">اسم الطالب</th>
       ${grpCells}
       <th class="g-final" rowspan="2">المجموع النهائي</th>
       <th class="g-final" rowspan="2">الدرجة القصوى</th>
@@ -4602,7 +4633,7 @@ function renderSectionSheet(key, opts){
   `}
 
   <div class="card${listMode && !forPrint ? ' screen-hidden' : ''}">
-    <div class="table-wrap">
+    <div class="table-wrap grid-wrap">
       <table class="grid" style="--item-count:${totalItemCount};">
         ${colGroupHeader()}
         <tbody id="rows-body">
@@ -6162,7 +6193,7 @@ function render(){
      فبقيت العلّة في سجل الإجراءات (تغيير «الحالة» في آخر عمود). صار يشمل
      كل الجداول في كل التبويبات، ويُستعاد بالترتيب ما دام عددها لم يتغيّر —
      فإن تغيّر فالبنية اختلفت ولا معنى لمطابقة المواضع. */
-  const prevScrolls = [...main.querySelectorAll('.table-wrap')].map(w=> w.scrollLeft);
+  const prevScrolls = [...main.querySelectorAll('.table-wrap')].map(w=> ({ x:w.scrollLeft, y:w.scrollTop }));
 
   if(view === 'home'){
     main.innerHTML = renderHome();
@@ -6198,12 +6229,20 @@ function render(){
   restoreTableScrolls(main, prevScrolls);
 }
 
-/* تُستدعى بعد إعادة بناء أي تبويب. */
+/* تُستدعى بعد إعادة بناء أي تبويب.
+   المحوران معًا لا الأفقي وحده: جدول الرصد صار يُمرَّر رأسيًا داخل إطاره،
+   وكل رصدة تُعيد بناء الجدول — فبلا استرجاع العمودي يقفز المعلّم إلى أول
+   الكشف بعد كل خانة يرصدها. */
 function restoreTableScrolls(main, prevScrolls){
   if(!prevScrolls || prevScrolls.length===0) return;
   const wraps = main.querySelectorAll('.table-wrap');
   if(wraps.length !== prevScrolls.length) return;
-  wraps.forEach((w,i)=>{ if(prevScrolls[i]) w.scrollLeft = prevScrolls[i]; });
+  wraps.forEach((w,i)=>{
+    const prev = prevScrolls[i];
+    if(!prev) return;
+    if(prev.x) w.scrollLeft = prev.x;
+    if(prev.y) w.scrollTop  = prev.y;
+  });
 }
 
 /* الترويسة العلوية تتغيّر حسب التبويب: الرصد يعرض اسم الشعبة فقط،
