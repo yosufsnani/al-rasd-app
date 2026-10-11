@@ -5284,7 +5284,10 @@ function renderFollowUpCard(opts){
   <div class="card">
     <h2 style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
       <span>🚨 يحتاج متابعة</span>
-      ${(followUps.length>0 && !forPrint) ? `<button type="button" class="fu-print-all-btn" style="border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;">🖨️ طباعة كل تقارير الإحالة</button>` : ``}
+      ${(followUps.length>0 && !forPrint) ? `<span style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button type="button" class="fu-print-sum-btn" style="border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;">📄 كشف مختصر للجميع</button>
+        <button type="button" class="fu-print-all-btn" style="border:1px solid var(--border); background:#fff; padding:5px 8px; border-radius:8px; font-size:11px; cursor:pointer; font-family:inherit;">🖨️ تقرير لكل طالب</button>
+      </span>` : ``}
     </h2>
     ${followUps.length===0 ? `<div class="empty-note">لا يوجد طلاب بحاجة متابعة حاليًا 🎉</div>` : `
     <div class="table-wrap">
@@ -6319,6 +6322,10 @@ function wireFollowUpEvents(){
   const printAllBtn = document.querySelector('.fu-print-all-btn');
   if(printAllBtn){
     printAllBtn.addEventListener('click', ()=> printAllFollowUpReferrals());
+  }
+  const printSumBtn = document.querySelector('.fu-print-sum-btn');
+  if(printSumBtn){
+    printSumBtn.addEventListener('click', ()=> printFollowUpSummary());
   }
 }
 
@@ -9325,6 +9332,92 @@ function printAnalysisReport(){
 // إحالات مكرّرة في السجل في كل مرة. فصارت الخيارات الثلاثة مطابقة تمامًا
 // لما يعرضه مسار "📋 إحالة" الفردي: إلغاء، حفظ بلا طباعة، طباعة بلا حفظ —
 // والمعلّم يختار حسب موقفه، لا القالب يفرض عليه أحدهما.
+/* كشفٌ واحد يجمع كل من يحتاج متابعة — بديلٌ عن حزمة تقارير مستقلّة حين
+   يريد المعلّم ورقةً واحدة يسلّمها للمرشد أو يناقشها في اجتماع. الأعمدة
+   هي أعمدة الجدول الذي يراه المعلّم على الشاشة، فلا يتعلّم ترتيبًا ثانيًا. */
+function followUpSummaryHtml(){
+  const list = needsFollowUpList();
+  const lh = STATE.letterhead || blankLetterhead();
+  const logoSrc = document.querySelector('header.app-top img')?.src || '';
+  const anyMeta = SECTION_KEYS.map(k=> STATE.meta[k]).find(m=> m && (m.subject || m.teacher)) || {};
+  const urgent = list.filter(f=> f.severity === 'urgent').length;
+  const warn = list.length - urgent;
+  const bh = bhEnabled();
+  const sevText = (sev)=> SEV_TEXT[sev] || '—';
+
+  return `
+    <div class="referral-sheet fu-summary" dir="rtl" style="font-family:'Readex Pro','Tajawal',Tahoma,Arial,sans-serif; color:#111;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:2px solid #0f766e; padding-bottom:11px; margin-bottom:12px;">
+        <div style="text-align:right; font-size:12px; line-height:1.9; flex:1;">
+          <div>${escapeAttr(lh.line1)}</div>
+          <div>${escapeAttr(lh.line2)}</div>
+          <div style="font-weight:700;">${escapeAttr(lh.school)}</div>
+        </div>
+        ${logoSrc ? `<img alt="شعار وزارة التعليم" src="${logoSrc}" style="height:46px; width:auto; max-width:120px; object-fit:contain; flex-shrink:0;">` : ''}
+        <div style="text-align:left; font-size:12px; line-height:1.9; flex:1;">
+          <div>المادة: ${escapeAttr(anyMeta.subject || '')}</div>
+          <div>التاريخ: ${escapeAttr(getHijriDateStr())} هـ</div>
+        </div>
+      </div>
+
+      <h2 class="rf-title" style="text-align:center; font-size:17px; font-weight:700; margin:0 0 4px;">كشف الطلاب المحتاجين للمتابعة</h2>
+      <div style="text-align:center; font-size:11.5px; color:#444; margin-bottom:12px;">
+        العدد: <b>${fmt(list.length)}</b> &nbsp;·&nbsp; لا يسلّم: <b>${fmt(urgent)}</b> &nbsp;·&nbsp; يسلّم متأخرًا: <b>${fmt(warn)}</b>
+      </div>
+
+      <table class="log-table fu-sum-table" style="width:100%; border-collapse:collapse; font-size:11px;">
+        <thead>
+          <tr>
+            <th style="width:4%;">م</th>
+            <th style="width:22%;">اسم الطالب</th>
+            <th style="width:10%;">الشعبة</th>
+            <th style="width:9%;">التصنيف</th>
+            <th>سبب المتابعة</th>
+            <th style="width:8%;">الإنجاز</th>
+            <th style="width:8%;">لم تُسلَّم</th>
+            <th style="width:8%;">متأخر</th>
+            ${bh ? `<th style="width:8%;">السلوك</th>` : ``}
+            <th style="width:15%;">آخر إجراء</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map((f,i)=>{
+            const act = lastActionFor(f.key, f.name);
+            return `<tr>
+              <td style="text-align:center;">${i+1}</td>
+              <td style="text-align:right;">${escapeAttr(f.name)}</td>
+              <td style="text-align:center;">${escapeAttr(f.key)}</td>
+              <td style="text-align:center; font-weight:${f.severity==='urgent'?'700':'400'};">${escapeAttr(sevText(f.severity))}</td>
+              <td style="text-align:right;">${escapeAttr(f.reason)}</td>
+              <td style="text-align:center;">${f.ratioPct!==null ? f.ratioPct+'%' : '—'}</td>
+              <td style="text-align:center;">${f.missCount}</td>
+              <td style="text-align:center;">${f.lateCount}</td>
+              ${bh ? `<td style="text-align:center;">${f.bhTotal>0 ? f.bhTotal : '—'}</td>` : ``}
+              <td style="text-align:center; font-size:10px;">${act ? escapeAttr(act.status) + '<br>' + escapeAttr(act.dateHijri||'') : 'لا إجراء بعد'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <div style="font-size:10px; color:#555; line-height:1.8; margin-top:7px;">
+        <b>لا يسلّم</b>: ثلاث حالات عدم تسليم فأكثر، أو لم تصل منه ربع المهام المرصودة فأكثر.
+        <b>يسلّم متأخرًا</b>: تأخير متكرر لكن المهام تصل — والتأخير نصف درجة، فمن يسلّم كل شيء متأخرًا نسبته ٥٠٪.
+      </div>
+
+      <div class="rf-sign" style="display:flex; justify-content:space-between; margin-top:22px; font-size:12px;">
+        <div style="text-align:center; flex:1;">معلم المادة: ${escapeAttr(anyMeta.teacher || '')}<span class="ln" style="display:block; margin-top:20px; border-top:1px solid #333; padding-top:4px;">التوقيع</span></div>
+        <div style="text-align:center; flex:1;">المرشد الطلابي<span class="ln" style="display:block; margin-top:20px; border-top:1px solid #333; padding-top:4px;">التوقيع</span></div>
+      </div>
+    </div>`;
+}
+
+function printFollowUpSummary(){
+  if(needsFollowUpList().length === 0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }
+  const holder = document.getElementById('print-referral-holder');
+  holder.innerHTML = followUpSummaryHtml();
+  printHolder(holder);
+}
+
 function printAllFollowUpReferrals(){
   const followUps = needsFollowUpList();
   if(followUps.length===0){ showAlertDialog('لا يوجد طلاب بحاجة متابعة حاليًا'); return; }

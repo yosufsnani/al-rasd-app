@@ -72,5 +72,47 @@ module.exports = async function run(){
   t.ok('كل العدادات صفر', ind2.missCount === 0 && ind2.lateCount === 0 && ind2.assessedCount === 0,
        JSON.stringify(ind2));
 
+  /* كشفٌ واحد يجمع كل من يحتاج متابعة — بديل عن حزمة تقارير مستقلّة. */
+  t.head('الكشف المختصر لمن يحتاج متابعة');
+  vm.runInContext(`
+    applyLoadedState(normalizeLoadedState(freshState())); CURRENT_UID='u1'; SAVE_ENABLED=false;
+    STATE.letterhead = { line1:'المملكة العربية السعودية', line2:'وزارة التعليم', school:'متوسطة أم القرى', logo:'' };
+    var KK = SECTION_KEYS[0];
+    STATE.meta[KK] = Object.assign(STATE.meta[KK]||{}, { subject:'علوم', teacher:'يوسف السناني' });
+    /* ثلاثة لا يسلّمون، واثنان يسلّمان متأخرًا، وواحد سليم لا يُدرج. */
+    for(var i=0;i<3;i++){ STATE.sections[KK][i].name='غير مسلّم '+(i+1);
+      for(var g=0; g<5; g++) STATE.sections[KK][i].p[g]='❌'; }
+    for(var i=3;i<5;i++){ STATE.sections[KK][i].name='متأخر '+(i-2);
+      for(var g=0; g<6; g++) STATE.sections[KK][i].h[g]='⏰'; }
+    STATE.sections[KK][5].name='منضبط';
+    for(var g=0; g<8; g++) STATE.sections[KK][5].p[g]='✔️';
+    var SUM = followUpSummaryHtml();
+    var LIST = needsFollowUpList();
+  `, s);
+  const sum = vm.runInContext('SUM', s);
+  const sumTxt = txt(sum);
+  const listLen = vm.runInContext('LIST.length', s);
+
+  t.ok('يُدرج من يحتاج متابعة وحده', listLen === 5, listLen + ' بدل 5');
+  t.ok('ولا يُدرج المنضبط', sumTxt.indexOf('منضبط') < 0);
+  t.ok('وصفٌّ لكل واحد منهم',
+       ((sum.match(/<tbody>[\s\S]*?<\/tbody>/) || [''])[0].split('<tr>').length - 1) === 5);
+  t.ok('والعدد مكتوب في الترويسة', /العدد:\s*5/.test(sumTxt), sumTxt.slice(0,80));
+  t.ok('وتفصيل التصنيفين', /لا يسلّم:\s*3/.test(sumTxt) && /يسلّم متأخرًا:\s*2/.test(sumTxt));
+  t.ok('والكليشة كاملة', /المملكة العربية السعودية/.test(sumTxt) && /متوسطة أم القرى/.test(sumTxt));
+  t.ok('وسطر التوقيع للمعلّم والمرشد', /معلم المادة: يوسف السناني/.test(sumTxt) && /المرشد الطلابي/.test(sumTxt));
+  t.ok('وأعمدة الأرقام التي يحتاجها المرشد',
+       /لم تُسلَّم/.test(sumTxt) && /متأخر/.test(sumTxt) && /الإنجاز/.test(sumTxt));
+  /* ورقة واحدة لا حزمة: لا تقارير مستقلّة داخلها. */
+  t.ok('ورقة واحدة لا تقرير لكل طالب',
+       (sum.match(/class="referral-sheet/g) || []).length === 1);
+
+  t.head('حين لا أحد يحتاج متابعة');
+  vm.runInContext(`
+    applyLoadedState(normalizeLoadedState(freshState())); CURRENT_UID='u1'; SAVE_ENABLED=false;
+    var E = needsFollowUpList().length;
+  `, s);
+  t.ok('القائمة فارغة فلا يُطبع كشف', vm.runInContext('E', s) === 0);
+
   return t.done();
 };
