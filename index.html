@@ -618,6 +618,22 @@ table.grid thead tr.grp th{color:#fff; font-weight:700; font-size:12px; padding:
 table.grid thead tr.sub th{background:#eef1f5; font-size:11px; font-weight:600; padding:5px 2px; color:#374151;}
 th.g-cat{background:var(--cat, var(--gray-head));}
 th.g-idx{background:var(--gray-head);} th.g-final{background:var(--gray-head);}
+/* عمودا الفترتين: لونٌ هادئ يفصلهما عن البنود ذوات الألوان، ورقمٌ تحت
+   الاسم يقول الدرجة العظمى فلا يُسأل عنها. */
+th.g-exam{background:#4A5568; color:#fff; font-size:11px; line-height:1.45;}
+th.g-exam i{display:block; font-style:normal; font-size:9.5px; font-weight:300; opacity:.8;}
+td.exam-c{
+  background:#F7F8FA; font-weight:500; font-size:12.5px; cursor:pointer;
+  font-variant-numeric:tabular-nums; color:var(--text);
+}
+td.exam-c:active{background:#EDEFF3;}
+td.exam-empty::after{content:'–'; color:#C9C2B8; font-weight:300;}
+@media print{
+  th.g-exam{background:#4A5568 !important; color:#fff !important; font-size:7.5px !important;}
+  th.g-exam i{font-size:6.5px !important;}
+  td.exam-c{background:#fff !important; color:#000 !important; cursor:auto; font-size:8px !important;}
+  td.exam-empty::after{content:'' !important;}
+}
 col.wide{}
 /* العمود لاصق، فكل بكسل يزيده يُقتطع من مساحة الرصد في كل موضع تمرير لا مرة
    واحدة. لذا يبقى ضيقًا حيث المساحة ثمينة (الجوال) ويتّسع حيث تتّسع الشاشة. */
@@ -1196,7 +1212,10 @@ body.modal-lock{ overflow:hidden; }
      فيُقصّ اسم العائلة — وهو أكثر ما يميّز الطالب. ١٣٪ تكفيها جميعًا، وثمنها
      ١٫٣ بكسل من كل عمود بند (١٨٫٦ ← ١٧٫٣) وهي خانة مربّعٍ صغير لا تتأثر. */
   col.col-name{width:13%;}
-  col.col-data{width:calc(57.5% / var(--item-count, 1));}
+  col.col-data{width:calc(var(--data-share, 57.5%) / var(--item-count, 1));}
+  /* عمودا الفترتين ٢٫٢٪ لكلٍّ (٢٤ بكسلًا) — رقمٌ من خانتين لا أكثر.
+     وحصّتهما تُخصم من أعمدة البنود عبر --data-share فيبقى مجموع العرض كما هو. */
+  col.col-exam{width:2.2%;}
   col.col-sum{width:2%;}
   col.col-final{width:5.4%;}
   col.col-del{width:0.1%;}
@@ -2894,6 +2913,7 @@ function colGroupHeader(){
     for(let i=0;i<cfg[k].count;i++) cols.push('col-data');
     cols.push('col-sum');
   }
+  if(examEnabled()) for(let i=0;i<EXAM_COUNT;i++) cols.push('col-exam');
   cols.push('col-final','col-final','col-final','col-final','col-del');
   const colgroup = `<colgroup>${cols.map(c=>`<col class="${c}">`).join("")}</colgroup>`;
   const grpCells = CAT_KEYS.map(k=>{
@@ -2917,6 +2937,8 @@ function colGroupHeader(){
       <th class="g-idx" style="position:sticky;right:0;top:0;z-index:26;" rowspan="2">م</th>
       <th class="g-idx name-h" style="position:sticky;right:34px;top:0;z-index:26;" rowspan="2">اسم الطالب</th>
       ${grpCells}
+      ${examEnabled() ? examSettings().names.map((nm,i)=>
+        `<th class="g-exam" rowspan="2" title="${escapeAttr('درجة اختبار '+nm+' — لا تدخل المجموع النهائي')}">${escapeAttr(nm)}<i>${fmt(examMax(i))}</i></th>`).join('') : ''}
       <th class="g-final" rowspan="2">المجموع النهائي</th>
       <th class="g-final" rowspan="2">الدرجة القصوى</th>
       <th class="g-final" rowspan="2">المستوى</th>
@@ -2952,6 +2974,10 @@ function renderSectionRows(key){
         (row[k]||[]).map((v,gi)=>cellHtml(key,idx,k,gi,v)).join("") +
         `<td class="sum-c">${fmt(c[k+'Sum'])}</td>`
       ).join("")}
+      ${examEnabled() ? examSettings().names.map((nm,i)=>{
+        const v = examScore(row, i);
+        return `<td class="exam-c${v===null?' exam-empty':''}" data-exam="${i}" data-key="${escapeAttr(key)}" data-idx="${idx}" title="${escapeAttr(nm)}">${v===null ? '' : fmt(v)}</td>`;
+      }).join('') : ''}
       <td class="final-c ${finalClass}">${fmt(c.final)}</td>
       <td class="max-c">${fmt(c.maxGrade)}</td>
       <td class="level-c" style="background:${studentLevel(c, empty).bg}; color:${studentLevel(c, empty).fg};">${studentLevelName(c, empty)}</td>
@@ -3093,6 +3119,13 @@ const ACCOUNT_PAGES = [
                  const n = SCHED_DAYS.reduce((t,_,d)=> t + schedTeachCount(d), 0);
                  return { text:`${fmt(n)} حصة`, on:true }; },
     body: ()=> renderSchedulePage() },
+
+  { id:'exams', icon:'📊', title:'درجات الفترات',
+    desc:'عمودان لاختباري الفترتين — لا يدخلان المجموع النهائي',
+    state: ()=>{ const e = examSettings();
+                 if(!e.enabled) return { text:'متوقف', on:false };
+                 return { text:`${fmt(e.max[0])} و${fmt(e.max[1])}`, on:true }; },
+    body: ()=> renderExamsPage() },
 
   { id:'attendance', icon:'📋', title:'الحضور والغياب',
     desc:'تسجيل الحضور ودرجة المواظبة',
@@ -3559,6 +3592,43 @@ function renderConfigPage(){
 }
 
 /* ---- 🗓️ إعدادات الحضور والغياب ---- */
+function renderExamsPage(){
+  const e = examSettings();
+  const marked = SECTION_KEYS.reduce((n,k)=>
+    n + (STATE.sections[k]||[]).reduce((m,r)=> m + (examScore(r,0)!==null?1:0) + (examScore(r,1)!==null?1:0), 0), 0);
+  return `
+  <div class="card meta-card">
+    <label class="sw-row">
+      <span class="sw-body">
+        <b>إظهار عمودَي الفترتين</b>
+        <i>يضيف عمودين في آخر كشف الرصد لدرجتَي اختباري الفترتين. ${marked>0
+          ? `إن أطفأته اختفى العمودان فقط — <b>الدرجات المحفوظة (${fmt(marked)}) تبقى كما هي</b> وتعود بتشغيل المفتاح`
+          : 'ولا يُحذف شيء عند الإطفاء'}.</i>
+      </span>
+      <input type="checkbox" id="exam-enabled" ${e.enabled?'checked':''}>
+      <span class="sw-track"><span class="sw-knob"></span></span>
+    </label>
+
+    ${e.enabled ? `
+    <div class="hint" style="margin:12px 0 10px;">
+      الدرجتان <b>لا تدخلان المجموع النهائي</b> ولا تؤثّران على التقدير ولا على علم «يحتاج متابعة» —
+      فالمتابعة عن الالتزام اليومي الذي تملك تغييره، لا عن درجة اختبارٍ انتهى.
+      ومجموع الفترة يُرصد في نظام نور بخانته الخاصة.
+    </div>
+    ${[0,1].map(i=>`
+    <div class="meta-field">
+      <label>اسم الفترة ${i+1}</label>
+      <input type="text" id="exam-name-${i}" value="${escapeAttr(e.names[i])}" placeholder="الفترة ${i===0?'الأولى':'الثانية'}">
+    </div>
+    <div class="meta-field">
+      <label>الدرجة العظمى للفترة ${i+1}</label>
+      <input type="number" id="exam-max-${i}" value="${fmt(e.max[i])}" min="1" step="1" inputmode="numeric">
+    </div>`).join('')}
+    <div class="hint" style="margin-top:4px;">تنزيل الدرجة العظمى لا يمحو درجةً محفوظة أكبر منها — تبقى كما رُصدت حتى تعدّلها بنفسك.</div>
+    ` : ``}
+  </div>`;
+}
+
 function renderAttendancePage(){
   const a = attSettings();
   const totalDays = Object.keys(STATE.attDays || {}).reduce((n,k)=> n + attDays(k).length, 0);
@@ -4042,6 +4112,57 @@ function periodClock(idx, nowMin){
 function blankAttendance(){
   return { enabled:false, affectsGrade:false, weight:5 };
 }
+/* ===== درجات اختبارات الفترات =====
+   التطبيق يرصد بالرموز (✔️ ⏰ ❌ ⬜)، ودرجة الاختبار رقمٌ من درجةٍ عظمى —
+   نوعٌ آخر لا يُحشر في البنود. فعمودان مخصّصان لا بندان:
+
+   - لا يدخلان المجموع النهائي، وعلم «يحتاج متابعة» يبقى على أعمال السنة
+     وحدها. المعلّم يرصد مجموع الفترة في نظام نور بخانته الخاصة، والفائدة
+     هنا في العرض والتحليل والطباعة.
+   - الحقل يُقرأ دفاعيًّا: الحالات المحفوظة قبل هذه الميزة لا تحمله، ولا
+     ينبغي أن يُجبرها أحد على حمله. غيابه يعني «لم يُرصد» لا صفرًا. */
+const EXAM_COUNT = 2;
+function examSettings(){
+  const e = STATE.exams && typeof STATE.exams === 'object' ? STATE.exams : (STATE.exams = {});
+  if(typeof e.enabled !== 'boolean') e.enabled = false;
+  if(!Array.isArray(e.names) || e.names.length !== EXAM_COUNT) e.names = ['الفترة الأولى','الفترة الثانية'];
+  if(!Array.isArray(e.max) || e.max.length !== EXAM_COUNT) e.max = [20, 20];
+  e.max = e.max.map(m=>{ const n = Number(m); return (isFinite(n) && n > 0) ? n : 20; });
+  return e;
+}
+function examEnabled(){ return !!examSettings().enabled; }
+function examName(i){ return examSettings().names[i] || ('الفترة ' + (i+1)); }
+function examMax(i){ return examSettings().max[i]; }
+
+/* الدرجة أو null. لا نُرجع صفرًا لغير المرصود: الفرق بين «صفر» و«لم يُرصد»
+   هو الفرق بين طالبٍ رسب وطالبٍ غاب عن الاختبار. */
+function examScore(row, i){
+  if(!row || !Array.isArray(row.exams)) return null;
+  const v = row.exams[i];
+  if(v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return isFinite(n) ? n : null;
+}
+function setExamScore(row, i, value){
+  if(!row) return;
+  if(!Array.isArray(row.exams)) row.exams = [];
+  while(row.exams.length < EXAM_COUNT) row.exams.push(null);
+  if(value === null || value === undefined || value === ''){ row.exams[i] = null; return; }
+  const n = Number(value);
+  if(!isFinite(n)) return;
+  row.exams[i] = Math.max(0, Math.min(examMax(i), Math.round(n * 100) / 100));
+}
+/* إحصاء فترةٍ في شعبة — للتحليل والطباعة. */
+function examStats(key, i){
+  const rows = (STATE.sections[key] || []).filter(r=> (r.name||'').trim() !== '');
+  const vals = rows.map(r=> examScore(r, i)).filter(v=> v !== null);
+  if(vals.length === 0) return { n:0, total:rows.length, avg:null, max:null, min:null, pct:null };
+  const sum = vals.reduce((a,b)=> a+b, 0);
+  return { n:vals.length, total:rows.length, avg:sum/vals.length,
+           max:Math.max(...vals), min:Math.min(...vals),
+           pct: examMax(i) > 0 ? (sum/vals.length)/examMax(i)*100 : null };
+}
+
 function attSettings(){
   if(!STATE.attendance) STATE.attendance = blankAttendance();
   return STATE.attendance;
@@ -4634,7 +4755,7 @@ function renderSectionSheet(key, opts){
 
   <div class="card${listMode && !forPrint ? ' screen-hidden' : ''}">
     <div class="table-wrap grid-wrap">
-      <table class="grid" style="--item-count:${totalItemCount};">
+      <table class="grid" style="--item-count:${totalItemCount}; --data-share:${examEnabled() ? '53.1%' : '57.5%'};">
         ${colGroupHeader()}
         <tbody id="rows-body">
           ${renderSectionRows(key)}
@@ -6562,6 +6683,11 @@ function wireSectionEvents(key){
       openNameMenu(nameArrow, key, idx);
       return;
     }
+    const examCell = e.target.closest('td.exam-c');
+    if(examCell){
+      openExamEntry(examCell.dataset.key, parseInt(examCell.dataset.idx), parseInt(examCell.dataset.exam));
+      return;
+    }
     const cell = e.target.closest('td.cell');
     if(cell){
       const idx = parseInt(cell.dataset.idx);
@@ -6880,6 +7006,31 @@ function wireSettingsPanelEvents(){
   });
 
   setupSignaturePad();
+
+  const examEn = document.getElementById('exam-enabled');
+  if(examEn) examEn.addEventListener('change', ()=>{
+    examSettings().enabled = examEn.checked;
+    persistState();
+    render();
+    showToast(examEn.checked ? 'ظهر عمودا الفترتين في الرصد' : 'أُخفي العمودان — الدرجات محفوظة وتعود بتشغيل المفتاح');
+  });
+  [0,1].forEach(i=>{
+    const nm = document.getElementById('exam-name-' + i);
+    if(nm) nm.addEventListener('change', ()=>{
+      const v = nm.value.trim();
+      examSettings().names[i] = v || ('الفترة ' + (i === 0 ? 'الأولى' : 'الثانية'));
+      persistState(); render();
+    });
+    const mx = document.getElementById('exam-max-' + i);
+    if(mx) mx.addEventListener('change', ()=>{
+      const n = Number(mx.value);
+      if(!isFinite(n) || n <= 0){ mx.value = fmt(examMax(i)); return; }
+      /* لا نُقصّ الدرجات المحفوظة على الحدّ الجديد: خفضُ العظمى سهوًا كان
+         سيمحو درجات الطلاب بلا رجعة. تبقى كما رُصدت حتى يعدّلها المعلّم. */
+      examSettings().max[i] = Math.round(n * 100) / 100;
+      persistState(); render();
+    });
+  });
 
   const attEn = document.getElementById('att-enabled');
   if(attEn) attEn.addEventListener('change', ()=>{
@@ -8087,6 +8238,48 @@ function openSymMenu(cellEl, key, idx, group, gi){
     });
   });
   positionPopupMenu(menu, cellEl);
+}
+
+/* إدخال درجة فترة: حقلُ رقمٍ لا قائمة رموز. ويعرض الاسم والدرجة العظمى
+   حتى يعرف المعلّم لمن يكتب ومن كم، فالخانة وحدها لا تقول ذلك في جدولٍ
+   يُمرَّر أفقيًّا. */
+function openExamEntry(key, idx, i){
+  const row = STATE.sections[key] && STATE.sections[key][idx];
+  if(!row) return;
+  const cur = examScore(row, i);
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:330px;">
+        <h3>${escapeAttr(examName(i))}</h3>
+        <p style="margin:0 0 12px; font-size:12.5px; color:var(--text-2); line-height:1.8;">
+          ${escapeAttr((row.name||'').trim() || 'طالب بلا اسم')}<br>
+          <span style="color:var(--muted); font-size:11.5px;">الدرجة من ${fmt(examMax(i))}</span>
+        </p>
+        <input id="exam-val" type="number" inputmode="decimal" step="0.25" min="0" max="${examMax(i)}"
+               value="${cur===null?'':fmt(cur)}" placeholder="—"
+               style="width:100%; font-family:inherit; font-size:22px; font-weight:500; text-align:center;
+                      padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--bg);">
+        <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px; margin-top:14px;">
+          <button type="button" class="btn-ok" id="exam-save">حفظ</button>
+          <button type="button" class="btn-cancel" id="exam-clear">مسح الدرجة</button>
+          <button type="button" class="btn-cancel" id="exam-cancel">إلغاء</button>
+        </div>
+      </div>
+    </div>`;
+  const input = document.getElementById('exam-val');
+  input.focus();
+  input.select();
+  const commit = (val)=>{
+    setExamScore(row, i, val);
+    persistState();
+    closeDialog();
+    render();
+  };
+  document.getElementById('exam-save').addEventListener('click', ()=> commit(input.value));
+  document.getElementById('exam-clear').addEventListener('click', ()=> commit(null));
+  document.getElementById('exam-cancel').addEventListener('click', closeDialog);
+  input.addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter'){ ev.preventDefault(); commit(input.value); } });
 }
 
 /* ================= NAME MENU (rename / move / future features) ================= */
