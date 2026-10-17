@@ -89,6 +89,66 @@ module.exports = async function run(){
   t.ok('والإطفاء يُخفي العمودين', (run1('colGroupHeader()').match(/g-exam/g) || []).length === 0);
   t.ok('ولا يمحو درجة', run1('examScore(STATE.sections[SECTION_KEYS[0]][0],0)') === 20);
 
+  /* بطاقة التحليل: تقارن الاختبارين بعضهما، لا الفصل بأرشيفه — وتُسمّي من
+     انخفض، فالعدد وحده لا يُتابَع به طالب. */
+  t.head('بطاقة «اختبارا الفترتين» في التحليل');
+  run1(`
+    applyLoadedState(normalizeLoadedState(freshState()));
+    var KA = SECTION_KEYS[0];
+    STATE.sections[KA].length = 4;
+    ['أ','ب','ج','د'].forEach(function(n,i){ STATE.sections[KA][i].name = 'طالب '+n; });
+    examSettings().enabled = true;
+    var EMPTY_HTML = renderAnalysis();
+    setExamScore(STATE.sections[KA][0], 0, 20); setExamScore(STATE.sections[KA][0], 1, 10);
+    setExamScore(STATE.sections[KA][1], 0, 10); setExamScore(STATE.sections[KA][1], 1, 18);
+    setExamScore(STATE.sections[KA][2], 0, 15);
+    var ON_HTML = renderAnalysis();
+    var MOVERS = JSON.parse(JSON.stringify(examMovers()));
+    /* الإطفاء لا يمحو الدرجات، فالبطاقة هي التي يجب أن تختفي. */
+    examSettings().enabled = false;
+    var OFF_HTML = renderAnalysis();
+    examSettings().enabled = true;
+  `);
+  const title = 'اختبارا الفترتين';
+  t.ok('لا تظهر قبل رصد أي درجة', run1('EMPTY_HTML').indexOf(title) < 0);
+  const onHtml = run1('ON_HTML');
+  t.ok('وتظهر بعد الرصد', onHtml.indexOf(title) >= 0);
+  t.ok('وتختفي بإطفاء الميزة ولو بقيت الدرجات', run1('OFF_HTML').indexOf(title) < 0);
+  /* «الفترة الأولى» ترد في الجدول أيضًا، فالفحص داخل الرسمة وحدها. */
+  const svg = (onHtml.slice(onHtml.indexOf(title)).match(/<svg[\s\S]*?<\/svg>/) || [''])[0];
+  t.ok('وتُسمّي الفترتين في مفتاح الرسم',
+       svg.indexOf('>الفترة الأولى<') >= 0 && svg.indexOf('>الفترة الثانية<') >= 0,
+       svg ? 'المفتاح: ' + (svg.match(/>الفترة[^<]*</g) || []).join(' ') : 'لا رسمة');
+  /* الرسمة نفسها تخدم بطاقة الأرشيف، فتسميتها الأصلية يجب أن تبقى لها. */
+  const plain = run1("svgGroupedBars(['شعبة 1'], [50], [60], {})");
+  t.ok('ومفتاح بطاقة الأرشيف لم يتغيّر',
+       plain.indexOf('>الفترة السابقة<') >= 0 && plain.indexOf('>الفترة الحالية<') >= 0);
+  t.ok('والمتوسط يُعرض منسوبًا للعظمى', /15 من 20/.test(onHtml), 'متوسط ٣ درجات: ٢٠ و١٠ و١٥');
+
+  const movers = run1('MOVERS');
+  t.ok('من رُصدت له فترة واحدة لا يُقارَن', movers.length === 2, JSON.stringify(movers.map(m=> m.name)));
+  t.ok('والترتيب يبدأ بالأشدّ انخفاضًا', movers[0].name === 'طالب أ' && movers[0].delta === -10,
+       JSON.stringify(movers[0]));
+  t.ok('والمتحسّن في الطرف الآخر', movers[1].delta === 8);
+  t.ok('والمنخفض يُسمّى في البطاقة',
+       onHtml.indexOf('الأكثر انخفاضًا') >= 0 && onHtml.indexOf('20 ← 10') >= 0);
+  t.ok('والمتحسّن كذلك', onHtml.indexOf('الأكثر تحسّنًا') >= 0 && onHtml.indexOf('10 ← 18') >= 0);
+  t.ok('والفرق بالدرجات حين تتساوى العظمى', /▼ 10 درجة/.test(onHtml));
+
+  /* ١٥ من ٢٠ ثم ٣٠ من ٤٠ ليست ارتفاعًا بـ١٥ درجة — هي ثبات. */
+  run1(`
+    examSettings().max[1] = 40;
+    setExamScore(STATE.sections[SECTION_KEYS[0]][0], 0, 15);
+    setExamScore(STATE.sections[SECTION_KEYS[0]][0], 1, 30);
+    var MIX = JSON.parse(JSON.stringify(examMovers()));
+    var MIX_HTML = renderAnalysis();
+  `);
+  const mix = run1('MIX').find(m=> m.name === 'طالب أ');
+  t.ok('واختلاف العظمى يُقاس بالنقاط المئوية لا بالدرجات', mix.delta === 0 && mix.pctDelta === 0,
+       JSON.stringify(mix));
+  t.ok('والوحدة تُسمّى في البطاقة', /نقطة مئوية/.test(run1('MIX_HTML')));
+  run1('examSettings().max[1] = 20;');
+
   t.head('الطباعة: الحصّة تُؤخذ من البنود لا تُضاف للعرض');
   t.ok('عمود الفترة له عرض مصرَّح', css.has('col.col-exam', /width\s*:\s*2\.2%/));
   t.ok('وحصّة البنود متغيّرة', css.has('col.col-data', /--data-share/));

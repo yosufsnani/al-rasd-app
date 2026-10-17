@@ -4210,6 +4210,26 @@ function examStats(key, i){
            pct: examMax(i) > 0 ? (sum/vals.length)/examMax(i)*100 : null };
 }
 
+/* من تحرّك بين الفترتين. الفرق بالدرجات حين تتساوى العظمى بين العمودين،
+   وبالنقاط المئوية حين تختلفان — جمع ١٥ من ٢٠ مع ٣٠ من ٤٠ بالدرجات يكذب. */
+function examSameMax(){ return examMax(0) === examMax(1); }
+function examMovers(){
+  const out = [];
+  SECTION_KEYS.forEach(key=>{
+    (STATE.sections[key] || []).forEach(row=>{
+      if((row.name || '').trim() === '') return;
+      const a = examScore(row, 0), b = examScore(row, 1);
+      if(a === null || b === null) return;
+      const pa = examMax(0) > 0 ? a / examMax(0) * 100 : 0;
+      const pb = examMax(1) > 0 ? b / examMax(1) * 100 : 0;
+      out.push({ key, name:row.name, a, b,
+                 delta: examSameMax() ? b - a : Math.round((pb - pa) * 10) / 10,
+                 pctDelta: Math.round((pb - pa) * 10) / 10 });
+    });
+  });
+  return out.sort((x,y)=> x.pctDelta - y.pctDelta);
+}
+
 function attSettings(){
   if(!STATE.attendance) STATE.attendance = blankAttendance();
   return STATE.attendance;
@@ -5242,7 +5262,77 @@ function renderAnalysis(opts){
     </div>
   </div>`;
 
-  return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + levelCard + periodCard + comparisonTable;
+  /* ---- 📝 اختبارا الفترتين ----
+     منفصلة عن «مقارنة الفترات» أعلاه: تلك تقارن الشعبة بنسختها المؤرشفة من
+     فصل سابق، وهذه تقارن درجتَي الاختبارين. ولا تدخل هذه الدرجات في المجموع
+     النهائي ولا في «يحتاج متابعة» — تُرصد في نور بخانة خاصة بها. */
+  const examCard = (()=>{
+    if(!examEnabled()) return ``;
+    const es = SECTION_KEYS.map(k=> ({ k, a:examStats(k,0), b:examStats(k,1) }));
+    if(es.every(x=> x.a.n === 0 && x.b.n === 0)) return ``;
+    const anyBoth = es.some(x=> x.a.n > 0 && x.b.n > 0);
+
+    const chart = `<div class="chart-box">${svgGroupedBars(
+      es.map(x=> x.k), es.map(x=> x.a.pct), es.map(x=> x.b.pct),
+      { title:'متوسط كل فترة', legendA:examName(0), legendB:examName(1) })}</div>`;
+
+    const cellsFor = (st, i)=> st.n === 0
+      ? `<td colspan="4" style="color:var(--muted);">لم تُرصد بعد</td>`
+      : `<td>${fmt(st.n)}</td><td>${fmt(Math.round(st.avg*10)/10)} من ${fmt(examMax(i))}</td><td>${fmt(st.max)}</td><td>${fmt(st.min)}</td>`;
+
+    const table = `
+      <div class="table-wrap">
+      <table class="followup-table">
+        <thead><tr><th>الشعبة</th><th>الفترة</th><th>مرصود</th><th>المتوسط</th><th>الأعلى</th><th>الأدنى</th></tr></thead>
+        <tbody>
+          ${es.map(x=> [0,1].map(i=>`
+            <tr>
+              ${i === 0 ? `<td class="fu-name" rowspan="2">${escapeAttr(sectionTitle(x.k))}</td>` : ``}
+              <td class="fu-reason">${escapeAttr(examName(i))}</td>
+              ${cellsFor(i === 0 ? x.a : x.b, i)}
+            </tr>`).join('')).join('')}
+        </tbody>
+      </table>
+      </div>`;
+
+    /* من نزل بين الاختبارين هو ما يستحق تدخّلًا، فيُسمّى لا يُعدّ وحسب. */
+    const movers = anyBoth ? examMovers() : [];
+    const unit = examSameMax() ? 'درجة' : 'نقطة مئوية';
+    const moverRow = (m)=>{
+      const up = m.pctDelta > 0, flat = m.pctDelta === 0;
+      const col = flat ? 'var(--muted)' : (up ? 'var(--teal-d)' : '#C0392B');
+      const sign = flat ? '—' : (up ? '▲ +' : '▼ ') + fmt(Math.abs(m.delta));
+      return `<tr>
+        <td class="fu-name">${escapeAttr(shortenName(m.name))}<br><i style="font-style:normal; color:var(--muted); font-size:11px;">${escapeAttr(sectionTitle(m.key))}</i></td>
+        <td>${fmt(m.a)} ← ${fmt(m.b)}</td>
+        <td style="color:${col}; font-weight:700;">${sign}${flat ? '' : ' ' + unit}</td>
+      </tr>`;
+    };
+    const down = movers.filter(m=> m.pctDelta < 0).slice(0, 5);
+    const up   = movers.filter(m=> m.pctDelta > 0).slice(-3).reverse();
+    const moversBlock = !anyBoth ? `
+      <div class="hint">حين تُرصد الفترتان معًا تظهر هنا أسماء من ارتفعت درجتهم ومن انخفضت.</div>`
+      : (down.length === 0 && up.length === 0 ? `
+      <div class="hint">لم تتغيّر درجة أحد بين الفترتين.</div>` : `
+      ${down.length ? `
+      <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">▼ الأكثر انخفاضًا بين الفترتين</h3>
+      <div class="table-wrap"><table class="followup-table"><tbody>${down.map(moverRow).join('')}</tbody></table></div>` : ``}
+      ${up.length ? `
+      <h3 style="font-size:12.5px; color:var(--muted); margin:14px 0 6px;">▲ الأكثر تحسّنًا</h3>
+      <div class="table-wrap"><table class="followup-table"><tbody>${up.map(moverRow).join('')}</tbody></table></div>` : ``}
+      <div class="hint">يُقارَن من رُصدت له الفترتان معًا فقط — عددهم ${fmt(movers.length)}. الانخفاض إشارة للمراجعة لا حكمًا؛ قد يكون الاختبار الثاني أصعب.</div>`);
+
+    return `
+    <div class="card ap-wide">
+      <h2>📝 اختبارا الفترتين</h2>
+      <div class="hint" style="margin-top:0; margin-bottom:8px;">درجات الاختبارين وحدها. لا تدخل في المجموع النهائي ولا في «يحتاج متابعة» — تُرصد في نور بخانة خاصة.</div>
+      ${chart}
+      ${table}
+      ${moversBlock}
+    </div>`;
+  })();
+
+  return analysisToolbar + summaryBar + sectionPerf + weakestCard + itemPerfCard + levelCard + examCard + periodCard + comparisonTable;
 }
 
 
@@ -6682,11 +6772,14 @@ function svgGroupedBars(labels, seriesA, seriesB, opts){
     <text x="${cx(i).toFixed(1)}" y="${H-padB+14}" text-anchor="middle" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(lb, 11))}</text>`).join('');
 
   const ly = H - 12;
+  /* البطاقتان اللتان تستعملان هذه الرسمة تقارنان شيئين مختلفين: أرشيف فصل
+     سابق، أو اختبارَي الفترتين — فالتسمية من المُستدعي لا مثبّتة هنا. */
+  const nameA = o.legendA || 'الفترة السابقة', nameB = o.legendB || 'الفترة الحالية';
   const legend = `
     <rect x="${W/2+4}" y="${ly-8}" width="9" height="9" rx="2.5" fill="${CHART_TEAL_SOFT}"/>
-    <text x="${W/2+17}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">الفترة السابقة</text>
+    <text x="${W/2+17}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(nameA, 16))}</text>
     <rect x="${W/2-70}" y="${ly-8}" width="9" height="9" rx="2.5" fill="${CHART_TEAL}"/>
-    <text x="${W/2-57}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">الفترة الحالية</text>`;
+    <text x="${W/2-57}" y="${ly}" text-anchor="${ANCHOR_R}" font-size="9.5" fill="${CHART_INK}">${escapeAttr(svgClip(nameB, 16))}</text>`;
 
   return svgWrap(W, H, `${o.title?svgTitle(o.title,W):''}${grid}
     <line x1="${padL}" x2="${W-padR}" y1="${yOf(0)}" y2="${yOf(0)}" stroke="${CHART_MUTED}" stroke-width="1"/>${groups}${legend}`);
