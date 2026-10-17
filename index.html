@@ -1154,6 +1154,52 @@ body.modal-lock{ overflow:hidden; }
 .warn-modal button.btn-danger:active{background:#fdf2f2;}
 @media print{ .warn-overlay{display:none !important;} }
 
+/* ===== شاشة مراجعة استيراد الدرجات =====
+   المطابقة الآلية تخطئ، فالشاشة مبنيّة على أن يرى المعلّم كل اسمٍ مشكوك
+   فيه بجوار اقتراحنا قبل أن تُكتب درجة واحدة. */
+.meta-field select{
+  width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
+  font-family:inherit; background:#fafbfc; color:var(--text);
+}
+.xi-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; margin-bottom:14px;}
+.xi-chip{background:var(--surface-2); color:var(--text-2); border-radius:20px; padding:3px 10px; font-size:11.5px;}
+.xi-chip.warn{background:var(--yellow); color:var(--yellow-t);}
+.xi-grp{margin-top:18px;}
+.xi-grp:first-of-type{margin-top:0;}
+.xi-grp-h{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; margin-bottom:9px; color:var(--text);}
+.xi-grp-h .xi-n{background:var(--surface-2); color:var(--text-2); border-radius:20px; padding:2px 9px; font-size:11.5px; font-weight:500;}
+.xi-grp.ok   .xi-grp-h .xi-n{background:var(--teal-soft); color:var(--teal-d);}
+.xi-grp.warn .xi-grp-h .xi-n{background:var(--yellow); color:var(--yellow-t);}
+.xi-row{
+  border:1px solid var(--border); border-radius:11px; padding:11px 12px; margin-bottom:8px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.xi-row.warn{border-color:#E8D9B4;}
+.xi-typed{font-size:13px; line-height:1.6; color:var(--text);}
+.xi-typed small{display:block; font-size:11px; color:var(--muted); margin-top:2px;}
+.xi-arrow{display:flex; align-items:center; gap:9px;}
+.xi-arrow .xi-ar{flex:0 0 auto; color:var(--muted); font-size:14px;}
+.xi-arrow select{
+  flex:1 1 auto; min-width:0; font-family:inherit; font-size:12.5px; padding:8px 9px;
+  border:1px solid var(--border); border-radius:8px; background:#fafbfc; color:var(--text);
+}
+.xi-score{
+  flex:0 0 auto; background:var(--teal-soft); color:var(--teal-d); font-weight:700;
+  border-radius:8px; padding:6px 11px; font-size:13px; font-variant-numeric:tabular-nums;
+}
+.xi-row.off{opacity:.5;}
+.xi-row.off .xi-score{background:var(--surface-2); color:var(--muted);}
+.xi-autolist{font-size:12.5px; color:var(--text-2);}
+.xi-autolist div{display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed var(--border); padding:5px 0;}
+.xi-autolist div:last-child{border-bottom:none;}
+.xi-autolist b{font-weight:500; color:var(--text);}
+.xi-autolist span{font-variant-numeric:tabular-nums;}
+.warn-modal button.xi-more{
+  background:none; border:none; color:var(--teal-d); font-size:12.5px;
+  padding:6px 0; font-weight:500; width:auto; text-align:right;
+}
+.xi-note{font-size:12px; line-height:1.9; color:var(--text-2); background:var(--surface-2); border-radius:10px; padding:10px 12px;}
+
 /* Print-only header/footer, hidden on screen */
 .print-header, .print-footer{display:none;}
 #print-referral-holder{display:none;}
@@ -3972,6 +4018,7 @@ function renderSectionTools(key){
   <div class="card drop-panel">
     <div class="toolbar">
       <button class="primary" id="btn-import-students">📥 إضافة عدة طلاب (لصق/إكسل)</button>
+      ${examEnabled() ? `<button id="btn-import-exam">📊 استيراد درجات اختبار</button>` : ``}
       <button id="btn-clear-section">🧹 تفريغ الرصد (هذه الشعبة)</button>
       <button id="btn-delete-section">🗑️ حذف هذه الشعبة</button>
     </div>
@@ -6715,6 +6762,9 @@ function wireSectionEvents(key){
   on('btn-import-students', 'click', ()=>{
     showImportStudentsDialog(key);
   });
+  on('btn-import-exam', 'click', ()=>{
+    showExamImportDialog(key);
+  });
 
   on('btn-select-empty', 'click', ()=>{
     let found = 0;
@@ -8104,6 +8154,360 @@ function parseNamesFromAOA(aoa){
     if(v) names.push(v);
   }
   return names;
+}
+
+/* ===== استيراد درجات اختبار من ملف =====
+   ملفات الاختبارات الإلكترونية يكتب فيها الطالب اسمه بنفسه، فيأتي ناقصًا
+   أو بخطأ إملائي أو بسبعة مقاطع. ويأتي معه صفوف إحصاء في الأسفل، وأحيانًا
+   طالبٌ سلّم مرتين. فالمطابقة الآلية وحدها تُسند درجاتٍ لأشخاص خطأ — ولا
+   تُكتب درجة إلا بعد أن يراها المعلّم ويعتمدها. */
+
+const EXAM_STAT_WORDS = ['عدد الطلاب','المتوسط','أعلى درجة','أدنى درجة','عدد الناجحين','عدد الراسبين','المجموع','الإجمالي'];
+
+function examNormName(str){
+  let v = String(str == null ? '' : str);
+  try{ v = v.normalize('NFKC'); }catch(e){}
+  v = v.replace(/[\u064B-\u0652\u0640]/g, '');
+  v = v.replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي');
+  v = v.replace(/\bعبد\s+(ال)/g, 'عبد$1');
+  return v.replace(/\s+/g,' ').trim();
+}
+
+/* يجد عمود الاسم وعمود الدرجة والدرجة العظمى من ترويسة الملف. */
+function examParseAOA(aoa){
+  const out = { rows:[], max:null, ignored:0, error:null };
+  if(!aoa || aoa.length === 0){ out.error = 'الملف فارغ'; return out; }
+  const cell = (r,c)=> (aoa[r] && aoa[r][c] != null) ? String(aoa[r][c]).trim() : '';
+
+  let headRow = -1, nameCol = -1, scoreCol = -1, maxCol = -1, fourCol = -1, dateCol = -1;
+  for(let r = 0; r < Math.min(aoa.length, 8) && headRow < 0; r++){
+    const head = (aoa[r] || []).map(v=> String(v == null ? '' : v).trim());
+    const ni = head.findIndex(h=> /اسم|name/i.test(h) && !/رباعي/.test(h));
+    const si = head.findIndex(h=> /^الدرجة$|^درجة$|score|mark|points/i.test(h));
+    if(ni >= 0 && si >= 0){
+      headRow = r; nameCol = ni; scoreCol = si;
+      maxCol  = head.findIndex(h=> /^من$|out of|total/i.test(h));
+      fourCol = head.findIndex(h=> /رباعي/.test(h));
+      dateCol = head.findIndex(h=> /تاريخ|date/i.test(h));
+    }
+  }
+  if(headRow < 0){ out.error = 'لم أجد عمودَي «الاسم» و«الدرجة» في الملف'; return out; }
+
+  for(let r = headRow + 1; r < aoa.length; r++){
+    const nm = cell(r, nameCol);
+    const sc = cell(r, scoreCol);
+    if(!nm && !sc) continue;
+    /* صفوف الإحصاء أسفل الملف: اسمٌ معروف أو صفٌّ بلا درجة رقمية. */
+    if(EXAM_STAT_WORDS.some(w=> nm === w) || !nm || !isFinite(Number(sc)) || sc === ''){ out.ignored++; continue; }
+    const four = fourCol >= 0 ? cell(r, fourCol) : '';
+    const mx = maxCol >= 0 ? Number(cell(r, maxCol)) : NaN;
+    if(isFinite(mx) && mx > 0) out.max = mx;
+    out.rows.push({ typed: nm, four, score: Number(sc), when: dateCol >= 0 ? cell(r, dateCol) : '' });
+  }
+  if(out.rows.length === 0) out.error = 'لم أجد صفوف درجات في الملف';
+  return out;
+}
+
+/* نصٌّ ملصوق: «الاسم<جدولة>الدرجة» أو «الاسم،الدرجة» أو آخر رقم في السطر. */
+function examParsePaste(text){
+  const out = { rows:[], max:null, ignored:0, error:null };
+  (text || '').split('\n').forEach(line=>{
+    const t = line.trim();
+    if(!t) return;
+    const m = t.match(/^(.*?)[\t,;|]+\s*([\d.]+)\s*$/) || t.match(/^(.+?)\s+([\d.]+)\s*$/);
+    if(!m){ out.ignored++; return; }
+    const nm = m[1].trim(), sc = Number(m[2]);
+    if(!nm || !isFinite(sc) || EXAM_STAT_WORDS.some(w=> nm === w)){ out.ignored++; return; }
+    out.rows.push({ typed: nm, four:'', score: sc, when: '' });
+  });
+  if(out.rows.length === 0) out.error = 'لم أفهم الأسطر — اكتب في كل سطر: الاسم ثم الدرجة';
+  return out;
+}
+
+/* يطابق صفوف الملف بكشف الشعبة. الاسم الأول والعائلة لا يكفيان في شعبةٍ
+   نصفها «الجهني»، فنطلب توافق ثلاثة مقاطع فأكثر وتفوّقًا واضحًا على التالي
+   — وإلا تُركت المطابقة للمعلّم بلا اقتراح. */
+function examMatchRows(key, parsed){
+  const roster = (STATE.sections[key] || [])
+    .map((r, idx)=> ({ idx, name:(r.name||'').trim() }))
+    .filter(r=> r.name !== '');
+  const normed = roster.map(r=> ({ ...r, tokens:new Set(examNormName(r.name).split(' ')), norm:examNormName(r.name) }));
+
+  const items = parsed.rows.map((row, i)=>{
+    const cand = row.four && row.four.trim() ? row.four.trim() : row.typed;
+    const nrm = examNormName(cand);
+    const exact = normed.find(r=> r.norm === nrm) || normed.find(r=> r.norm === examNormName(row.typed));
+    if(exact) return { ...row, id:'r'+i, target:exact.idx, kind:'auto' };
+    const tset = new Set(examNormName(row.typed).split(' '));
+    const scored = normed.map(r=>({ r, n:[...tset].filter(x=> r.tokens.has(x)).length }))
+                         .sort((a,b)=> b.n - a.n);
+    const best = scored[0], second = scored[1] || { n:0 };
+    if(best && best.n >= 3 && best.n > second.n)
+      return { ...row, id:'r'+i, target:best.r.idx, kind:'confirm', why:'اسمٌ كتبه الطالب ناقصًا أو بخطأ' };
+    if(best && best.n >= 2 && best.n > second.n)
+      return { ...row, id:'r'+i, target:best.r.idx, kind:'confirm', why:'تشابه جزئي — راجعه' };
+    return { ...row, id:'r'+i, target:null, kind:'none', why:'لا مطابق واضح' };
+  });
+
+  /* المكرّر من الاسم كما كتبه الطالب، لا من مطابقةٍ قد تكون خاطئة. */
+  const byTyped = {};
+  items.forEach(it=>{ const k = examNormName(it.typed); (byTyped[k] = byTyped[k] || []).push(it); });
+  Object.keys(byTyped).forEach(k=>{
+    if(byTyped[k].length > 1) byTyped[k].forEach(it=>{ it.kind = 'dup'; it.why = 'سلّم أكثر من مرة'; });
+  });
+  return { items, roster };
+}
+
+/* نافذة الاستيراد: اختيار الفترة ثم الملف أو اللصق. اللصق أولًا في الترتيب
+   لأن قراءة الإكسل تعتمد مكتبةً من الإنترنت قد لا تصل على شبكة المدرسة. */
+let __examPending = null;
+function showExamImportDialog(key){
+  __examPending = null;
+  const holder = document.getElementById('dialog-holder');
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:430px;">
+        <h3>📊 استيراد درجات اختبار</h3>
+        <div class="meta-field">
+          <label>الفترة</label>
+          <select id="exam-imp-period">
+            ${[0,1].map(i=>`<option value="${i}">${escapeAttr(examName(i))} (من ${fmt(examMax(i))})</option>`).join('')}
+          </select>
+        </div>
+        <div class="meta-field">
+          <label>الصق الأسماء والدرجات</label>
+          <textarea id="exam-imp-paste" rows="4" placeholder="اسم الطالب[مسافة أو جدولة]الدرجة&#10;في كل سطر طالب واحد"
+            style="width:100%; font-family:inherit; font-size:13px; padding:9px; border:1px solid var(--border); border-radius:9px; resize:vertical;"></textarea>
+        </div>
+        <div class="hint" style="margin:0 0 10px;">أو ارفع ملف الاختبار (إكسل أو CSV) — يُقرأ عمودا «الاسم» و«الدرجة» تلقائيًا، وتُهمل صفوف الإحصاء أسفل الملف.</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+          <button type="button" id="exam-imp-pick" style="width:auto; background:#eef2f7; color:var(--text); border:1px solid var(--border); padding:9px 13px; border-radius:9px; font-family:inherit; font-size:12.5px; cursor:pointer;">📂 اختر ملفًا</button>
+          <input type="file" id="exam-imp-file" accept=".xlsx,.xls,.csv" style="display:none">
+          <span id="exam-imp-fname" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+        <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <button type="button" class="btn-ok" id="exam-imp-next">التالي — مراجعة المطابقة</button>
+          <button type="button" class="btn-cancel" id="exam-imp-cancel">إلغاء</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('exam-imp-cancel').addEventListener('click', ()=>{ __examPending = null; closeDialog(); });
+  document.getElementById('exam-imp-pick').addEventListener('click', ()=> document.getElementById('exam-imp-file').click());
+  document.getElementById('exam-imp-file').addEventListener('change', (ev)=>{
+    const file = ev.target.files && ev.target.files[0];
+    if(!file) return;
+    const fname = document.getElementById('exam-imp-fname');
+    if(typeof XLSX === 'undefined'){
+      fname.textContent = '⚠️ تعذّر تحميل قارئ الإكسل — استعمل اللصق';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const aoa = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+        const parsed = examParseAOA(aoa);
+        if(parsed.error){ fname.textContent = '⚠️ ' + parsed.error; __examPending = null; return; }
+        __examPending = parsed;
+        fname.textContent = `✅ ${file.name} — ${fmt(parsed.rows.length)} درجة`;
+      }catch(err){
+        __examPending = null;
+        fname.textContent = '⚠️ تعذّرت قراءة الملف: ' + err.message;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  document.getElementById('exam-imp-next').addEventListener('click', ()=>{
+    const i = parseInt(document.getElementById('exam-imp-period').value, 10) || 0;
+    const pasteVal = document.getElementById('exam-imp-paste').value.trim();
+    let parsed = __examPending;
+    if(pasteVal) parsed = examParsePaste(pasteVal);
+    if(!parsed || parsed.error || parsed.rows.length === 0){
+      showToast((parsed && parsed.error) || 'الصق أسماء ودرجات أو اختر ملفًا أولًا');
+      return;
+    }
+    __examPending = null;
+    showExamReviewDialog(key, i, parsed);
+  });
+}
+
+/* شاشة المراجعة. كل صفٍّ لم تتأكّد مطابقته يظهر بجوار اقتراحنا وقائمةٍ
+   بكشف الشعبة، والمكرّر مدخلٌ واحد باختيار المحاولة. العقد المعلن للمعلّم:
+   لا تُكتب درجة واحدة قبل ضغط «اعتمد». */
+function showExamReviewDialog(key, idx, parsed){
+  const rows = STATE.sections[key] || [];
+  const matched = examMatchRows(key, parsed);
+  if(matched.roster.length === 0){ showToast('لا أسماء في هذه الشعبة بعد'); return; }
+  const max = examMax(idx);
+
+  const autos = [], review = [], dupBy = {};
+  matched.items.forEach(it=>{
+    if(it.kind === 'auto'){ autos.push(it); return; }
+    if(it.kind === 'dup'){ const k = examNormName(it.typed); (dupBy[k] = dupBy[k] || []).push(it); return; }
+    review.push({ id:it.id, kind:it.kind, typed:it.typed, why:it.why, target:it.target, score:it.score });
+  });
+  /* المكرّر: الطالب واحد والمحاولات عدّة — مدخل واحد، والأعلى هي الافتراضية. */
+  Object.keys(dupBy).forEach((k, i)=>{
+    const at = dupBy[k];
+    const best = at.reduce((a,b)=> (b.score > a.score ? b : a));
+    review.push({ id:'d'+i, kind:'dup', typed:at[0].typed, attempts:at,
+                  why:`سلّم ${fmt(at.length)} مرات — اختر المحاولة`,
+                  target:best.target, score:best.score });
+  });
+
+  const ST = {};
+  const reset = ()=> review.forEach(r=>{
+    ST[r.id] = { target:r.target, score:r.score, off:(r.target === null) };
+  });
+  reset();
+
+  function assigned(){
+    const by = {};
+    autos.forEach(a=>{ (by[a.target] = by[a.target] || []).push(fmt(a.score)); });
+    review.forEach(r=>{ const st = ST[r.id];
+      if(!st.off && st.target !== null) (by[st.target] = by[st.target] || []).push(fmt(st.score)); });
+    return by;
+  }
+  const rosterName = (i)=> (rows[i] && rows[i].name) ? rows[i].name : '';
+
+  function rosterOptions(sel){
+    return matched.roster.map(r=>
+      `<option value="${r.idx}"${r.idx === sel ? ' selected' : ''}>${escapeAttr(r.name)}</option>`
+    ).join('') + `<option value="skip"${sel === null ? ' selected' : ''}>— تجاهل هذا الصف —</option>`;
+  }
+
+  let showAll = false;
+  const AUTO_PEEK = 4;
+
+  function body(){
+    const by = assigned();
+    const missing = matched.roster.filter(r=> !by[r.idx]);
+    const clash = Object.keys(by).filter(k=> by[k].length > 1);
+    const willReplace = Object.keys(by).filter(k=> examScore(rows[Number(k)], idx) !== null).length;
+    const written = Object.keys(by).length;
+
+    const reviewHtml = review.map(r=>{
+      const st = ST[r.id];
+      const att = r.attempts ? `
+        <div class="xi-arrow"><span class="xi-ar">↳</span>
+          <select data-att="${r.id}">
+            ${r.attempts.map(a=>`<option value="${a.score}"${a.score === st.score ? ' selected' : ''}>${fmt(a.score)} من ${fmt(max)}${a.when ? ' — ' + escapeAttr(a.when) : ''}</option>`).join('')}
+          </select></div>` : ``;
+      return `
+        <div class="xi-row warn${st.off ? ' off' : ''}">
+          <div class="xi-typed">«${escapeAttr(r.typed)}»<small>${escapeAttr(r.why || '')}</small></div>
+          <div class="xi-arrow">
+            <span class="xi-ar">←</span>
+            <select data-tgt="${r.id}">${rosterOptions(st.off ? null : st.target)}</select>
+            <span class="xi-score">${st.off ? '—' : fmt(st.score)}</span>
+          </div>${att}
+        </div>`;
+    }).join('');
+
+    const autoList = (showAll ? autos : autos.slice(0, AUTO_PEEK)).map(a=>
+      `<div><b>${escapeAttr(rosterName(a.target))}</b><span>${fmt(a.score)}</span></div>`).join('');
+
+    return `
+      ${review.length ? `
+      <div class="xi-grp warn">
+        <div class="xi-grp-h">⚠️ يحتاج تأكيدك <span class="xi-n">${fmt(review.length)}</span></div>
+        ${reviewHtml}
+      </div>` : ``}
+
+      ${autos.length ? `
+      <div class="xi-grp ok">
+        <div class="xi-grp-h">✅ طوبق تلقائيًا <span class="xi-n">${fmt(autos.length)}</span></div>
+        <div class="xi-autolist">${autoList}</div>
+        ${autos.length > AUTO_PEEK ? `<button type="button" class="xi-more" id="xi-more">${showAll ? '▴ أخفِ' : '▾ اعرض الباقي ('+fmt(autos.length-AUTO_PEEK)+')'}</button>` : ``}
+      </div>` : ``}
+
+      <div class="xi-grp">
+        <div class="xi-grp-h">❓ في شعبتك بلا درجة <span class="xi-n">${fmt(missing.length)}</span></div>
+        <div class="xi-note">${missing.length
+          ? escapeAttr(missing.map(r=> r.name).join(' · ')) + '<br>تبقى خانتهم فارغة، ولا تُحسب صفرًا.'
+          : 'كل طالب في كشفك له درجة في هذا الملف.'}</div>
+      </div>
+
+      ${parsed.ignored ? `
+      <div class="xi-grp">
+        <div class="xi-grp-h">🚫 صفوف أُهملت <span class="xi-n">${fmt(parsed.ignored)}</span></div>
+        <div class="xi-note">صفوفٌ بلا درجة رقمية أو صفوف الإحصاء أسفل الملف (عدد الطلاب، المتوسط، أعلى درجة…). لولا استثناؤها لصار «عدد الطلاب» طالبًا درجته ${fmt(parsed.rows.length)}.</div>
+      </div>` : ``}
+
+      ${clash.length ? `
+      <div class="xi-note" style="margin-top:14px; background:var(--red); color:var(--red-t);">
+        ⚠️ أكثر من صفٍّ يشير إلى ${clash.map(k=> '«'+escapeAttr(rosterName(k))+'»').join(' و')} — سيُحفظ آخرها فقط.
+      </div>` : ``}
+
+      ${willReplace ? `
+      <div class="xi-note" style="margin-top:14px;">
+        ↻ ${fmt(willReplace)} من هؤلاء لهم درجة محفوظة في «${escapeAttr(examName(idx))}»، وستُستبدل.
+      </div>` : ``}
+
+      <div class="warn-actions" style="flex-direction:column; align-items:stretch; gap:8px; margin-top:16px;">
+        <button type="button" class="btn-ok" id="xi-go"${written ? '' : ' disabled style="opacity:.5;"'}>✅ اعتمد ${fmt(written)} درجة</button>
+        <button type="button" class="btn-cancel" id="xi-cancel">إلغاء — لا تُكتب شيئًا</button>
+      </div>`;
+  }
+
+  function draw(){
+    document.getElementById('xi-body').innerHTML = body();
+    const b = document.getElementById('xi-body');
+    b.querySelectorAll('[data-tgt]').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const st = ST[sel.getAttribute('data-tgt')];
+        st.off = (sel.value === 'skip');
+        if(!st.off) st.target = parseInt(sel.value, 10);
+        draw();
+      });
+    });
+    b.querySelectorAll('[data-att]').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        ST[sel.getAttribute('data-att')].score = Number(sel.value);
+        draw();
+      });
+    });
+    const more = document.getElementById('xi-more');
+    if(more) more.addEventListener('click', ()=>{ showAll = !showAll; draw(); });
+    document.getElementById('xi-cancel').addEventListener('click', closeDialog);
+    const go = document.getElementById('xi-go');
+    if(go) go.addEventListener('click', commit);
+  }
+
+  function commit(){
+    const by = assigned();
+    const keys = Object.keys(by);
+    if(keys.length === 0){ closeDialog(); return; }
+    closeDialog();
+    withUndo(()=>{
+      keys.forEach(k=>{
+        const list = by[k];
+        setExamScore(rows[Number(k)], idx, Number(list[list.length - 1]));
+      });
+      persistState();
+      render();
+    }, `رُصدت ${fmt(keys.length)} درجة في «${examName(idx)}»`);
+  }
+
+  const holder = document.getElementById('dialog-holder');
+  const fileMax = (parsed.max != null && isFinite(parsed.max)) ? parsed.max : null;
+  holder.innerHTML = `
+    <div class="warn-overlay" id="dlg-overlay">
+      <div class="warn-modal" style="max-width:520px;">
+        <h3>📊 مراجعة الدرجات قبل الاعتماد</h3>
+        <div class="xi-head">
+          <span>إلى <b>${escapeAttr(sectionTitle(key))}</b> · <b>${escapeAttr(examName(idx))}</b></span>
+          <span class="xi-chip">${fmt(parsed.rows.length)} صفًّا</span>
+          <span class="xi-chip">من ${fmt(max)}</span>
+          ${(fileMax !== null && fileMax !== max) ? `<span class="xi-chip warn">⚠️ الملف من ${fmt(fileMax)} — ما تجاوز ${fmt(max)} سيُقصّ</span>` : ``}
+        </div>
+        <div id="xi-body"></div>
+      </div>
+    </div>`;
+  draw();
 }
 
 /* Adds a list of names to a section: reuses existing empty rows first (if fillEmptyFirst),
