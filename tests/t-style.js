@@ -74,10 +74,9 @@ module.exports = async function run(){
 
   /* ٧ — تمرير الجدول يُسترجع في المحورين. بلا العمودي يقفز المعلّم إلى
      أول الكشف بعد كل خانة يرصدها. */
-  t.head('موضع التمرير بعد كل رصدة');
-  const restore = vm.runInContext('restoreTableScrolls.toString()', s);
-  t.ok('يُسترجع الأفقي', /scrollLeft/.test(restore));
-  t.ok('ويُسترجع العمودي', /scrollTop/.test(restore), 'كل رصدة ستقفز بالمعلّم لأعلى');
+  /* كان هنا فحصان يقرآن نصّ restoreTableScrolls بحثًا عن scrollLeft و
+     scrollTop. وجود الكلمة في الشيفرة لا يعني أن الموضع يُستعاد فعلًا،
+     وقد مرّا بينما كان المعلّم يقفز حقًّا. القياس الحقيقي في t-scroll.js. */
 
   return t.done();
 };

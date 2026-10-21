@@ -6490,21 +6490,89 @@ function render(){
   restoreTableScrolls(main, prevScrolls);
 }
 
-/* تُستدعى بعد إعادة بناء أي تبويب.
-   المحوران معًا لا الأفقي وحده: جدول الرصد صار يُمرَّر رأسيًا داخل إطاره،
-   وكل رصدة تُعيد بناء الجدول — فبلا استرجاع العمودي يقفز المعلّم إلى أول
-   الكشف بعد كل خانة يرصدها. */
-function restoreTableScrolls(main, prevScrolls){
-  if(!prevScrolls || prevScrolls.length===0) return;
-  const wraps = main.querySelectorAll('.table-wrap');
-  if(wraps.length !== prevScrolls.length) return;
-  wraps.forEach((w,i)=>{
-    const prev = prevScrolls[i];
-    if(!prev) return;
-    if(prev.x) w.scrollLeft = prev.x;
-    if(prev.y) w.scrollTop  = prev.y;
-  });
+/* ===== موضع إطار الكشف =====
+   إطار الكشف مُمرِّر داخل مُمرِّر (الصفحة). وحين يطلب المتصفّح «مرِّر هذا
+   العنصر إلى الرؤية» — عند التركيز على حقل، أو حين تفتح لوحة مفاتيح الجوال،
+   أو بعد إعادة بناء الشاشة — يحلّ الالتباس بتصفير الإطار الداخلي وتمرير
+   الصفحة بدلًا منه. والنتيجة التي يراها المعلّم: الكشف يقفز إلى أوّله وهو
+   في منتصف ثلاثين اسمًا، بعد كل خانة يرصدها.
+
+   لا يمكن إلغاء الإطار الداخلي: الترويسة الثابتة تحتاج مُمرِّرًا تلتصق به.
+   فالعلاج أن نعرف أيّ تمريرٍ من إصبع المعلّم وأيّه من المتصفّح: ما تبع
+   سحبًا أو عجلةً أو مفتاح تنقّلٍ فهو منه ونحفظه، وما جاء بلا ذلك فليس منه
+   فنردّ الإطار إلى حيث تركه.
+
+   والإعادة مرّتان: فورًا، ثم في الإطار التالي — لأن التخطيط قد لا يكون
+   اكتمل لحظة الإسناد، فيقصّ المتصفّح ما نُسنده إلى ارتفاعٍ لم يكتمل. ومن
+   هذا بالذات كانت القفزة متقطّعة لا دائمة. */
+let SCROLL_MEM = [];
+let LAST_GESTURE = 0;
+const GESTURE_GRACE = 1500;   // يتّسع لاندفاع التمرير بعد رفع الإصبع
+
+function tableWraps(){
+  const main = document.getElementById('main');
+  return main ? [...main.querySelectorAll('.table-wrap')] : [];
 }
+function captureTableScrolls(){
+  return tableWraps().map(w=> ({ x:w.scrollLeft, y:w.scrollTop }));
+}
+function rememberTableScrolls(){
+  const now = captureTableScrolls();
+  if(now.length) SCROLL_MEM = now;
+}
+/* تُسند المواضع المحفوظة، ثم تُعاد في الإطار التالي لتجاوز القصّ.
+   وما نُسنده يصير هو الموضع المعتمد، وإلا ردّه المراقب أدناه إلى قيمةٍ
+   أقدم فتتقاتل الآليتان. */
+function applyTableScrolls(mem){
+  const want = mem || SCROLL_MEM;
+  if(!want || want.length === 0) return;
+  SCROLL_MEM = want;
+  const put = ()=>{
+    const wraps = tableWraps();
+    if(wraps.length !== want.length) return;
+    wraps.forEach((w,i)=>{
+      const s = want[i];
+      if(!s) return;
+      if(s.x && Math.abs(w.scrollLeft - s.x) > 1) w.scrollLeft = s.x;
+      if(s.y && Math.abs(w.scrollTop  - s.y) > 1) w.scrollTop  = s.y;
+    });
+  };
+  put();
+  requestAnimationFrame(put);
+}
+
+/* تُستدعى بعد إعادة بناء أي تبويب. المحوران معًا لا الأفقي وحده.
+   ما قبل البناء يُؤخذ للتهيئة الأولى فقط: بعدها المحفوظ أصدق منه، لأن
+   المتصفّح قد يكون عبث بالإطار قبل أن يبدأ البناء. */
+function restoreTableScrolls(main, prevScrolls){
+  if(SCROLL_MEM.length === 0 && prevScrolls && prevScrolls.length) SCROLL_MEM = prevScrolls;
+  applyTableScrolls();
+}
+
+(function(){
+  /* اللمسة وحدها ليست تمريرًا: المعلّم يلمس الخانة ليرصدها، ثم تفتح لوحة
+     المفاتيح بعد جزءٍ من الثانية فتُمرّر الحقل إلى الرؤية. فلو عددنا اللمسة
+     إذنًا لمرّ عبث المتصفّح باسمها. التمرير هو السحب والعجلة ومفاتيح
+     التنقّل وحدها. */
+  const SCROLL_KEYS = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ','Spacebar'];
+  const stamp = ()=>{ LAST_GESTURE = Date.now(); };
+  document.addEventListener('touchmove', stamp, { capture:true, passive:true });
+  document.addEventListener('wheel',     stamp, { capture:true, passive:true });
+  document.addEventListener('pointermove', (e)=>{ if(e.buttons) stamp(); }, { capture:true, passive:true });
+  document.addEventListener('keydown', (e)=>{
+    const tn = (e.target && e.target.tagName) || '';
+    if(/INPUT|TEXTAREA|SELECT/.test(tn) || (e.target && e.target.isContentEditable)) return;
+    if(SCROLL_KEYS.indexOf(e.key) >= 0) stamp();
+  }, true);
+
+  /* أحداث التمرير لا تصعد، فتُلتقط في مرحلة الالتقاط من المستند. */
+  document.addEventListener('scroll', (e)=>{
+    const w = e.target;
+    if(!w || !w.classList || !w.classList.contains('table-wrap')) return;
+    if(Date.now() - LAST_GESTURE < GESTURE_GRACE) rememberTableScrolls();
+    else applyTableScrolls();
+  }, true);
+})();
 
 /* الترويسة العلوية تتغيّر حسب التبويب: الرصد يعرض اسم الشعبة فقط،
    وبقية التبويبات تعرض عنوانها. */
